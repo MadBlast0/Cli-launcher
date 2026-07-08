@@ -48,12 +48,32 @@ Cross-platform desktop launcher for AI coding CLIs. Install, update, uninstall, 
 
 ## Features
 
-- **17 AI coding CLIs** — manage all major terminal AI agents in one place.
-- **Install / Update / Uninstall / Repair** — per-CLI actions with progress feedback.
-- **Open terminal** — launches a terminal in your chosen working directory.
-- **Drag to reorder** — arrange CLI cards to your preference.
-- **Update detection** — checks npm/pip for newer versions (cached 1 hour).
-- **Cross-platform** — Windows (`.ps1`), macOS & Linux (`.sh`).
+- **17 AI coding CLIs** — manage all major terminal AI agents (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Aider, and more) in one place.
+- **Install / Update / Uninstall / Repair** — per-CLI actions with real-time progress feedback. Each CLI gets its own install script generated dynamically for your platform.
+- **Open terminal** — launches a terminal (cmd, PowerShell, or your default shell) pre-configured in your chosen working directory.
+- **Drag to reorder** — rearrange CLI cards to your preference; layout persists across sessions.
+- **Update detection** — checks npm/pip for newer versions (cached 1 hour) and badges each CLI when an update is available.
+- **Cross-platform** — Windows (`.ps1` scripts), macOS & Linux (`.sh` scripts). Packaged as native installers for each OS.
+
+## Installation
+
+Download the latest release for your platform from the [Releases page](https://github.com/MadBlast0/Cli-launcher/releases/latest).
+
+| Platform | Format | Arch |
+| -------- | ------ | ---- |
+| Windows | `.msi` installer | x64 |
+| Windows | `.exe` installer (NSIS) | x64 |
+| Windows | Portable `.exe` | x64 |
+| macOS | `.dmg` (universal) | x64 + arm64 |
+| macOS | `.dmg` (Intel) | x64 |
+| macOS | `.dmg` (Apple Silicon) | arm64 |
+| macOS | `.zip` (universal) | x64 + arm64 |
+| Linux | `.AppImage` | x64, arm64 |
+| Linux | `.deb` | x64, arm64 |
+| Linux | `.rpm` | x64, arm64 |
+| Linux | `.tar.gz` | x64, arm64 |
+
+Builds are automatically produced by GitHub CI when a new version tag is pushed.
 
 ## Stack
 
@@ -74,13 +94,21 @@ npm run dev
 
 ## Build
 
+Build artifacts are output to the `release/` directory.
+
 ```bash
 npm run build          # current platform
-npm run build:win      # Windows
-npm run build:mac      # macOS
-npm run build:linux    # Linux
+npm run build:win      # Windows (MSI, NSIS, portable, ZIP)
+npm run build:mac      # macOS (DMG, ZIP — x64 + arm64)
+npm run build:linux    # Linux (AppImage, deb, rpm, snap, pacman)
 npm run build:all      # all platforms
 ```
+
+## CI/CD
+
+Every push to `main` builds the app on Windows, macOS, and Linux and uploads the artifacts. Pushing a tag matching `v*.*.*` (e.g. `v1.0.0`) additionally publishes a [GitHub Release](https://github.com/MadBlast0/Cli-launcher/releases) with all platform builds attached.
+
+The macOS universal binaries (fat binaries containing both x64 and arm64 slices) are produced automatically using `electron-builder --universal`, so a single download works on both Intel and Apple Silicon Macs.
 
 ## Star History
 

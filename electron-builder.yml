@@ -5,7 +5,7 @@ directories:
   buildResources: resources
 publish:
   - provider: github
-    releaseType: draft
+    releaseType: release
 files:
   - dist/**/*
   - src/cli-registry/**/*.ps1
@@ -41,10 +41,12 @@ mac:
       arch:
         - x64
         - arm64
+        - universal
     - target: zip
       arch:
         - x64
         - arm64
+        - universal
     - target: 7z
       arch:
         - x64
