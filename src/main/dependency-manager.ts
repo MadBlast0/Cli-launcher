@@ -1,5 +1,9 @@
 import { exec } from 'child_process'
+import { platform } from 'os'
 import { DependencyCheck } from '../shared/types'
+
+const isWin = platform() === 'win32'
+const isMac = platform() === 'darwin'
 
 function execCmd(command: string): Promise<string> {
   return new Promise((resolve) => {
@@ -10,8 +14,11 @@ function execCmd(command: string): Promise<string> {
 }
 
 export async function checkDependencies(): Promise<DependencyCheck> {
-  const nodeVersion = await execCmd('node --version')
-  const pythonVersion = await execCmd('python --version')
+  const nodeCmd = isWin ? 'node --version' : 'command -v node && node --version || echo ""'
+  const pythonCmd = isWin ? 'python --version' : 'command -v python3 && python3 --version || command -v python && python --version || echo ""'
+
+  const nodeVersion = await execCmd(nodeCmd)
+  const pythonVersion = await execCmd(pythonCmd)
 
   return {
     node: {
@@ -19,54 +26,104 @@ export async function checkDependencies(): Promise<DependencyCheck> {
       version: nodeVersion || undefined,
     },
     python: {
-      installed: pythonVersion.toLowerCase().startsWith('python'),
+      installed: pythonVersion.toLowerCase().includes('python'),
       version: pythonVersion || undefined,
     },
   }
 }
 
-export async function installNode(): Promise<string> {
+function download(url: string, output: string): Promise<void> {
+  const cmd = isWin
+    ? `powershell -NoProfile -Command "Invoke-WebRequest -Uri '${url}' -OutFile '${output}'"`
+    : `curl -fsSL '${url}' -o '${output}'`
   return new Promise((resolve, reject) => {
-    const url = 'https://nodejs.org/dist/v22.14.0/node-v22.14.0-x64.msi'
-    const downloader = `
-      $url = "${url}"
-      $output = "$env:TEMP\\node-installer.msi"
-      Write-Output "Downloading Node.js..."
-      Invoke-WebRequest -Uri $url -OutFile $output
-      Write-Output "Installing Node.js..."
-      Start-Process msiexec.exe -Wait -ArgumentList "/i $output /qn"
-      Write-Output "Node.js installed successfully"
-    `
-    exec(
-      `powershell -NoProfile -Command "${downloader.replace(/"/g, '\\"')}"`,
-      { timeout: 300000 },
-      (error, stdout, stderr) => {
-        if (error) reject(new Error(stderr || error.message))
-        else resolve(stdout)
-      }
-    )
+    exec(cmd, { timeout: 120000 }, (error) => {
+      if (error) reject(error)
+      else resolve()
+    })
   })
 }
 
+export async function installNode(): Promise<string> {
+  const lines: string[] = []
+  const push = (s: string) => lines.push(s)
+
+  if (isWin) {
+    const url = 'https://nodejs.org/dist/v22.14.0/node-v22.14.0-x64.msi'
+    const output = `${process.env.TEMP}\\node-installer.msi`
+    push('Downloading Node.js...')
+    await download(url, output)
+    push('Installing Node.js...')
+    await new Promise<void>((resolve, reject) => {
+      exec(`msiexec.exe /i "${output}" /qn`, { timeout: 300000 }, (error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+  } else if (isMac) {
+    push('Downloading Node.js...')
+    const url = 'https://nodejs.org/dist/v22.14.0/node-v22.14.0.pkg'
+    const output = '/tmp/node-installer.pkg'
+    await download(url, output)
+    push('Installing Node.js...')
+    await new Promise<void>((resolve, reject) => {
+      exec(`sudo installer -pkg "${output}" -target /`, { timeout: 300000 }, (error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+  } else {
+    push('Installing Node.js via NodeSource...')
+    await new Promise<void>((resolve, reject) => {
+      exec('curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash - && sudo apt-get install -y nodejs', { timeout: 300000 }, (error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+  }
+
+  push('Node.js installed successfully')
+  return lines.join('\n')
+}
+
 export async function installPython(): Promise<string> {
-  return new Promise((resolve, reject) => {
+  const lines: string[] = []
+  const push = (s: string) => lines.push(s)
+
+  if (isWin) {
     const url = 'https://www.python.org/ftp/python/3.12.8/python-3.12.8-amd64.exe'
-    const downloader = `
-      $url = "${url}"
-      $output = "$env:TEMP\\python-installer.exe"
-      Write-Output "Downloading Python..."
-      Invoke-WebRequest -Uri $url -OutFile $output
-      Write-Output "Installing Python..."
-      Start-Process $output -Wait -ArgumentList "/quiet InstallAllUsers=1 PrependPath=1"
-      Write-Output "Python installed successfully"
-    `
-    exec(
-      `powershell -NoProfile -Command "${downloader.replace(/"/g, '\\"')}"`,
-      { timeout: 300000 },
-      (error, stdout, stderr) => {
-        if (error) reject(new Error(stderr || error.message))
-        else resolve(stdout)
-      }
-    )
-  })
+    const output = `${process.env.TEMP}\\python-installer.exe`
+    push('Downloading Python...')
+    await download(url, output)
+    push('Installing Python...')
+    await new Promise<void>((resolve, reject) => {
+      exec(`"${output}" /quiet InstallAllUsers=1 PrependPath=1`, { timeout: 300000 }, (error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+  } else if (isMac) {
+    push('Downloading Python...')
+    const url = 'https://www.python.org/ftp/python/3.12.8/python-3.12.8-macos11.pkg'
+    const output = '/tmp/python-installer.pkg'
+    await download(url, output)
+    push('Installing Python...')
+    await new Promise<void>((resolve, reject) => {
+      exec(`sudo installer -pkg "${output}" -target /`, { timeout: 300000 }, (error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+  } else {
+    push('Installing Python via apt...')
+    await new Promise<void>((resolve, reject) => {
+      exec('sudo apt-get update && sudo apt-get install -y python3 python3-pip', { timeout: 300000 }, (error) => {
+        if (error) reject(error)
+        else resolve()
+      })
+    })
+  }
+
+  push('Python installed successfully')
+  return lines.join('\n')
 }

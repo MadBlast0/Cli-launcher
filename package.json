@@ -7,9 +7,13 @@
     "dev": "concurrently -k \"npm run dev:renderer\" \"npm run dev:electron\"",
     "dev:renderer": "vite",
     "dev:electron": "wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .",
-    "build": "tsc && vite build && electron-builder",
+    "build": "npm run build:renderer && npm run build:main && electron-builder",
     "build:renderer": "vite build",
     "build:main": "tsc -p tsconfig.node.json",
+    "build:win": "npm run build:renderer && npm run build:main && electron-builder --win",
+    "build:mac": "npm run build:renderer && npm run build:main && electron-builder --mac",
+    "build:linux": "npm run build:renderer && npm run build:main && electron-builder --linux",
+    "build:all": "npm run build:renderer && npm run build:main && electron-builder --win --mac --linux",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -3,17 +3,86 @@ productName: CLI Launcher
 directories:
   output: release
   buildResources: resources
+publish:
+  - provider: github
+    releaseType: draft
 files:
   - dist/**/*
   - src/cli-registry/**/*.ps1
+  - src/cli-registry/**/*.sh
+  - resources/**/*
+
 win:
   target:
     - target: nsis
       arch:
         - x64
+    - target: portable
+      arch:
+        - x64
+    - target: msi
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
   icon: resources/icon.ico
+  publisherName: CLI Launcher
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   installerIcon: resources/icon.ico
   uninstallerIcon: resources/icon.ico
+  shortcutName: CLI Launcher
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+    - target: 7z
+      arch:
+        - x64
+        - arm64
+  icon: resources/icon.icns
+  category: public.app-category.developer-tools
+  artifactName: "${productName}-${version}-mac-${arch}.${ext}"
+
+linux:
+  target:
+    - target: AppImage
+      arch:
+        - x64
+        - arm64
+    - target: deb
+      arch:
+        - x64
+        - arm64
+    - target: rpm
+      arch:
+        - x64
+        - arm64
+    - target: tar.gz
+      arch:
+        - x64
+        - arm64
+    - target: snap
+      arch:
+        - x64
+        - arm64
+    - target: freebsd
+      arch:
+        - x64
+        - arm64
+    - target: pacman
+      arch:
+        - x64
+        - arm64
+  icon: resources/icon.png
+  category: Development
+  artifactName: "${productName}-${version}-linux-${arch}.${ext}"

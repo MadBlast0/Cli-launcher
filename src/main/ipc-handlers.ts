@@ -1,6 +1,6 @@
 import { ipcMain, dialog, app } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
-import { executeCliAction, openCli, checkCliUpdate } from './cli-engine'
+import { executeCliAction, openCli, checkCliUpdate, isWindows } from './cli-engine'
 import { checkDependencies, installNode, installPython } from './dependency-manager'
 import { getCliRegistry } from '../cli-registry'
 import { CliAction, CliState } from '../shared/types'
@@ -33,7 +33,8 @@ function saveFolder(folder: string) {
 async function checkCliStatus(cliId: string, executable: string): Promise<CliState> {
   try {
     const version = await new Promise<string>((resolve) => {
-      exec(`where.exe ${executable}`, { timeout: 5000 }, (err) => {
+      const which = isWindows ? 'where' : 'which'
+      exec(`${which} ${executable}`, { timeout: 5000 }, (err) => {
         if (err) { resolve(''); return }
         exec(`${executable} --version`, { timeout: 5000 }, (_err, stdout) => {
           resolve(stdout.trim().split('\n')[0] || 'installed')

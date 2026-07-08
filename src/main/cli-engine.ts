@@ -1,11 +1,15 @@
 import { execFile, spawn } from 'child_process'
 import path from 'path'
 import fs from 'fs'
+import os from 'os'
 import { CliAction, CliActionResult, CliDefinition } from '../shared/types'
+
+const isWindows = os.platform() === 'win32'
 
 function getScriptPath(cliId: string, action: CliAction): string {
   const baseDir = path.join(__dirname, '../../src/cli-registry', cliId)
-  const scriptPath = path.join(baseDir, `${action}.ps1`)
+  const ext = isWindows ? '.ps1' : '.sh'
+  const scriptPath = path.join(baseDir, `${action}${ext}`)
 
   if (!fs.existsSync(scriptPath)) {
     throw new Error(`Script not found: ${scriptPath}`)
@@ -15,45 +19,54 @@ function getScriptPath(cliId: string, action: CliAction): string {
 
 function runScript(scriptPath: string): Promise<CliActionResult> {
   return new Promise((resolve) => {
-    const child = execFile(
-      'powershell',
-      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath],
-      { maxBuffer: 1024 * 1024 },
-      (error, stdout, stderr) => {
-        if (error) {
-          resolve({ success: false, output: stdout, error: stderr || error.message })
-        } else {
-          resolve({ success: true, output: stdout })
-        }
+    const cmd = isWindows ? 'powershell' : 'bash'
+    const args = isWindows
+      ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath]
+      : [scriptPath]
+
+    const child = execFile(cmd, args, { maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+      if (error) {
+        resolve({ success: false, output: stdout, error: stderr || error.message })
+      } else {
+        resolve({ success: true, output: stdout })
       }
-    )
+    })
     child.stdin?.end()
   })
 }
 
-/**
- * Launch a CLI in a NEW visible terminal window, in the chosen working folder.
- * (There is no open.ps1 — "open" is handled here so it actually spawns a console.)
- */
 export function openCli(cli: CliDefinition, folder: string | null): CliActionResult {
   const flag = cli.skipPermissions
     ? ` ${cli.skipPermissionsFlag || '--dangerously-skip-permissions'}`
     : ''
   const exeCmd = `${cli.executable}${flag}`
 
-  // Keep the window open after the CLI exits so the user can read output / re-run.
-  const inner = folder
-    ? `Set-Location -LiteralPath "${folder}"; ${exeCmd}`
-    : exeCmd
-
   try {
-    // `cmd /c start` opens a brand-new console window hosting PowerShell.
-    const child = spawn(
-      'cmd.exe',
-      ['/c', 'start', '', 'powershell', '-NoExit', '-Command', inner],
-      { detached: true, stdio: 'ignore', windowsHide: false }
-    )
-    child.unref()
+    if (isWindows) {
+      const inner = folder
+        ? `Set-Location -LiteralPath "${folder}"; ${exeCmd}`
+        : exeCmd
+      const child = spawn(
+        'cmd.exe',
+        ['/c', 'start', '', 'powershell', '-NoExit', '-Command', inner],
+        { detached: true, stdio: 'ignore', windowsHide: false }
+      )
+      child.unref()
+    } else {
+      const inner = folder ? `cd "${folder}" && ${exeCmd}` : exeCmd
+      const term = process.env.TERM || ''
+      if (os.platform() === 'darwin') {
+        const script = `tell application "Terminal" to do script "${inner.replace(/"/g, '\\"')}"`
+        spawn('osascript', ['-e', script], { detached: true, stdio: 'ignore' }).unref()
+      } else {
+        const terminal = fs.existsSync('/usr/bin/x-terminal-emulator')
+          ? 'x-terminal-emulator'
+          : fs.existsSync('/usr/bin/gnome-terminal')
+            ? 'gnome-terminal'
+            : 'xterm'
+        spawn(terminal, ['-e', `bash -c "${inner}; exec bash"`], { detached: true, stdio: 'ignore' }).unref()
+      }
+    }
     return { success: true, output: `Opened ${cli.name}` }
   } catch (err) {
     return {
@@ -64,35 +77,87 @@ export function openCli(cli: CliDefinition, folder: string | null): CliActionRes
   }
 }
 
-/** Detect whether a newer version is published (npm-based CLIs only). */
-export function checkCliUpdate(
-  cli: CliDefinition
-): Promise<{ updateAvailable: boolean; latestVersion?: string }> {
-  if (cli.dependencyType !== 'node' || !cli.packageName) {
-    return Promise.resolve({ updateAvailable: false })
+const CACHE_TTL = 60 * 60 * 1000
+
+const npmOutdatedCache: { data: Record<string, { current: string; latest: string }> | null; ts: number } = { data: null, ts: 0 }
+const pipOutdatedCache: { data: Record<string, { current: string; latest: string }> | null; ts: number } = { data: null, ts: 0 }
+
+function isCacheFresh(cache: { ts: number }): boolean {
+  return Date.now() - cache.ts < CACHE_TTL
+}
+
+function getNpmOutdated(): Promise<Record<string, { current: string; latest: string }>> {
+  if (npmOutdatedCache.data && isCacheFresh(npmOutdatedCache)) {
+    return Promise.resolve(npmOutdatedCache.data!)
   }
-  const pkg: string = cli.packageName
   return new Promise((resolve) => {
-    // `npm outdated` exits 1 when something is outdated; JSON is on stdout regardless.
     execFile(
       'npm',
-      ['outdated', '-g', pkg, '--json'],
+      ['outdated', '-g', '--json'],
       { timeout: 25000, shell: true, maxBuffer: 1024 * 1024 },
       (_error: unknown, stdout: string) => {
         try {
-          const data = JSON.parse(stdout || '{}')
-          const entry = data[pkg]
-          if (entry && entry.current && entry.latest && entry.current !== entry.latest) {
-            resolve({ updateAvailable: true, latestVersion: entry.latest })
-          } else {
-            resolve({ updateAvailable: false })
-          }
+          const data: Record<string, { current: string; latest: string }> = JSON.parse(stdout || '{}')
+          npmOutdatedCache.data = data
+          npmOutdatedCache.ts = Date.now()
+          resolve(data)
         } catch {
-          resolve({ updateAvailable: false })
+          resolve({})
         }
       }
     )
   })
+}
+
+function getPipOutdated(): Promise<Record<string, { current: string; latest: string }>> {
+  if (pipOutdatedCache.data && isCacheFresh(pipOutdatedCache)) {
+    return Promise.resolve(pipOutdatedCache.data!)
+  }
+  return new Promise((resolve) => {
+    execFile(
+      'pip',
+      ['list', '--outdated', '--format=json'],
+      { timeout: 25000, shell: true, maxBuffer: 1024 * 1024 },
+      (_error: unknown, stdout: string) => {
+        try {
+          const list = JSON.parse(stdout || '[]')
+          const map: Record<string, { current: string; latest: string }> = {}
+          for (const pkg of list) {
+            map[pkg.name] = { current: pkg.version, latest: pkg.latest_version }
+          }
+          pipOutdatedCache.data = map
+          pipOutdatedCache.ts = Date.now()
+          resolve(map)
+        } catch {
+          resolve({})
+        }
+      }
+    )
+  })
+}
+
+export async function checkCliUpdate(
+  cli: CliDefinition
+): Promise<{ updateAvailable: boolean; latestVersion?: string }> {
+  if (cli.dependencyType === 'node' && cli.packageName) {
+    const outdated = await getNpmOutdated()
+    const entry = outdated[cli.packageName]
+    if (entry && entry.current && entry.latest && entry.current !== entry.latest) {
+      return { updateAvailable: true, latestVersion: entry.latest }
+    }
+    return { updateAvailable: false }
+  }
+
+  if (cli.dependencyType === 'python' && cli.packageName) {
+    const outdated = await getPipOutdated()
+    const entry = outdated[cli.packageName]
+    if (entry && entry.current && entry.latest && entry.current !== entry.latest) {
+      return { updateAvailable: true, latestVersion: entry.latest }
+    }
+    return { updateAvailable: false }
+  }
+
+  return { updateAvailable: false }
 }
 
 export async function executeCliAction(cliId: string, action: CliAction): Promise<CliActionResult> {
@@ -107,3 +172,5 @@ export async function executeCliAction(cliId: string, action: CliAction): Promis
     }
   }
 }
+
+export { isWindows }
