@@ -32,6 +32,11 @@ jobs:
         run: npm run build:renderer
       - name: Build main process
         run: npm run build:main
+      - name: Delete existing release (clean slate)
+        if: runner.os == 'Linux'
+        run: gh release delete "${{ github.ref_name }}" --yes || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build & publish
         run: >
           npx electron-builder
