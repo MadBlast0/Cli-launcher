@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ESNext",
-    "module": "CommonJS",
+    "module": "Node16",
     "lib": ["ESNext"],
     "types": ["node"],
     "strict": true,
@@ -11,7 +11,7 @@
     "resolveJsonModule": true,
     "outDir": "dist",
     "rootDir": "src",
-    "moduleResolution": "node"
+    "moduleResolution": "node16"
   },
   "include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*", "src/cli-registry/**/*"]
 }
