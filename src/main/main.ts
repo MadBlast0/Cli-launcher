@@ -59,6 +59,8 @@ function createWindow() {
   })
 }
 
+if (process.platform === 'win32') app.setAppUserModelId('com.cli-launcher.app')
+
 app.whenReady().then(() => {
   createWindow()
   registerIpcHandlers()
