@@ -28,6 +28,7 @@ win:
         - x64
   icon: resources/icon.ico
   publisherName: CLI Launcher
+  appUserModelId: com.cli-launcher.app
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
@@ -37,7 +38,6 @@ nsis:
   shortcutName: CLI Launcher
   installerIcon: resources/icon.ico
   uninstallerIcon: resources/icon.ico
-  appUserModelId: com.cli-launcher.app
   installerSidebar: null
   uninstallDisplayName: CLI Launcher
   language: 1033
