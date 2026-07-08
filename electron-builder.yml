@@ -28,7 +28,6 @@ win:
         - x64
   icon: resources/icon.ico
   publisherName: CLI Launcher
-  appUserModelId: com.cli-launcher.app
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
