@@ -21,7 +21,15 @@ export default function App() {
   const [justInstalled, setJustInstalled] = useState<string | null>(null)
 
   const loadStates = useCallback(
-    () => window.electronAPI.getAllCliStates().then(setStates),
+    () => window.electronAPI.getAllCliStates().then((cached) => {
+      setStates(cached)
+      setLoaded(true)
+    }),
+    []
+  )
+
+  const refreshStates = useCallback(
+    () => window.electronAPI.refreshCliStates(),
     []
   )
 
@@ -30,6 +38,13 @@ export default function App() {
     window.electronAPI.checkDependencies().then(setDeps)
     loadStates()
   }, [loadStates])
+
+  useEffect(() => {
+    const cleanup = window.electronAPI.onCliStateUpdate((cliId, state) => {
+      setStates((prev) => ({ ...prev, [cliId]: state }))
+    })
+    return cleanup
+  }, [])
 
   const isInstalled = (cliId: string) =>
     states[cliId]?.status === 'installed' || states[cliId]?.status === 'update-available'
@@ -120,7 +135,7 @@ export default function App() {
           onReorder={handleReorder}
           onOpenDeps={() => setShowDeps(true)}
           onOpenCatalog={() => setShowCatalog(true)}
-          onCliChanged={loadStates}
+          onCliChanged={refreshStates}
           deps={deps}
           search={search}
           onSearchChange={setSearch}
@@ -133,7 +148,7 @@ export default function App() {
         onClose={() => setShowCatalog(false)}
         clis={clis}
         states={states}
-        onChanged={loadStates}
+        onChanged={refreshStates}
         onInstalled={(id) => {
           setJustInstalled(id)
           setTimeout(() => setJustInstalled(null), 5000)

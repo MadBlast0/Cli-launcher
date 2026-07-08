@@ -1,14 +1,33 @@
-import { ipcMain, dialog, app } from 'electron'
+import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
 import { executeCliAction, openCli, checkCliUpdate, isWindows } from './cli-engine'
 import { checkDependencies, installNode, installPython } from './dependency-manager'
 import { getCliRegistry } from '../cli-registry'
-import { CliAction, CliState } from '../shared/types'
+import { CliAction, CliState, CliDefinition } from '../shared/types'
 import { exec } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
 const cliStatusCache = new Map<string, CliState>()
+const STATE_CACHE_FILE = 'cli-state-cache.json'
+
+function getStateCachePath() {
+  return path.join(app.getPath('userData'), STATE_CACHE_FILE)
+}
+
+function readStateCache(): Record<string, CliState> {
+  try {
+    const p = getStateCachePath()
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8'))
+  } catch { /* ignore */ }
+  return {}
+}
+
+function writeStateCache(cache: Record<string, CliState>) {
+  try {
+    fs.writeFileSync(getStateCachePath(), JSON.stringify(cache), 'utf-8')
+  } catch { /* ignore */ }
+}
 
 function getFolderPath() {
   return path.join(app.getPath('userData'), 'lastfolder.txt')
@@ -48,6 +67,21 @@ async function checkCliStatus(cliId: string, executable: string): Promise<CliSta
   }
 }
 
+async function refreshAllStates(registry: CliDefinition[], sender: Electron.WebContents) {
+  const freshStates: Record<string, CliState> = {}
+
+  await Promise.all(
+    registry.map(async (cli) => {
+      const state = await checkCliStatus(cli.id, cli.executable)
+      freshStates[cli.id] = state
+      cliStatusCache.set(cli.id, state)
+      try { sender.send('cli:state-updated', cli.id, state) } catch { /* window closed */ }
+    })
+  )
+
+  writeStateCache(freshStates)
+}
+
 export function registerIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.GET_CLIS, () => getCliRegistry())
 
@@ -59,16 +93,20 @@ export function registerIpcHandlers() {
     return state
   })
 
-  ipcMain.handle(IPC_CHANNELS.GET_ALL_CLI_STATES, async () => {
+  ipcMain.handle(IPC_CHANNELS.GET_ALL_CLI_STATES, async (event) => {
     const registry = getCliRegistry()
-    const results = await Promise.all(
-      registry.map(async (cli) => {
-        const state = await checkCliStatus(cli.id, cli.executable)
-        cliStatusCache.set(cli.id, state)
-        return [cli.id, state] as const
-      })
-    )
-    return Object.fromEntries(results) as Record<string, CliState>
+    const cached = readStateCache()
+    const sender = event.sender
+
+    // Background refresh — per-CLI updates streamed to renderer
+    refreshAllStates(registry, sender)
+
+    return cached
+  })
+
+  ipcMain.on('cli:refresh-all-states', (event) => {
+    const registry = getCliRegistry()
+    refreshAllStates(registry, event.sender)
   })
 
   ipcMain.handle(IPC_CHANNELS.EXECUTE_ACTION, async (_event, cliId: string, action: CliAction) => {
@@ -121,5 +159,15 @@ export function registerIpcHandlers() {
 
   ipcMain.handle(IPC_CHANNELS.SAVE_FOLDER, (_event, folder: string) => {
     saveFolder(folder)
+  })
+
+  ipcMain.on('window:close', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) win.close()
+  })
+
+  ipcMain.on('window:minimize', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) win.minimize()
   })
 }

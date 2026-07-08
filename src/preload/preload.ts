@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { CliState } from '../shared/types'
 
 const api = {
   getClis: () => ipcRenderer.invoke('cli:get-all'),
@@ -13,6 +14,12 @@ const api = {
   saveFolder: (folder: string) => ipcRenderer.invoke('folder:save', folder),
   minimizeWindow: () => ipcRenderer.send('window:minimize'),
   closeWindow: () => ipcRenderer.send('window:close'),
+  refreshCliStates: () => ipcRenderer.send('cli:refresh-all-states'),
+  onCliStateUpdate: (callback: (cliId: string, state: CliState) => void) => {
+    const handler = (_event: any, cliId: string, state: CliState) => callback(cliId, state)
+    ipcRenderer.on('cli:state-updated', handler)
+    return () => { ipcRenderer.removeListener('cli:state-updated', handler) }
+  },
 }
 
 contextBridge.exposeInMainWorld('electronAPI', api)

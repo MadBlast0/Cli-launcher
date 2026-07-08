@@ -24,6 +24,8 @@ Cross-platform desktop launcher for AI coding CLIs. Install, update, uninstall, 
 
 </div>
 
+![Screenshot](media/screenshot.png)
+
 ## Supported CLIs
 
 | CLI | Package | Type |

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Modal, Tooltip } from '../ui'
 import { getCliLogo } from '../../logos'
 import type { CliDefinition, CliState } from '@shared/types'
-import { Download, Check } from 'lucide-react'
+import { ArrowLeft, Download, Check, Search } from 'lucide-react'
 
 interface CliCatalogProps {
   open: boolean
@@ -48,12 +48,25 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
   return (
     <Modal open={open} onClose={onClose} title="Catalog" width="480px" hideHeader>
       <div className="p-4 flex flex-col gap-3">
-        <input
-          className="mac-input w-full px-3 py-2 text-xs font-semibold"
-          placeholder="Search..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onClose}
+            className="mac-btn p-1.5 rounded-[3px]"
+            aria-label="Back"
+          >
+            <ArrowLeft size={14} />
+          </button>
+          <div className="mac-input flex items-center gap-2 px-3 py-2 flex-1">
+            <Search size={15} className="text-muted-foreground shrink-0" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search..."
+              className="w-full bg-transparent text-foreground text-[13px] font-[450] outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+        </div>
 
         <div className="flex flex-col gap-1.5">
           {filtered.length === 0 && (

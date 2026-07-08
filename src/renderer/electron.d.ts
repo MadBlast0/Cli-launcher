@@ -16,6 +16,8 @@ declare global {
       saveFolder: (folder: string) => Promise<void>
       minimizeWindow: () => void
       closeWindow: () => void
+      refreshCliStates: () => void
+      onCliStateUpdate: (callback: (cliId: string, state: CliState) => void) => () => void
     }
   }
 }

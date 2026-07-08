@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { X } from 'lucide-react'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import appLogo from '../../assets/app-logo.png'
 
@@ -36,6 +37,13 @@ export function LauncherWindow({ children, isDark, onToggleTheme }: LauncherWind
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
           <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+          <button
+            onClick={() => window.electronAPI.closeWindow()}
+            className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            aria-label="Close"
+          >
+            <X size={15} />
+          </button>
         </div>
       </div>
 

@@ -34,7 +34,10 @@ jobs:
         run: npm run build:main
       - name: Delete existing release (clean slate)
         if: runner.os == 'Linux'
-        run: gh release delete "${{ github.ref_name }}" --yes || true
+        run: |
+          if gh release view "${{ github.ref_name }}" --repo "${{ github.repository }}" &>/dev/null; then
+            gh release delete "${{ github.ref_name }}" --yes --cleanup-tag
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Build & publish
