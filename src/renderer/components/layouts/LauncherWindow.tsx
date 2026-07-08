@@ -1,0 +1,46 @@
+import type { ReactNode } from 'react'
+import { ThemeToggle } from '../ui/ThemeToggle'
+import appLogo from '../../assets/app-logo.png'
+
+interface LauncherWindowProps {
+  children: ReactNode
+  isDark: boolean
+  onToggleTheme: () => void
+}
+
+export function LauncherWindow({ children, isDark, onToggleTheme }: LauncherWindowProps) {
+  return (
+    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden border border-border">
+      {/* Title bar — flush with the app background, no divider */}
+      <div
+        className="flex items-center justify-between px-3.5 h-11 shrink-0 bg-background"
+        style={{ WebkitAppRegion: 'drag' } as React.CSSProperties}
+      >
+        <div
+          className="flex items-center gap-2.5"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          <img
+            src={appLogo}
+            alt="CLI Launcher"
+            className="w-6 h-6 object-contain shrink-0"
+            draggable={false}
+          />
+          <span className="text-[13px] font-bold tracking-tight text-foreground">
+            CLI Launcher
+          </span>
+        </div>
+
+        <div
+          className="flex items-center gap-3"
+          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+        >
+          <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 flex flex-col overflow-hidden">{children}</div>
+    </div>
+  )
+}
