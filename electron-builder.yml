@@ -31,10 +31,16 @@ win:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: CLI Launcher
   installerIcon: resources/icon.ico
   uninstallerIcon: resources/icon.ico
-  shortcutName: CLI Launcher
   appUserModelId: com.cli-launcher.app
+  installerSidebar: null
+  uninstallDisplayName: CLI Launcher
+  language: 1033
 
 mac:
   target:
