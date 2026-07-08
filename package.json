@@ -2,6 +2,10 @@
   "name": "cli-launcher",
   "version": "1.0.0",
   "description": "Floating launcher for terminal AI CLIs",
+  "author": {
+    "name": "Mad Blast",
+    "email": "81722794+MadBlast0@users.noreply.github.com"
+  },
   "main": "dist/main/main.js",
   "scripts": {
     "dev": "concurrently -k \"npm run dev:renderer\" \"npm run dev:electron\"",
