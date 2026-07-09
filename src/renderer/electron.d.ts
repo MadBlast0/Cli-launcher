@@ -1,4 +1,4 @@
-import type { CliDefinition, CliState, CliActionResult, DependencyCheck } from '@shared/types'
+import type { CliDefinition, CliState, CliActionResult, DependencyCheck, AppSettings } from '@shared/types'
 
 declare global {
   interface Window {
@@ -13,8 +13,14 @@ declare global {
       selectFolder: () => Promise<string | null>
       getSavedFolder: () => Promise<string | null>
       saveFolder: (folder: string) => Promise<void>
+      getSettings: () => Promise<AppSettings>
+      saveSettings: (settings: AppSettings) => Promise<void>
+      installAllMissing: () => Promise<{ id: string; name: string; success: boolean; error?: string }[]>
+      exportCliList: () => Promise<string | null>
+      importCliList: () => Promise<{ success: boolean; count?: number; error?: string } | null>
       minimizeWindow: () => void
       closeWindow: () => void
+      minimizeToTray: () => void
       refreshCliStates: () => void
       onCliStateUpdate: (callback: (cliId: string, state: CliState) => void) => () => void
     }

@@ -9,6 +9,12 @@ export const IPC_CHANNELS = {
   SELECT_FOLDER: 'folder:select',
   GET_SAVED_FOLDER: 'folder:get-saved',
   SAVE_FOLDER: 'folder:save',
+  SAVE_SETTINGS: 'settings:save',
+  GET_SETTINGS: 'settings:get',
+  INSTALL_ALL_MISSING: 'cli:install-all-missing',
+  EXPORT_CLI_LIST: 'cli:export-list',
+  IMPORT_CLI_LIST: 'cli:import-list',
+  MINIMIZE_TO_TRAY: 'window:minimize-to-tray',
 } as const
 
 export const WINDOW_CONFIG = {

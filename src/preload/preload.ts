@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { CliState } from '../shared/types'
+import type { CliState, AppSettings } from '../shared/types'
 
 const api = {
   getClis: () => ipcRenderer.invoke('cli:get-all'),
@@ -12,8 +12,14 @@ const api = {
   selectFolder: () => ipcRenderer.invoke('folder:select'),
   getSavedFolder: () => ipcRenderer.invoke('folder:get-saved'),
   saveFolder: (folder: string) => ipcRenderer.invoke('folder:save', folder),
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  saveSettings: (settings: AppSettings) => ipcRenderer.invoke('settings:save', settings),
+  installAllMissing: () => ipcRenderer.invoke('cli:install-all-missing'),
+  exportCliList: () => ipcRenderer.invoke('cli:export-list'),
+  importCliList: () => ipcRenderer.invoke('cli:import-list'),
   minimizeWindow: () => ipcRenderer.send('window:minimize'),
   closeWindow: () => ipcRenderer.send('window:close'),
+  minimizeToTray: () => ipcRenderer.send('window:minimize-to-tray'),
   refreshCliStates: () => ipcRenderer.send('cli:refresh-all-states'),
   onCliStateUpdate: (callback: (cliId: string, state: CliState) => void) => {
     const handler = (_event: any, cliId: string, state: CliState) => callback(cliId, state)

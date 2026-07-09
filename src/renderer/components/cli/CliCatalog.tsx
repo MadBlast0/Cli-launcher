@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { Modal, Tooltip } from '../ui'
+import { useState, useMemo } from 'react'
+import { Modal, Tooltip, Button } from '../ui'
 import { getCliLogo } from '../../logos'
 import type { CliDefinition, CliState } from '@shared/types'
-import { ArrowLeft, Download, Check, Search } from 'lucide-react'
+import { ArrowLeft, Download, Check, Search, Package, Globe, DownloadCloud } from 'lucide-react'
 
 interface CliCatalogProps {
   open: boolean
@@ -12,9 +12,24 @@ interface CliCatalogProps {
   onChanged: () => void
   onInstalled?: (cliId: string) => void
   onToast?: (message: string, type: 'success' | 'error' | 'info') => void
+  onInstallAllMissing?: () => void
 }
 
-export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled, onToast }: CliCatalogProps) {
+type ManagerGroup = 'npm' | 'pip' | 'standalone'
+
+const groupLabels: Record<ManagerGroup, string> = {
+  npm: 'npm (Node.js)',
+  pip: 'pip (Python)',
+  standalone: 'Standalone',
+}
+
+const groupIcons: Record<ManagerGroup, string> = {
+  npm: '⬡',
+  pip: '▰',
+  standalone: '◈',
+}
+
+export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled, onToast, onInstallAllMissing }: CliCatalogProps) {
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [leaving, setLeaving] = useState<string | null>(null)
@@ -29,6 +44,16 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
       cli.name.toLowerCase().includes(search.toLowerCase()) ||
       cli.id.toLowerCase().includes(search.toLowerCase())
   )
+
+  // Group by dependency type
+  const grouped = useMemo(() => {
+    const groups: Record<ManagerGroup, CliDefinition[]> = { npm: [], pip: [], standalone: [] }
+    for (const cli of filtered) {
+      const type = (cli.dependencyType === 'python' ? 'pip' : cli.dependencyType) as ManagerGroup
+      if (groups[type]) groups[type].push(cli)
+    }
+    return groups
+  }, [filtered])
 
   const handleInstall = async (cliId: string) => {
     setBusy(cliId)
@@ -56,8 +81,83 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
     }
   }
 
+  const renderCliItem = (cli: CliDefinition) => {
+    const logo = getCliLogo(cli.id)
+    const initial = cli.name.charAt(0).toUpperCase()
+    const isBusy = busy === cli.id
+    const isLeaving = leaving === cli.id
+    return (
+      <div
+        key={cli.id}
+        className={`mac-card flex flex-col gap-0 px-3 py-2 ${isLeaving ? 'anim-slide-out' : ''}`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 flex items-center justify-center shrink-0">
+            {logo ? (
+              <img src={logo} alt="" className="w-full h-full object-contain" draggable={false} />
+            ) : (
+              <span className="text-[15px] font-bold text-muted-foreground">{initial}</span>
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] font-semibold tracking-tight text-card-foreground truncate">
+                {cli.name}
+              </span>
+              {cli.packageName && (
+                <span className="text-[10px] font-mono text-muted-foreground truncate flex items-center gap-1">
+                  <Package size={9} /> {cli.packageName}
+                </span>
+              )}
+            </div>
+            {cli.description && (
+              <p className="text-[10.5px] text-muted-foreground truncate mt-0.5">{cli.description}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {cli.homepage && (
+              <a
+                href={cli.homepage}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mac-btn mac-btn-soft p-1.5 rounded-[3px] text-muted-foreground"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`${cli.name} homepage`}
+              >
+                <Globe size={12} />
+              </a>
+            )}
+            <Tooltip text={isBusy ? 'Installing…' : 'Install'}>
+              <button
+                className="mac-btn mac-btn-primary p-1.5 rounded-[3px]"
+                onClick={() => handleInstall(cli.id)}
+                disabled={isBusy || isLeaving}
+                aria-label={`Install ${cli.name}`}
+              >
+                {isBusy ? (
+                  <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : isLeaving ? (
+                  <Check size={12} />
+                ) : (
+                  <Download size={12} />
+                )}
+              </button>
+            </Tooltip>
+          </div>
+        </div>
+        {isBusy && (
+          <div className="h-1 bg-border rounded-none overflow-hidden mt-1.5">
+            <div className="h-full bg-primary anim-pulse-bar rounded-none" />
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  const hasAny = Object.values(grouped).some((g) => g.length > 0)
+
   return (
-    <Modal open={open} onClose={onClose} title="Catalog" width="480px" hideHeader>
+    <Modal open={open} onClose={onClose} title="Catalog" width="520px" hideHeader>
       <div className="p-4 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <button
@@ -75,69 +175,46 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search..."
               className="w-full bg-transparent text-foreground text-[13px] font-[450] outline-none placeholder:text-muted-foreground"
+              aria-label="Search available CLIs"
             />
           </div>
+          {onInstallAllMissing && notInstalled.length > 0 && (
+            <Tooltip text="Install all CLIs that are not yet installed">
+              <Button
+                variant="primary"
+                size="sm"
+                icon={<DownloadCloud size={14} />}
+                onClick={onInstallAllMissing}
+                aria-label="Install all missing CLIs"
+              >
+                Install All ({notInstalled.length})
+              </Button>
+            </Tooltip>
+          )}
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          {filtered.length === 0 && (
+        <div className="flex flex-col gap-3">
+          {!hasAny && (
             <div className="text-center py-8 text-xs font-semibold uppercase text-muted-foreground">
               {search ? 'No CLIs match' : 'All CLIs are installed'}
             </div>
           )}
-          {filtered.map((cli) => {
-            const logo = getCliLogo(cli.id)
-            const initial = cli.name.charAt(0).toUpperCase()
-            const isBusy = busy === cli.id
-            const isLeaving = leaving === cli.id
+
+          {(Object.entries(grouped) as [ManagerGroup, CliDefinition[]][]).map(([group, groupClis]) => {
+            if (groupClis.length === 0) return null
             return (
-              <div
-                key={cli.id}
-                className={`mac-card flex flex-col gap-0 px-3 py-2 ${isLeaving ? 'anim-slide-out' : ''}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 flex items-center justify-center shrink-0">
-                    {logo ? (
-                      <img src={logo} alt="" className="w-full h-full object-contain" draggable={false} />
-                    ) : (
-                      <span className="text-[15px] font-bold text-muted-foreground">{initial}</span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[13px] font-semibold tracking-tight text-card-foreground truncate">
-                        {cli.name}
-                      </span>
-                      {cli.packageName && (
-                        <span className="text-[10px] font-mono text-muted-foreground truncate">
-                          {cli.packageName}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Tooltip text={isBusy ? 'Installing…' : 'Install'}>
-                      <button
-                        className="mac-btn mac-btn-primary p-1.5 rounded-[3px]"
-                        onClick={() => handleInstall(cli.id)}
-                        disabled={isBusy || isLeaving}
-                      >
-                        {isBusy ? (
-                          <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                        ) : isLeaving ? (
-                          <Check size={12} />
-                        ) : (
-                          <Download size={12} />
-                        )}
-                      </button>
-                    </Tooltip>
-                  </div>
+              <div key={group}>
+                <div className="flex items-center gap-2 px-1 pb-1.5">
+                  <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase flex items-center gap-1">
+                    {groupIcons[group]} {groupLabels[group]}
+                  </span>
+                  <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
+                    {groupClis.length}
+                  </span>
                 </div>
-                {isBusy && (
-                  <div className="h-1 bg-border rounded-none overflow-hidden mt-1.5">
-                    <div className="h-full bg-primary anim-pulse-bar rounded-none" />
-                  </div>
-                )}
+                <div className="flex flex-col gap-1.5">
+                  {groupClis.map(renderCliItem)}
+                </div>
               </div>
             )
           })}

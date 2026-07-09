@@ -1,4 +1,4 @@
-import { execFile, spawn } from 'child_process'
+import { execFile, spawn, exec } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
@@ -6,6 +6,7 @@ import { app } from 'electron'
 import { CliAction, CliActionResult, CliDefinition } from '../shared/types'
 
 const isWindows = os.platform() === 'win32'
+const isMac = os.platform() === 'darwin'
 
 function getAppRoot(): string {
   if (app.isPackaged) {
@@ -43,39 +44,59 @@ function runScript(scriptPath: string): Promise<CliActionResult> {
   })
 }
 
-export function openCli(cli: CliDefinition, folder: string | null): CliActionResult {
+function detectTerminalEmulator(): string {
+  if (isWindows) {
+    const wt = process.env.WT_SESSION ? 'wt' : null
+    const programFiles = process.env['ProgramFiles'] || 'C:\\Program Files'
+    const wtPath = path.join(programFiles, 'WindowsApps', 'wt.exe')
+    if (wt || fs.existsSync(wtPath)) return 'wt'
+    return 'cmd'
+  }
+  if (isMac) {
+    const iterm = '/Applications/iTerm.app/Contents/MacOS/iTerm2'
+    if (fs.existsSync(iterm)) return 'iterm'
+    return 'terminal'
+  }
+  const terminals = ['x-terminal-emulator', 'gnome-terminal', 'konsole', 'xterm']
+  for (const t of terminals) {
+    if (fs.existsSync(`/usr/bin/${t}`)) return t
+  }
+  return 'xterm'
+}
+
+export function openCli(cli: CliDefinition, folder: string | null, terminalOverride?: string): CliActionResult {
   const flag = cli.skipPermissions
     ? ` ${cli.skipPermissionsFlag || '--dangerously-skip-permissions'}`
     : ''
   const exeCmd = `${cli.executable}${flag}`
 
   try {
+    const terminal = terminalOverride || detectTerminalEmulator()
+
     if (isWindows) {
       const inner = folder
         ? `Set-Location -LiteralPath "${folder}"; ${exeCmd}`
         : exeCmd
-      const child = spawn(
-        'cmd.exe',
-        ['/c', 'start', '', 'powershell', '-NoExit', '-Command', inner],
-        { detached: true, stdio: 'ignore', windowsHide: false }
-      )
-      child.unref()
-    } else {
+
+      if (terminal === 'wt') {
+        spawn('wt.exe', ['-d', folder || process.env.USERPROFILE || '', 'powershell', '-NoExit', '-Command', inner], { detached: true, stdio: 'ignore' }).unref()
+      } else {
+        spawn('cmd.exe', ['/c', 'start', '', 'powershell', '-NoExit', '-Command', inner], { detached: true, stdio: 'ignore', windowsHide: false }).unref()
+      }
+    } else if (isMac) {
       const inner = folder ? `cd "${folder}" && ${exeCmd}` : exeCmd
-      const term = process.env.TERM || ''
-      if (os.platform() === 'darwin') {
-        const script = `tell application "Terminal" to do script "${inner.replace(/"/g, '\\"')}"`
+      if (terminal === 'iterm') {
+        const script = `tell application "iTerm" to create window with default profile command "${inner.replace(/"/g, '\\"')}"`
         spawn('osascript', ['-e', script], { detached: true, stdio: 'ignore' }).unref()
       } else {
-        const terminal = fs.existsSync('/usr/bin/x-terminal-emulator')
-          ? 'x-terminal-emulator'
-          : fs.existsSync('/usr/bin/gnome-terminal')
-            ? 'gnome-terminal'
-            : 'xterm'
-        spawn(terminal, ['-e', `bash -c "${inner}; exec bash"`], { detached: true, stdio: 'ignore' }).unref()
+        const script = `tell application "Terminal" to do script "${inner.replace(/"/g, '\\"')}"`
+        spawn('osascript', ['-e', script], { detached: true, stdio: 'ignore' }).unref()
       }
+    } else {
+      const inner = folder ? `cd "${folder}" && ${exeCmd}` : exeCmd
+      spawn(terminal, ['-e', `bash -c "${inner}; exec bash"`], { detached: true, stdio: 'ignore' }).unref()
     }
-    return { success: true, output: `Opened ${cli.name}` }
+    return { success: true, output: `Opened ${cli.name} in ${terminal}` }
   } catch (err) {
     return {
       success: false,
@@ -164,6 +185,41 @@ export async function checkCliUpdate(
     }
     return { updateAvailable: false }
   }
+
+  return { updateAvailable: false }
+}
+
+const standaloneVersionCache: { data: Record<string, string>; ts: number } = { data: {}, ts: 0 }
+
+export async function checkStandaloneUpdate(
+  cli: CliDefinition
+): Promise<{ updateAvailable: boolean; latestVersion?: string }> {
+  if (!isCacheFresh(standaloneVersionCache)) {
+    standaloneVersionCache.data = {}
+    standaloneVersionCache.ts = Date.now()
+    try {
+      const npmView = await new Promise<string>((resolve) => {
+        exec(`npm view ${cli.packageName || cli.id} version`, { timeout: 10000 }, (_err, stdout) => {
+          resolve(stdout.trim())
+        })
+      })
+      if (npmView) standaloneVersionCache.data[cli.id] = npmView
+    } catch { /* not an npm package */ }
+  }
+
+  const latest = standaloneVersionCache.data[cli.id]
+  if (!latest) return { updateAvailable: false }
+
+  try {
+    const current = await new Promise<string>((resolve) => {
+      exec(`${cli.executable} --version`, { timeout: 5000 }, (_err, stdout) => {
+        resolve(stdout.trim().split('\n')[0] || '')
+      })
+    })
+    if (current && current !== latest) {
+      return { updateAvailable: true, latestVersion: latest }
+    }
+  } catch { /* ignore */ }
 
   return { updateAvailable: false }
 }

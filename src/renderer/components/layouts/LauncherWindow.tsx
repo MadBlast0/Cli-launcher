@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { X } from 'lucide-react'
+import { X, Minus, ChevronDown } from 'lucide-react'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import appLogo from '../../assets/app-logo.png'
 
@@ -33,9 +33,24 @@ export function LauncherWindow({ children, isDark, onToggleTheme }: LauncherWind
         </div>
 
         <div
-          className="flex items-center gap-3"
+          className="flex items-center gap-2"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
+          <button
+            onClick={() => window.electronAPI.minimizeToTray()}
+            className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            aria-label="Minimize to tray"
+            title="Minimize to tray"
+          >
+            <ChevronDown size={15} />
+          </button>
+          <button
+            onClick={() => window.electronAPI.minimizeWindow()}
+            className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            aria-label="Minimize"
+          >
+            <Minus size={15} />
+          </button>
           <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
           <button
             onClick={() => window.electronAPI.closeWindow()}

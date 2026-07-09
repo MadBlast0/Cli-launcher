@@ -38,6 +38,9 @@ export interface DependencyCheck {
 
 export interface AppSettings {
   theme: 'light' | 'dark'
+  cliOrder?: string[]
+  favorites?: string[]
+  terminalEmulator?: string
 }
 
 export interface CliCount {

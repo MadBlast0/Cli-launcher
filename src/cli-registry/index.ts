@@ -17,6 +17,11 @@ import commandcodeDef from './commandcode'
 import cursorDef from './cursor'
 import ampDef from './amp'
 import amazonqDef from './amazonq'
+import clineDef from './cline'
+import codyDef from './cody'
+import skiDef from './ski'
+import boltDef from './bolt'
+import replitAgentDef from './replit-agent'
 
 const registry: CliDefinition[] = [
   claudeDef,
@@ -36,6 +41,11 @@ const registry: CliDefinition[] = [
   cursorDef,
   ampDef,
   amazonqDef,
+  clineDef,
+  codyDef,
+  skiDef,
+  boltDef,
+  replitAgentDef,
 ]
 
 export function getCliRegistry(): CliDefinition[] {

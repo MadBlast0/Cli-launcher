@@ -32,6 +32,7 @@
     "concurrently": "^9.0.0",
     "cross-env": "^7.0.0",
     "electron": "^33.0.0",
+    "electron-updater": "^6.3.0",
     "electron-builder": "^25.0.0",
     "lucide-react": "^0.460.0",
     "png-to-ico": "^3.0.2",

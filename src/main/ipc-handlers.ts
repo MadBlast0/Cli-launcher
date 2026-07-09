@@ -1,18 +1,37 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
-import { executeCliAction, openCli, checkCliUpdate, isWindows } from './cli-engine'
+import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate } from './cli-engine'
 import { checkDependencies, installNode, installPython } from './dependency-manager'
 import { getCliRegistry } from '../cli-registry'
-import { CliAction, CliState, CliDefinition } from '../shared/types'
+import { CliAction, CliState, CliDefinition, AppSettings } from '../shared/types'
 import { exec } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
 const cliStatusCache = new Map<string, CliState>()
 const STATE_CACHE_FILE = 'cli-state-cache.json'
+const SETTINGS_FILE = 'settings.json'
 
 function getStateCachePath() {
   return path.join(app.getPath('userData'), STATE_CACHE_FILE)
+}
+
+function getSettingsPath() {
+  return path.join(app.getPath('userData'), SETTINGS_FILE)
+}
+
+function readSettings(): AppSettings {
+  try {
+    const p = getSettingsPath()
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8'))
+  } catch { /* ignore */ }
+  return { theme: 'dark' }
+}
+
+function writeSettings(settings: AppSettings) {
+  try {
+    fs.writeFileSync(getSettingsPath(), JSON.stringify(settings, null, 2), 'utf-8')
+  } catch { /* ignore */ }
 }
 
 function readStateCache(): Record<string, CliState> {
@@ -97,10 +116,7 @@ export function registerIpcHandlers() {
     const registry = getCliRegistry()
     const cached = readStateCache()
     const sender = event.sender
-
-    // Background refresh — per-CLI updates streamed to renderer
     refreshAllStates(registry, sender)
-
     return cached
   })
 
@@ -113,9 +129,9 @@ export function registerIpcHandlers() {
     const cli = getCliRegistry().find((c) => c.id === cliId)
     if (!cli) return { success: false, output: '', error: 'Unknown CLI' }
 
-    // "open" spawns a real terminal in the saved working folder (no ps1 script).
     if (action === 'open') {
-      return openCli(cli, getSavedFolder())
+      const settings = readSettings()
+      return openCli(cli, getSavedFolder(), settings.terminalEmulator)
     }
 
     const result = await executeCliAction(cliId, action)
@@ -129,6 +145,9 @@ export function registerIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.CHECK_CLI_UPDATE, async (_event, cliId: string) => {
     const cli = getCliRegistry().find((c) => c.id === cliId)
     if (!cli) return { updateAvailable: false }
+    if (cli.dependencyType === 'standalone') {
+      return await checkStandaloneUpdate(cli)
+    }
     return await checkCliUpdate(cli)
   })
 
@@ -161,6 +180,62 @@ export function registerIpcHandlers() {
     saveFolder(folder)
   })
 
+  ipcMain.handle(IPC_CHANNELS.GET_SETTINGS, () => {
+    return readSettings()
+  })
+
+  ipcMain.handle(IPC_CHANNELS.SAVE_SETTINGS, (_event, settings: AppSettings) => {
+    writeSettings(settings)
+  })
+
+  ipcMain.handle(IPC_CHANNELS.INSTALL_ALL_MISSING, async (event) => {
+    const registry = getCliRegistry()
+    const results: { id: string; name: string; success: boolean; error?: string }[] = []
+    for (const cli of registry) {
+      const state = await checkCliStatus(cli.id, cli.executable)
+      if (state.status === 'not-installed') {
+        const result = await executeCliAction(cli.id, 'install')
+        results.push({ id: cli.id, name: cli.name, success: result.success, error: result.error })
+        try { event.sender.send('cli:state-updated', cli.id, await checkCliStatus(cli.id, cli.executable)) } catch { /* ignore */ }
+      }
+    }
+    return results
+  })
+
+  ipcMain.handle(IPC_CHANNELS.EXPORT_CLI_LIST, async () => {
+    const registry = getCliRegistry()
+    const states = readStateCache()
+    const settings = readSettings()
+    const data = { version: 1, exportedAt: new Date().toISOString(), clis: registry.map(c => c.id), states, settings }
+    const result = await dialog.showSaveDialog({
+      defaultPath: `cli-launcher-export-${Date.now()}.json`,
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    })
+    if (!result.canceled && result.filePath) {
+      fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2), 'utf-8')
+      return result.filePath
+    }
+    return null
+  })
+
+  ipcMain.handle(IPC_CHANNELS.IMPORT_CLI_LIST, async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ['openFile'],
+      filters: [{ name: 'JSON', extensions: ['json'] }],
+    })
+    if (!result.canceled && result.filePaths.length > 0) {
+      try {
+        const raw = fs.readFileSync(result.filePaths[0], 'utf-8')
+        const data = JSON.parse(raw)
+        if (data.settings) writeSettings({ ...readSettings(), ...data.settings })
+        return { success: true, count: data.clis?.length || 0 }
+      } catch (err) {
+        return { success: false, error: 'Invalid export file' }
+      }
+    }
+    return null
+  })
+
   ipcMain.on('window:close', () => {
     const win = BrowserWindow.getAllWindows()[0]
     if (win) win.close()
@@ -169,5 +244,10 @@ export function registerIpcHandlers() {
   ipcMain.on('window:minimize', () => {
     const win = BrowserWindow.getAllWindows()[0]
     if (win) win.minimize()
+  })
+
+  ipcMain.on('window:minimize-to-tray', () => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) win.hide()
   })
 }

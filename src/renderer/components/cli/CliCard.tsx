@@ -1,15 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Tooltip } from '../ui'
 import { getCliLogo } from '../../logos'
 import type { CliDefinition, CliState } from '@shared/types'
-import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUpCircle } from 'lucide-react'
+import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUpCircle, Star, ExternalLink, Globe, Copy } from 'lucide-react'
 
 interface CliCardProps {
   cli: CliDefinition
   state: CliState | null
   count: number
+  isFavorite?: boolean
   onCountChange: (delta: number) => void
   onLaunch: () => void
+  onToggleFavorite?: () => void
   onChanged?: () => void
   onDragStart: (e: React.DragEvent) => void
   onDragOver: (e: React.DragEvent) => void
@@ -22,13 +24,15 @@ interface CliCardProps {
 type Busy = 'install' | 'uninstall' | 'update' | 'repair' | null
 
 export function CliCard({
-  cli, state, count, onCountChange, onLaunch, onChanged,
+  cli, state, count, isFavorite, onCountChange, onLaunch, onToggleFavorite, onChanged,
   onDragStart, onDragOver, onDrop, index, justInstalled, onToast,
 }: CliCardProps) {
   const isNew = justInstalled === cli.id
   const [busy, setBusy] = useState<Busy>(null)
   const [latest, setLatest] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+  const cardRef = useRef<HTMLDivElement>(null)
 
   const installed = state?.status === 'installed' || state?.status === 'update-available'
   const updateAvailable = !!latest
@@ -43,10 +47,19 @@ export function CliCard({
     }
   }, [state, cli.id])
 
+  // Close context menu on outside click
+  useEffect(() => {
+    if (!contextMenu) return
+    const handleClick = () => setContextMenu(null)
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [contextMenu])
+
   const runAction = async (action: Exclude<Busy, null>) => {
     if (busy) return
     setBusy(action)
     setError(null)
+    setContextMenu(null)
     try {
       const result = await window.electronAPI.executeAction(cli.id, action)
       if (action === 'install' || action === 'uninstall') {
@@ -85,28 +98,64 @@ export function CliCard({
     }
   }
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setContextMenu({ x: e.clientX, y: e.clientY })
+  }
+
+  const copyInstallCommand = async () => {
+    const cmd = `npm install -g ${cli.packageName || cli.id}`
+    try {
+      await navigator.clipboard.writeText(cmd)
+      onToast?.('Install command copied', 'success')
+    } catch { /* ignore */ }
+    setContextMenu(null)
+  }
+
+  const openHomepage = () => {
+    if (cli.homepage) {
+      try { window.open(cli.homepage, '_blank') } catch { /* ignore */ }
+    }
+    setContextMenu(null)
+  }
+
   const logo = getCliLogo(cli.id)
   const initial = cli.name.charAt(0).toUpperCase()
   const anyBusy = busy !== null
 
   return (
     <div
-      className={`mac-card flex items-center gap-2 pl-2 pr-2 py-2 ${isNew ? 'anim-slide-in' : ''}`}
-      draggable
-      onDragStart={onDragStart}
+      ref={cardRef}
+      className={`mac-card flex items-center gap-2 pl-2 pr-2 py-2 ${isNew ? 'anim-slide-in' : ''} relative`}
+      draggable={index >= 0}
+      onDragStart={index >= 0 ? onDragStart : undefined}
       onDragOver={onDragOver}
       onDrop={onDrop}
       data-index={index}
+      onContextMenu={handleContextMenu}
+      role="listitem"
+      aria-label={`${cli.name}${installed ? `, version ${state?.version || 'installed'}` : ', not installed'}${isFavorite ? ', favorite' : ''}`}
     >
-      <div className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground shrink-0 transition-colors">
-        <GripVertical size={14} />
-      </div>
+      {index >= 0 && (
+        <div className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground shrink-0 transition-colors" aria-hidden="true">
+          <GripVertical size={14} />
+        </div>
+      )}
+
+      <button
+        onClick={onToggleFavorite}
+        className="shrink-0 p-0.5 text-muted-foreground/30 hover:text-warning transition-colors"
+        aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+        title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+      >
+        <Star size={11} fill={isFavorite ? 'var(--warning)' : 'none'} />
+      </button>
 
       <div className="w-9 h-9 flex items-center justify-center shrink-0">
         {logo ? (
-          <img src={logo} alt="" className="w-full h-full object-contain" draggable={false} />
+          <img src={logo} alt={`${cli.name} logo`} className="w-full h-full object-contain" draggable={false} />
         ) : (
-          <span className="text-[15px] font-bold text-muted-foreground">{initial}</span>
+          <span className="text-[15px] font-bold text-muted-foreground" aria-hidden="true">{initial}</span>
         )}
       </div>
 
@@ -116,13 +165,18 @@ export function CliCard({
         </span>
         <div className="flex items-center gap-1.5 mt-0.5">
           {error && (
-            <span className="text-[10px] font-mono text-destructive truncate max-w-[120px]" title={error}>
-              {error}
-            </span>
+            <Tooltip text={error}>
+              <span className="text-[10px] font-mono text-destructive truncate max-w-[120px]" role="alert">
+                {error}
+              </span>
+            </Tooltip>
           )}
           {!error && (
             <>
-              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${installed ? 'bg-success' : 'bg-muted-foreground/40'}`} />
+              <span
+                className={`w-1.5 h-1.5 rounded-full shrink-0 ${installed ? 'bg-success' : 'bg-muted-foreground/40'}`}
+                aria-hidden="true"
+              />
               <span className="text-[10.5px] font-mono text-muted-foreground truncate">
                 {installed ? state?.version || 'installed' : 'not installed'}
               </span>
@@ -137,6 +191,7 @@ export function CliCard({
             className="mac-btn flex items-center gap-1 px-1.5 py-1 text-[10px] font-semibold bg-white text-black border border-border rounded-none shrink-0 disabled:opacity-50"
             disabled={anyBusy}
             onClick={() => runAction('update')}
+            aria-label={`Update ${cli.name} to ${latest}`}
           >
             {busy === 'update'
               ? <RefreshCw size={11} className="animate-spin" />
@@ -152,6 +207,7 @@ export function CliCard({
             className="mac-btn mac-btn-soft p-1.5 rounded-none text-secondary-foreground disabled:opacity-50"
             disabled={anyBusy}
             onClick={() => runAction('repair')}
+            aria-label={`Repair ${cli.name}`}
           >
             {busy === 'repair' ? <RefreshCw size={13} className="animate-spin" /> : <Wrench size={13} />}
           </button>
@@ -163,6 +219,7 @@ export function CliCard({
           className="mac-btn mac-btn-soft p-1.5 rounded-none text-secondary-foreground disabled:opacity-50"
           disabled={anyBusy}
           onClick={() => runAction(installed ? 'uninstall' : 'install')}
+          aria-label={installed ? `Uninstall ${cli.name}` : `Install ${cli.name}`}
         >
           {busy === 'install' || busy === 'uninstall'
             ? <RefreshCw size={13} className="animate-spin" />
@@ -170,21 +227,23 @@ export function CliCard({
         </button>
       </Tooltip>
 
-      <div className="flex items-center gap-0.5 mac-input rounded-none px-0.5 py-0.5 shrink-0">
+      <div className="flex items-center gap-0.5 mac-input rounded-none px-0.5 py-0.5 shrink-0" role="group" aria-label={`Launch count for ${cli.name}`}>
         <button
           className="mac-btn p-0.5 rounded-none text-muted-foreground hover:text-foreground disabled:opacity-30"
           disabled={count <= 1}
           onClick={() => onCountChange(-1)}
+          aria-label="Decrease launch count"
         >
           <Minus size={12} />
         </button>
-        <span className="w-4 text-center text-[12px] font-semibold font-mono text-card-foreground tabular-nums">
+        <span className="w-4 text-center text-[12px] font-semibold font-mono text-card-foreground tabular-nums" aria-live="polite">
           {count}
         </span>
         <button
           className="mac-btn p-0.5 rounded-none text-muted-foreground hover:text-foreground disabled:opacity-30"
           disabled={count >= 9}
           onClick={() => onCountChange(1)}
+          aria-label="Increase launch count"
         >
           <Plus size={12} />
         </button>
@@ -195,10 +254,47 @@ export function CliCard({
           className="mac-btn mac-btn-soft px-3 py-1.5 text-[12px] font-bold rounded-none shrink-0 uppercase tracking-wide text-foreground disabled:opacity-40"
           disabled={!installed}
           onClick={onLaunch}
+          aria-label={`Open ${cli.name}${count > 1 ? ` (${count} terminals)` : ''}`}
         >
           Open
         </button>
       </Tooltip>
+
+      {/* Context menu */}
+      {contextMenu && (
+        <div
+          className="fixed z-[9999] mac-surface bg-popover text-popover-foreground p-1.5 anim-pop min-w-[180px]"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          role="menu"
+          aria-label={`Actions for ${cli.name}`}
+        >
+          {cli.homepage && (
+            <button
+              className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
+              onClick={openHomepage}
+              role="menuitem"
+            >
+              <Globe size={13} /> Homepage
+            </button>
+          )}
+          {cli.packageName && (
+            <button
+              className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
+              onClick={copyInstallCommand}
+              role="menuitem"
+            >
+              <Copy size={13} /> Copy install command
+            </button>
+          )}
+          <button
+            className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
+            onClick={() => { window.electronAPI.executeAction(cli.id, 'open'); setContextMenu(null) }}
+            role="menuitem"
+          >
+            <ExternalLink size={13} /> Open terminal
+          </button>
+        </div>
+      )}
     </div>
   )
 }

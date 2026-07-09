@@ -7,7 +7,7 @@ import { DependencyModal } from './components/installer/DependencyModal'
 import { Loader } from './components/ui/Loader'
 import { ToastContainer } from './components/ui/Toast'
 import { useTheme } from './hooks/useTheme'
-import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
+import type { CliDefinition, DependencyCheck, CliCount, CliState, AppSettings } from '@shared/types'
 import type { Toast, ToastType } from './components/ui/Toast'
 
 export default function App() {
@@ -22,6 +22,9 @@ export default function App() {
   const [counts, setCounts] = useState<CliCount[]>([])
   const [justInstalled, setJustInstalled] = useState<string | null>(null)
   const [toasts, setToasts] = useState<Toast[]>([])
+  const [favorites, setFavorites] = useState<string[]>([])
+  const [cliOrder, setCliOrder] = useState<string[]>([])
+  const [terminalEmulator, setTerminalEmulator] = useState<string | undefined>(undefined)
 
   const addToast = useCallback((message: string, type: ToastType = 'info') => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -45,11 +48,29 @@ export default function App() {
     []
   )
 
+  const loadSettings = useCallback(async () => {
+    try {
+      const settings = await window.electronAPI.getSettings()
+      if (settings.favorites) setFavorites(settings.favorites)
+      if (settings.cliOrder) setCliOrder(settings.cliOrder)
+      if (settings.terminalEmulator) setTerminalEmulator(settings.terminalEmulator)
+    } catch { /* ignore */ }
+  }, [])
+
+  const saveSettings = useCallback(async (updates: Partial<AppSettings>) => {
+    try {
+      const current = await window.electronAPI.getSettings()
+      const merged = { ...current, ...updates }
+      await window.electronAPI.saveSettings(merged)
+    } catch { /* ignore */ }
+  }, [])
+
   useEffect(() => {
     window.electronAPI.getClis().then(setClis)
     window.electronAPI.checkDependencies().then(setDeps)
     loadStates()
-  }, [loadStates])
+    loadSettings()
+  }, [loadStates, loadSettings])
 
   useEffect(() => {
     const cleanup = window.electronAPI.onCliStateUpdate((cliId, state) => {
@@ -57,6 +78,33 @@ export default function App() {
     })
     return cleanup
   }, [])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'f') {
+          e.preventDefault()
+          const input = document.querySelector<HTMLInputElement>('input[type="text"]')
+          input?.focus()
+        }
+        if (e.key === 'd') {
+          e.preventDefault()
+          setShowDeps(true)
+        }
+        if (e.key >= '1' && e.key <= '9') {
+          const idx = parseInt(e.key) - 1
+          const installed = clis.filter((cli) => isInstalled(cli.id))
+          if (installed[idx]) {
+            e.preventDefault()
+            window.electronAPI.executeAction(installed[idx].id, 'open')
+          }
+        }
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  })
 
   const isInstalled = (cliId: string) =>
     states[cliId]?.status === 'installed' || states[cliId]?.status === 'update-available'
@@ -85,7 +133,20 @@ export default function App() {
       const copy = [...prev]
       const [moved] = copy.splice(fromIndex, 1)
       copy.splice(toIndex, 0, moved)
+      const newOrder = copy.map((c) => c.id)
+      setCliOrder(newOrder)
+      saveSettings({ cliOrder: newOrder })
       return copy
+    })
+  }
+
+  const handleToggleFavorite = (cliId: string) => {
+    setFavorites((prev) => {
+      const next = prev.includes(cliId)
+        ? prev.filter((id) => id !== cliId)
+        : [...prev, cliId]
+      saveSettings({ favorites: next })
+      return next
     })
   }
 
@@ -113,8 +174,54 @@ export default function App() {
     window.electronAPI.executeAction(cliId, 'update')
   }
 
-  // Main page shows only CLIs already installed on this machine.
-  const installedClis = clis.filter((cli) => isInstalled(cli.id))
+  const handleInstallAllMissing = async () => {
+    addToast('Installing all missing CLIs...', 'info')
+    const results = await window.electronAPI.installAllMissing()
+    const succeeded = results.filter((r) => r.success).length
+    const failed = results.filter((r) => !r.success).length
+    refreshStates()
+    if (failed === 0) {
+      addToast(`Installed ${succeeded} CLI(s) successfully`, 'success')
+    } else {
+      addToast(`Installed ${succeeded}, ${failed} failed`, 'error')
+    }
+  }
+
+  const handleExport = async () => {
+    const path = await window.electronAPI.exportCliList()
+    if (path) addToast(`Exported to ${path}`, 'success')
+  }
+
+  const handleImport = async () => {
+    const result = await window.electronAPI.importCliList()
+    if (result?.success) {
+      addToast(`Imported settings for ${result.count} CLI(s)`, 'success')
+      loadSettings()
+    }
+  }
+
+  const handleTerminalChange = async (terminal: string) => {
+    setTerminalEmulator(terminal)
+    await saveSettings({ terminalEmulator: terminal || undefined })
+  }
+
+  // Apply cliOrder to the list
+  const orderedClis = [...clis]
+  if (cliOrder.length > 0) {
+    const orderMap = new Map(cliOrder.map((id, i) => [id, i]))
+    orderedClis.sort((a, b) => {
+      const ai = orderMap.get(a.id)
+      const bi = orderMap.get(b.id)
+      if (ai !== undefined && bi !== undefined) return ai - bi
+      if (ai !== undefined) return -1
+      if (bi !== undefined) return 1
+      return 0
+    })
+  }
+
+  // Main page shows only CLIs already installed
+  const sortedFavoriteIds = [...favorites].sort((a, b) => a.localeCompare(b))
+  const installedClis = orderedClis.filter((cli) => isInstalled(cli.id))
   const filtered = installedClis.filter(
     (cli) =>
       cli.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -134,6 +241,8 @@ export default function App() {
           clis={filtered}
           states={states}
           counts={counts}
+          favorites={favorites}
+          terminalEmulator={terminalEmulator}
           onUpdateCount={handleUpdateCount}
           onLaunch={handleLaunch}
           onInstall={handleInstall}
@@ -141,6 +250,7 @@ export default function App() {
           onRepair={handleRepair}
           onUpdate={handleUpdate}
           onReorder={handleReorder}
+          onToggleFavorite={handleToggleFavorite}
           onOpenDeps={() => setShowDeps(true)}
           onOpenCatalog={() => setShowCatalog(true)}
           onCliChanged={refreshStates}
@@ -149,13 +259,17 @@ export default function App() {
           onSearchChange={setSearch}
           justInstalled={justInstalled}
           onToast={addToast}
+          onInstallAllMissing={handleInstallAllMissing}
+          onExport={handleExport}
+          onImport={handleImport}
+          onTerminalChange={handleTerminalChange}
         />
       </div>
 
       <CliCatalog
         open={showCatalog}
         onClose={() => setShowCatalog(false)}
-        clis={clis}
+        clis={orderedClis}
         states={states}
         onChanged={refreshStates}
         onToast={addToast}
@@ -163,6 +277,7 @@ export default function App() {
           setJustInstalled(id)
           setTimeout(() => setJustInstalled(null), 5000)
         }}
+        onInstallAllMissing={handleInstallAllMissing}
       />
 
       {showDeps && deps && (
