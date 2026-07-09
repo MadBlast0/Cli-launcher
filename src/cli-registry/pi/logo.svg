@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-  <rect width="128" height="128" rx="6" fill="#5B6470"/>
-  <path d="M30 44h68v13H82v40H68V57H52v22c0 8-5 13-13 13-4 0-7-1-9-3l5-11c1 1 2 1 3 1 2 0 3-1 3-4V57H30V44z" fill="#F2F3F5"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="5" fill="#6366F1"/><text x="12" y="16.8" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="14" fill="#fff">π</text></svg>

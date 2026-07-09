@@ -32,6 +32,29 @@ export interface CliActionResult {
   error?: string
 }
 
+export interface LaunchCliRequest {
+  cliId: string
+  cwd?: string
+  permissionMode: 'normal' | 'dangerous'
+}
+
+export type LaunchErrorCode =
+  | 'INVALID_REQUEST'
+  | 'UNKNOWN_CLI'
+  | 'INVALID_WORKING_DIRECTORY'
+  | 'CLI_NOT_FOUND'
+  | 'DANGEROUS_MODE_UNSUPPORTED'
+  | 'TERMINAL_NOT_FOUND'
+  | 'SPAWN_FAILED'
+  | 'UNSUPPORTED_PLATFORM'
+
+export interface CliLaunchResult {
+  success: boolean
+  output: string
+  error?: string
+  errorCode?: LaunchErrorCode
+}
+
 export interface DependencyCheck {
   node: { installed: boolean; version?: string }
   python: { installed: boolean; version?: string }

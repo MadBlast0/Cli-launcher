@@ -11,6 +11,7 @@ export function useTheme() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
     localStorage.setItem('cli-launcher-theme', theme)
+    try { window.electronAPI.saveSettings({ theme }) } catch { /* ignore */ }
   }, [theme])
 
   const setTheme = useCallback((t: Theme) => {

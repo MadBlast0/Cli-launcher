@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { Modal, Tooltip, Button } from '../ui'
 import { getCliLogo } from '../../logos'
 import type { CliDefinition, CliState } from '@shared/types'
+import type { ToastType } from '../ui/Toast'
 import { ArrowLeft, Download, Check, Search, Package, Globe, DownloadCloud } from 'lucide-react'
 
 interface CliCatalogProps {
@@ -11,8 +12,8 @@ interface CliCatalogProps {
   states: Record<string, CliState>
   onChanged: () => void
   onInstalled?: (cliId: string) => void
-  onToast?: (message: string, type: 'success' | 'error' | 'info') => void
-  onInstallAllMissing?: () => void
+  onToast?: (message: string, type: ToastType) => string | void
+  updateToast?: (id: string, message: string, type: ToastType) => void
 }
 
 type ManagerGroup = 'npm' | 'pip' | 'standalone'
@@ -29,7 +30,7 @@ const groupIcons: Record<ManagerGroup, string> = {
   standalone: '◈',
 }
 
-export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled, onToast, onInstallAllMissing }: CliCatalogProps) {
+export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled, onToast, updateToast }: CliCatalogProps) {
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [leaving, setLeaving] = useState<string | null>(null)
@@ -49,21 +50,29 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
   const grouped = useMemo(() => {
     const groups: Record<ManagerGroup, CliDefinition[]> = { npm: [], pip: [], standalone: [] }
     for (const cli of filtered) {
-      const type = (cli.dependencyType === 'python' ? 'pip' : cli.dependencyType) as ManagerGroup
-      if (groups[type]) groups[type].push(cli)
+      const type: ManagerGroup =
+        cli.dependencyType === 'node'
+          ? 'npm'
+          : cli.dependencyType === 'python'
+            ? 'pip'
+            : 'standalone'
+      groups[type].push(cli)
     }
     return groups
   }, [filtered])
 
   const handleInstall = async (cliId: string) => {
     setBusy(cliId)
-    const result = await window.electronAPI.executeAction(cliId, 'install')
     const cliName = clis.find((c) => c.id === cliId)?.name || cliId
+    const toastId = onToast?.(`Installing ${cliName}…`, 'loading')
+
+    const result = await window.electronAPI.executeAction(cliId, 'install')
     const fresh = await window.electronAPI.getCliState(cliId)
     const installed = fresh?.status === 'installed' || fresh?.status === 'update-available'
 
     if (result.success && installed) {
-      onToast?.(`${cliName} installed successfully`, 'success')
+      if (toastId && updateToast) updateToast(toastId, `${cliName} installed successfully`, 'success')
+      else onToast?.(`${cliName} installed successfully`, 'success')
       setBusy(null)
       setLeaving(cliId)
       setTimeout(() => {
@@ -76,8 +85,28 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
         }, 50)
       }, 250)
     } else {
-      onToast?.(`${cliName} install failed: ${result.error || 'CLI not found after install'}`, 'error')
+      if (toastId && updateToast) updateToast(toastId, `${cliName} install failed: ${result.error || 'CLI not found after install'}`, 'error')
+      else onToast?.(`${cliName} install failed: ${result.error || 'CLI not found after install'}`, 'error')
       setBusy(null)
+    }
+  }
+
+  const installAll = async (list: CliDefinition[]) => {
+    for (const cli of list) {
+      const toastId = onToast?.(`Installing ${cli.name}…`, 'loading')
+      const result = await window.electronAPI.executeAction(cli.id, 'install')
+      const fresh = await window.electronAPI.getCliState(cli.id)
+      const installed = fresh?.status === 'installed' || fresh?.status === 'update-available'
+
+      if (result.success && installed) {
+        if (toastId && updateToast) updateToast(toastId, `${cli.name} installed successfully`, 'success')
+        else onToast?.(`${cli.name} installed successfully`, 'success')
+        onChanged()
+        onInstalled?.(cli.id)
+      } else {
+        if (toastId && updateToast) updateToast(toastId, `${cli.name} install failed: ${result.error || 'CLI not found after install'}`, 'error')
+        else onToast?.(`${cli.name} install failed: ${result.error || 'CLI not found after install'}`, 'error')
+      }
     }
   }
 
@@ -178,16 +207,16 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
               aria-label="Search available CLIs"
             />
           </div>
-          {onInstallAllMissing && notInstalled.length > 0 && (
+          {filtered.length > 0 && (
             <Tooltip text="Install all CLIs that are not yet installed">
               <Button
                 variant="primary"
                 size="sm"
                 icon={<DownloadCloud size={14} />}
-                onClick={onInstallAllMissing}
+                onClick={() => installAll(filtered)}
                 aria-label="Install all missing CLIs"
               >
-                Install All ({notInstalled.length})
+                Install All
               </Button>
             </Tooltip>
           )}

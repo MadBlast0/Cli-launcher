@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { SearchInput, Button, Tooltip } from '../ui'
+import { SearchInput, Button, Tooltip, CliCardSkeleton } from '../ui'
 import { CliCard } from './CliCard'
 import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
 import { Database, AlertTriangle, Terminal, Plus } from 'lucide-react'
@@ -8,6 +8,8 @@ interface CliGridProps {
   clis: CliDefinition[]
   states: Record<string, CliState>
   counts: CliCount[]
+  totalCount: number
+  loading?: boolean
   onUpdateCount: (cliId: string, delta: number) => void
   onLaunch: (cliId: string, count: number) => void
   onRepair: (cliId: string) => void
@@ -24,7 +26,7 @@ interface CliGridProps {
 }
 
 export function CliGrid({
-  clis, states, counts, onUpdateCount, onLaunch,
+  clis, states, counts, totalCount, loading = false, onUpdateCount, onLaunch,
   onRepair, onUpdate, onReorder, onOpenDeps, onOpenCatalog, onCliChanged,
   deps, search, onSearchChange, justInstalled, onToast,
 }: CliGridProps) {
@@ -59,7 +61,7 @@ export function CliGrid({
   ].filter(Boolean)
 
   const installedCount = clis.length
-  const allClisCount = 0 // We don't have total count here easily, skip
+  const allClisCount = totalCount
 
   return (
     <div className="flex flex-col h-full min-h-0 px-4 pb-4" role="main" aria-label="CLI Launcher">
@@ -89,7 +91,7 @@ export function CliGrid({
             Installed
           </span>
           <span className="text-[11px] font-medium text-muted-foreground tabular-nums">
-            {installedCount}
+            {installedCount}{allClisCount > 0 ? ` / ${allClisCount}` : ''}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -101,7 +103,10 @@ export function CliGrid({
 
       {/* CLI Rows */}
       <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto pr-0.5 -mr-0.5" role="list" aria-label="Installed CLI tools">
-        {clis.length === 0 && (
+        {loading && clis.length === 0 && (
+          Array.from({ length: 6 }).map((_, i) => <CliCardSkeleton key={`sk-${i}`} />)
+        )}
+        {!loading && clis.length === 0 && (
           <div className="flex flex-col items-center justify-center flex-1 gap-3 text-muted-foreground">
             <Terminal size={26} className="opacity-40" />
             <span className="text-[12px] font-medium">
@@ -124,6 +129,8 @@ export function CliGrid({
             onCountChange={(delta) => onUpdateCount(cli.id, delta)}
             onLaunch={() => onLaunch(cli.id, getCount(cli.id))}
             onChanged={onCliChanged}
+            onRepaired={() => onRepair(cli.id)}
+            onUpdated={() => onUpdate(cli.id)}
             onDragStart={(e) => handleDragStart(e, index)}
             onDragOver={(e) => handleDragOver(e, index)}
             onDrop={handleDrop}

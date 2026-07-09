@@ -5,6 +5,8 @@ directories:
   buildResources: resources
 publish:
   - provider: github
+    owner: MadBlast0
+    repo: Cli-launcher
     releaseType: release
 asarUnpack:
   - "src/cli-registry/**"
@@ -14,6 +16,17 @@ files:
   - src/cli-registry/**/*.ps1
   - src/cli-registry/**/*.sh
   - resources/**/*
+
+# Copy the runtime icons to the app's resources root so main.ts can load them
+# via process.resourcesPath in packaged builds (they'd otherwise be trapped
+# inside app.asar and fail to load for the tray/window icon).
+extraResources:
+  - from: resources
+    to: .
+    filter:
+      - icon.ico
+      - icon.icns
+      - icon.png
 
 win:
   target:

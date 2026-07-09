@@ -1,7 +1,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { X, Check, AlertTriangle, Info } from 'lucide-react'
 
-export type ToastType = 'success' | 'error' | 'info'
+export type ToastType = 'success' | 'error' | 'info' | 'loading'
 
 export interface Toast {
   id: string
@@ -18,6 +18,7 @@ const icons: Record<ToastType, ReactNode> = {
   success: <Check size={14} />,
   error: <AlertTriangle size={14} />,
   info: <Info size={14} />,
+  loading: <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />,
 }
 
 export function ToastContainer({ toasts, onDismiss }: ToastContainerProps) {
@@ -34,9 +35,10 @@ export function ToastContainer({ toasts, onDismiss }: ToastContainerProps) {
 
 function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string) => void }) {
   useEffect(() => {
+    if (toast.type === 'loading') return
     const timer = setTimeout(() => onDismiss(toast.id), 4000)
     return () => clearTimeout(timer)
-  }, [toast.id, onDismiss])
+  }, [toast.id, onDismiss, toast.type])
 
   return (
     <div

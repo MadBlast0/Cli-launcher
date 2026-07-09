@@ -22,6 +22,20 @@ import codyDef from './cody'
 import skiDef from './ski'
 import boltDef from './bolt'
 import replitAgentDef from './replit-agent'
+import interpreterDef from './interpreter'
+import openhandsDef from './openhands'
+import plandexDef from './plandex'
+import continueDef from './continue'
+import cursorAgentDef from './cursor-agent'
+import droidDef from './droid'
+import auggieDef from './auggie'
+import grokDef from './grok'
+import modsDef from './mods'
+import aichatDef from './aichat'
+import gptmeDef from './gptme'
+import sgptDef from './sgpt'
+import raAidDef from './ra-aid'
+import fabricDef from './fabric'
 
 const registry: CliDefinition[] = [
   claudeDef,
@@ -46,6 +60,20 @@ const registry: CliDefinition[] = [
   skiDef,
   boltDef,
   replitAgentDef,
+  interpreterDef,
+  openhandsDef,
+  plandexDef,
+  continueDef,
+  cursorAgentDef,
+  droidDef,
+  auggieDef,
+  grokDef,
+  modsDef,
+  aichatDef,
+  gptmeDef,
+  sgptDef,
+  raAidDef,
+  fabricDef,
 ]
 
 export function getCliRegistry(): CliDefinition[] {

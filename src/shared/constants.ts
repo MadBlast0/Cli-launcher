@@ -13,7 +13,7 @@ export const IPC_CHANNELS = {
   GET_SETTINGS: 'settings:get',
   INSTALL_ALL_MISSING: 'cli:install-all-missing',
   MINIMIZE_TO_TRAY: 'window:minimize-to-tray',
-  GET_AVAILABLE_TERMINALS: 'terminal:get-available',
+  LAUNCH_CLI: 'cli:launch',
 } as const
 
 export const WINDOW_CONFIG = {

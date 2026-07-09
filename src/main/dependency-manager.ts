@@ -5,11 +5,13 @@ import { DependencyCheck } from '../shared/types'
 const isWin = platform() === 'win32'
 const isMac = platform() === 'darwin'
 
+// Resolves with the trimmed stdout, or '' when the command fails. Detection
+// must never throw just because a runtime is absent (that previously left the
+// dependency panel stuck with no data).
 function execCmd(command: string): Promise<string> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     exec(command, { timeout: 10000 }, (error, stdout) => {
-      if (error) reject(error)
-      else resolve(stdout.trim())
+      resolve(error ? '' : (stdout || '').trim())
     })
   })
 }
@@ -42,7 +44,20 @@ async function getLatestPythonVersion(): Promise<string> {
     const html = await fetchText('https://www.python.org/ftp/python/')
     const versions = html.match(/(\d+\.\d+\.\d+)\/?/g)
     if (versions) {
-      const sorted = versions.map(v => v.replace(/\/$/, '')).sort().reverse()
+      const clean = versions.map((v) => v.replace(/\/$/, ''))
+      const sorted = clean
+        .sort((a, b) => {
+          const pa = a.split('.').map(Number)
+          const pb = b.split('.').map(Number)
+          const len = Math.max(pa.length, pb.length)
+          for (let i = 0; i < len; i++) {
+            const x = pa[i] || 0
+            const y = pb[i] || 0
+            if (x !== y) return x - y
+          }
+          return 0
+        })
+        .reverse()
       return sorted[0] || '3.12.8'
     }
   } catch { /* ignore */ }
@@ -54,7 +69,12 @@ export async function checkDependencies(): Promise<DependencyCheck> {
   const pythonCmd = isWin ? 'python --version' : 'command -v python3 && python3 --version || command -v python && python --version || echo ""'
 
   const nodeVersion = await execCmd(nodeCmd)
-  const pythonVersion = await execCmd(pythonCmd)
+  let pythonVersion = await execCmd(pythonCmd)
+  // On Windows, `python` may be the Microsoft Store stub (prints nothing / errors).
+  // Fall back to the `py` launcher before deciding Python is missing.
+  if (isWin && !pythonVersion.toLowerCase().includes('python')) {
+    pythonVersion = await execCmd('py --version')
+  }
 
   return {
     node: {

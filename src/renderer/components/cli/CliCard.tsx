@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, memo } from 'react'
 import { Tooltip } from '../ui'
 import { getCliLogo } from '../../logos'
 import type { CliDefinition, CliState } from '@shared/types'
@@ -11,6 +11,8 @@ interface CliCardProps {
   onCountChange: (delta: number) => void
   onLaunch: () => void
   onChanged?: () => void
+  onRepaired?: () => void
+  onUpdated?: () => void
   onDragStart: (e: React.DragEvent) => void
   onDragOver: (e: React.DragEvent) => void
   onDrop: (e: React.DragEvent) => void
@@ -21,8 +23,18 @@ interface CliCardProps {
 
 type Busy = 'install' | 'uninstall' | 'update' | 'repair' | null
 
-export function CliCard({
-  cli, state, count, onCountChange, onLaunch, onChanged,
+/** Builds the correct global-install command for the CLI's package manager. */
+function installCommandFor(cli: CliDefinition): string {
+  const pkg = cli.packageName || cli.id
+  if (cli.dependencyType === 'python') return `pip install ${pkg}`
+  if (cli.dependencyType === 'standalone') {
+    return cli.homepage ? `# See install instructions: ${cli.homepage}` : `# Install ${cli.name} from its homepage`
+  }
+  return `npm install -g ${pkg}`
+}
+
+function CliCardInner({
+  cli, state, count, onCountChange, onLaunch, onChanged, onRepaired, onUpdated,
   onDragStart, onDragOver, onDrop, index, justInstalled, onToast,
 }: CliCardProps) {
   const isNew = justInstalled === cli.id
@@ -85,6 +97,10 @@ export function CliCard({
           onToast?.(`${cli.name} ${action} failed: ${result.error}`, 'error')
         } else {
           onToast?.(`${cli.name} ${action} complete`, 'success')
+          // Notify the app so shared state (version / update badge) refreshes.
+          if (action === 'update') onUpdated?.()
+          if (action === 'repair') onRepaired?.()
+          onChanged?.()
         }
       }
     } catch (err) {
@@ -102,7 +118,7 @@ export function CliCard({
   }
 
   const copyInstallCommand = async () => {
-    const cmd = `npm install -g ${cli.packageName || cli.id}`
+    const cmd = installCommandFor(cli)
     try {
       await navigator.clipboard.writeText(cmd)
       onToast?.('Install command copied', 'success')
@@ -277,7 +293,7 @@ export function CliCard({
           )}
           <button
             className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
-            onClick={() => { window.electronAPI.executeAction(cli.id, 'open'); setContextMenu(null) }}
+            onClick={() => { onLaunch(); setContextMenu(null) }}
             role="menuitem"
           >
             <ExternalLink size={13} /> Open terminal
@@ -287,3 +303,6 @@ export function CliCard({
     </div>
   )
 }
+
+// Memoized so a state update for one CLI doesn't re-render every other card.
+export const CliCard = memo(CliCardInner)

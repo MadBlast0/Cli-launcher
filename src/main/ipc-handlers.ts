@@ -1,9 +1,9 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
-import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate, detectAvailableTerminals } from './cli-engine'
+import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate } from './cli-engine'
 import { checkDependencies, installNode, installPython } from './dependency-manager'
 import { getCliRegistry } from '../cli-registry'
-import { CliAction, CliState, CliDefinition, AppSettings } from '../shared/types'
+import { CliAction, CliState, CliDefinition, AppSettings, LaunchCliRequest, LaunchErrorCode } from '../shared/types'
 import { exec } from 'child_process'
 import fs from 'fs'
 import path from 'path'
@@ -68,24 +68,102 @@ function saveFolder(folder: string) {
   } catch { /* ignore */ }
 }
 
+/**
+ * Runs `<cmd> --version` and resolves with the trimmed first line, or `''`
+ * when the command fails or prints nothing. An empty string is intentionally
+ * NOT treated as "installed" (that was the previous bug).
+ */
+function getVersion(cmd: string): Promise<string> {
+  return new Promise((resolve) => {
+    exec(cmd, { timeout: 8000 }, (err, stdout) => {
+      if (err) { resolve(''); return }
+      resolve(stdout.trim().split('\n')[0] || '')
+    })
+  })
+}
+
+/**
+ * Authoritative global-package presence checks. Querying the package manager
+ * (rather than relying on an inherited PATH) avoids the "installed but still
+ * shows as missing" problem after an in-app install. Results are cached for
+ * the process lifetime.
+ */
+const PKG_CACHE_TTL = 60000
+
+let npmGlobalCache: { data: Set<string> | null; ts: number } = { data: null, ts: 0 }
+let pipGlobalCache: { data: Set<string> | null; ts: number } = { data: null, ts: 0 }
+
+async function npmGlobalPackages(): Promise<Set<string>> {
+  if (npmGlobalCache.data && Date.now() - npmGlobalCache.ts < PKG_CACHE_TTL) {
+    return npmGlobalCache.data
+  }
+  const set = await new Promise<Set<string>>((resolve) => {
+    exec('npm ls -g --depth=0 --json', { timeout: 20000 }, (_err, stdout) => {
+      const s = new Set<string>()
+      try {
+        const json = JSON.parse(stdout || '{}')
+        const deps = json.dependencies || {}
+        for (const name of Object.keys(deps)) s.add(name)
+      } catch { /* ignore */ }
+      resolve(s)
+    })
+  })
+  npmGlobalCache.data = set
+  npmGlobalCache.ts = Date.now()
+  return set
+}
+
+async function pipGlobalPackages(): Promise<Set<string>> {
+  if (pipGlobalCache.data && Date.now() - pipGlobalCache.ts < PKG_CACHE_TTL) {
+    return pipGlobalCache.data
+  }
+  const set = await new Promise<Set<string>>((resolve) => {
+    exec('pip list --format=json', { timeout: 20000 }, (_err, stdout) => {
+      const s = new Set<string>()
+      try {
+        const list = JSON.parse(stdout || '[]')
+        for (const p of list) s.add(p.name)
+      } catch { /* ignore */ }
+      resolve(s)
+    })
+  })
+  pipGlobalCache.data = set
+  pipGlobalCache.ts = Date.now()
+  return set
+}
+
 async function checkCliStatus(cli: CliDefinition): Promise<CliState> {
   try {
-    const version = await new Promise<string>((resolve) => {
-      if (cli.wslExecutable && isWindows) {
-        exec(`wsl -e bash -lc "${cli.executable} --version"`, { timeout: 10000 }, (err, stdout) => {
-          if (err) { resolve(''); return }
-          resolve(stdout.trim().split('\n')[0] || 'installed')
-        })
-      } else {
-        const which = isWindows ? 'where' : 'which'
-        exec(`${which} ${cli.executable}`, { timeout: 5000 }, (err) => {
-          if (err) { resolve(''); return }
-          exec(`${cli.executable} --version`, { timeout: 5000 }, (_err, stdout) => {
-            resolve(stdout.trim().split('\n')[0] || 'installed')
-          })
-        })
+    let version = ''
+
+    // 1) Authoritative check via the package manager (npm/pip global).
+    if (cli.dependencyType === 'node' && cli.packageName) {
+      const globals = await npmGlobalPackages()
+      if (globals.has(cli.packageName)) {
+        version = (await getVersion(`${cli.executable} --version`)) || 'installed'
       }
-    })
+    } else if (cli.dependencyType === 'python' && cli.packageName) {
+      const globals = await pipGlobalPackages()
+      if (globals.has(cli.packageName)) {
+        version = (await getVersion(`${cli.executable} --version`)) || 'installed'
+      }
+    }
+
+    // 2) For WSL-only CLIs, try WSL first...
+    if (!version && cli.wslExecutable && isWindows) {
+      version = await getVersion(`wsl -e bash -lc "${cli.executable} --version"`)
+    }
+
+    // 3) ...then fall back to a native PATH lookup (fixes Amazon Q installed
+    //    natively rather than via WSL).
+    if (!version) {
+      const found = await new Promise<boolean>((resolve) => {
+        const detector = isWindows ? 'where' : 'which'
+        exec(`${detector} ${cli.executable}`, { timeout: 5000 }, (err) => resolve(!err))
+      })
+      if (found) version = (await getVersion(`${cli.executable} --version`)) || 'installed'
+    }
+
     if (!version) return { status: 'not-installed' }
     return { status: 'installed', version }
   } catch {
@@ -93,17 +171,31 @@ async function checkCliStatus(cli: CliDefinition): Promise<CliState> {
   }
 }
 
+/**
+ * Runs `worker` over `items` with a bounded number of concurrent tasks so a
+ * full status refresh never spawns dozens of child processes at once (that
+ * caused a CPU/IO spike on startup with a large registry).
+ */
+async function runPool<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
+  let cursor = 0
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const item = items[cursor++]
+      await worker(item)
+    }
+  })
+  await Promise.all(runners)
+}
+
 async function refreshAllStates(registry: CliDefinition[], sender: Electron.WebContents) {
   const freshStates: Record<string, CliState> = {}
 
-  await Promise.all(
-    registry.map(async (cli) => {
-      const state = await checkCliStatus(cli)
-      freshStates[cli.id] = state
-      cliStatusCache.set(cli.id, state)
-      try { sender.send('cli:state-updated', cli.id, state) } catch { /* window closed */ }
-    })
-  )
+  await runPool(registry, 8, async (cli) => {
+    const state = await checkCliStatus(cli)
+    freshStates[cli.id] = state
+    cliStatusCache.set(cli.id, state)
+    try { sender.send('cli:state-updated', cli.id, state) } catch { /* window closed */ }
+  })
 
   writeStateCache(freshStates)
 }
@@ -111,35 +203,70 @@ async function refreshAllStates(registry: CliDefinition[], sender: Electron.WebC
 export function registerIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.GET_CLIS, () => getCliRegistry())
 
-  ipcMain.handle(IPC_CHANNELS.GET_CLI_STATE, async (_event, cliId: string) => {
+  ipcMain.handle(IPC_CHANNELS.GET_CLI_STATE, async (event, cliId: string) => {
     const cli = getCliRegistry().find((c) => c.id === cliId)
     if (!cli) return null
     const state = await checkCliStatus(cli)
     cliStatusCache.set(cliId, state)
+    try { event.sender.send('cli:state-updated', cliId, state) } catch { /* window closed */ }
     return state
   })
 
-  ipcMain.handle(IPC_CHANNELS.GET_ALL_CLI_STATES, async (event) => {
-    const registry = getCliRegistry()
-    const cached = readStateCache()
-    const sender = event.sender
-    refreshAllStates(registry, sender)
-    return cached
+  // Returns the persisted cache immediately for an instant first paint. The
+  // renderer calls `cli:refresh-all-states` separately to get fresh values,
+  // which stream back via the `cli:state-updated` event.
+  ipcMain.handle(IPC_CHANNELS.GET_ALL_CLI_STATES, () => {
+    return readStateCache()
   })
 
-  ipcMain.on('cli:refresh-all-states', (event) => {
+  ipcMain.handle('cli:refresh-all-states', async (event) => {
     const registry = getCliRegistry()
-    refreshAllStates(registry, event.sender)
+    await refreshAllStates(registry, event.sender)
+  })
+
+  // --- Dedicated launch IPC with full runtime validation ---
+  ipcMain.handle(IPC_CHANNELS.LAUNCH_CLI, async (_event, request: LaunchCliRequest) => {
+    // Reject unexpected properties
+    const allowed = new Set(['cliId', 'cwd', 'permissionMode'])
+    for (const key of Object.keys(request)) {
+      if (!allowed.has(key)) {
+        return { success: false, output: '', error: 'Unexpected property: ' + key, errorCode: 'INVALID_REQUEST' as LaunchErrorCode }
+      }
+    }
+
+    // Validate cliId
+    if (typeof request.cliId !== 'string' || !request.cliId.trim()) {
+      return { success: false, output: '', error: 'cliId must be a non-empty string', errorCode: 'INVALID_REQUEST' as LaunchErrorCode }
+    }
+    const cli = getCliRegistry().find((c) => c.id === request.cliId)
+    if (!cli) {
+      return { success: false, output: '', error: 'Unknown CLI: ' + request.cliId, errorCode: 'UNKNOWN_CLI' as LaunchErrorCode }
+    }
+
+    // Validate permissionMode
+    if (request.permissionMode !== 'normal' && request.permissionMode !== 'dangerous') {
+      return { success: false, output: '', error: 'permissionMode must be "normal" or "dangerous"', errorCode: 'INVALID_REQUEST' as LaunchErrorCode }
+    }
+
+    // Resolve and validate cwd
+    const cwd = request.cwd || getSavedFolder()
+    if (cwd) {
+      try {
+        const stat = fs.statSync(cwd)
+        if (!stat.isDirectory()) {
+          return { success: false, output: '', error: 'Working directory is not a directory', errorCode: 'INVALID_WORKING_DIRECTORY' as LaunchErrorCode }
+        }
+      } catch {
+        return { success: false, output: '', error: 'Working directory does not exist', errorCode: 'INVALID_WORKING_DIRECTORY' as LaunchErrorCode }
+      }
+    }
+
+    return openCli(cli, cwd, request.permissionMode)
   })
 
   ipcMain.handle(IPC_CHANNELS.EXECUTE_ACTION, async (_event, cliId: string, action: CliAction) => {
     const cli = getCliRegistry().find((c) => c.id === cliId)
     if (!cli) return { success: false, output: '', error: 'Unknown CLI' }
-
-    if (action === 'open') {
-      const settings = readSettings()
-      return openCli(cli, getSavedFolder(), settings.terminalEmulator)
-    }
 
     const result = await executeCliAction(cliId, action)
     if (result.success) {
@@ -191,8 +318,12 @@ export function registerIpcHandlers() {
     return readSettings()
   })
 
-  ipcMain.handle(IPC_CHANNELS.SAVE_SETTINGS, (_event, settings: AppSettings) => {
-    writeSettings(settings)
+  // Merge partial updates into the existing settings so a caller that saves
+  // only one key (e.g. the theme) can never wipe the others (cliOrder,
+  // terminalEmulator, favorites).
+  ipcMain.handle(IPC_CHANNELS.SAVE_SETTINGS, (_event, settings: Partial<AppSettings>) => {
+    const current = readSettings()
+    writeSettings({ ...current, ...settings })
   })
 
   ipcMain.handle(IPC_CHANNELS.INSTALL_ALL_MISSING, async (event) => {
@@ -207,10 +338,6 @@ export function registerIpcHandlers() {
       }
     }
     return results
-  })
-
-  ipcMain.handle(IPC_CHANNELS.GET_AVAILABLE_TERMINALS, async () => {
-    return await detectAvailableTerminals()
   })
 
   ipcMain.on('window:close', () => {

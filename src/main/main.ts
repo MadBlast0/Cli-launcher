@@ -12,8 +12,14 @@ function clamp(value: number, min: number, max: number) {
 }
 
 function getIconPath(): string {
-  const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
-  return path.join(__dirname, '../../resources', iconFile)
+  const iconFile =
+    process.platform === 'win32'
+      ? 'icon.ico'
+      : process.platform === 'darwin'
+        ? 'icon.icns'
+        : 'icon.png'
+  const base = app.isPackaged ? process.resourcesPath : path.join(__dirname, '../../resources')
+  return path.join(base, iconFile)
 }
 
 function createTray() {
@@ -69,9 +75,15 @@ function createWindow() {
   mainWindow.setIcon(appIcon)
   mainWindow.setMenuBarVisibility(false)
 
-  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
-    const prefix = ['info', 'warn', 'error', 'debug'][level] || 'log'
-    console.log(`[renderer:${prefix}] ${message} (${sourceId}:${line})`)
+  // Handle both the legacy positional signature and the newer details-object
+  // form (Electron changed this API), so log forwarding survives upgrades.
+  mainWindow.webContents.on('console-message', (...cmArgs: any[]) => {
+    const d = cmArgs[0] && typeof cmArgs[0] === 'object' && 'message' in cmArgs[0]
+      ? { level: cmArgs[0].level, message: cmArgs[0].message, line: cmArgs[0].lineNumber, sourceId: cmArgs[0].sourceId }
+      : { level: cmArgs[1], message: cmArgs[2], line: cmArgs[3], sourceId: cmArgs[4] }
+    const levels: Record<string, string> = { 0: 'verbose', 1: 'info', 2: 'warning', 3: 'error', 4: 'debug' }
+    const prefix = levels[d.level] ?? String(d.level ?? 'log')
+    console.log(`[renderer:${prefix}] ${d.message} (${d.sourceId}:${d.line})`)
   })
 
   mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription) => {
@@ -98,7 +110,10 @@ function createWindow() {
 }
 
 function checkForUpdates() {
-  // Auto-update: checks GitHub releases for newer versions
+  // Only check for updates in packaged builds (skip during development).
+  if (!app.isPackaged) return
+  // Auto-update: notifies the user about newer GitHub releases. The user
+  // decides whether to install via the notification (no forced restart).
   try {
     const { autoUpdater } = require('electron-updater')
     autoUpdater.setFeedURL({
@@ -107,9 +122,6 @@ function checkForUpdates() {
       repo: 'Cli-launcher',
     })
     autoUpdater.checkForUpdatesAndNotify()
-    autoUpdater.on('update-downloaded', () => {
-      autoUpdater.quitAndInstall()
-    })
   } catch { /* electron-updater not installed */ }
 }
 

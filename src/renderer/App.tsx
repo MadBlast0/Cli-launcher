@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { Terminal, ChevronDown } from 'lucide-react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { LauncherWindow } from './components/layouts/LauncherWindow'
 import { CliGrid } from './components/cli/CliGrid'
 import { CliCatalog } from './components/cli/CliCatalog'
@@ -12,8 +11,9 @@ import type { CliDefinition, DependencyCheck, CliCount, CliState, AppSettings } 
 import type { Toast, ToastType } from './components/ui/Toast'
 
 export default function App() {
-  const { theme, toggleTheme } = useTheme()
+  const { theme, toggleTheme, setTheme } = useTheme()
   const [loaded, setLoaded] = useState(false)
+  const [statesLoading, setStatesLoading] = useState(true)
   const [clis, setClis] = useState<CliDefinition[]>([])
   const [states, setStates] = useState<Record<string, CliState>>({})
   const [deps, setDeps] = useState<DependencyCheck | null>(null)
@@ -25,28 +25,44 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [favorites, setFavorites] = useState<string[]>([])
   const [cliOrder, setCliOrder] = useState<string[]>([])
-  const [terminalEmulator, setTerminalEmulator] = useState<string | undefined>(undefined)
-  const [availableTerminals, setAvailableTerminals] = useState<{ value: string; label: string }[]>([])
 
-  const addToast = useCallback((message: string, type: ToastType = 'info') => {
+
+  const addToast = useCallback((message: string, type: ToastType = 'info'): string => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
     setToasts((prev) => [...prev, { id, message, type }])
+    return id
+  }, [])
+
+  const updateToast = useCallback((id: string, message: string, type: ToastType) => {
+    setToasts((prev) => prev.map((t) => t.id === id ? { ...t, message, type } : t))
   }, [])
 
   const dismissToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id))
   }, [])
 
+  // Instant first paint from the persisted cache; if it already has entries we
+  // can drop the skeletons immediately.
   const loadStates = useCallback(
-    () => window.electronAPI.getAllCliStates().then((cached) => {
-      setStates(cached)
-      setLoaded(true)
-    }),
+    () =>
+      window.electronAPI
+        .getAllCliStates()
+        .then((cached) => {
+          setStates(cached)
+          if (cached && Object.keys(cached).length > 0) setStatesLoading(false)
+        })
+        .catch(() => {}),
     []
   )
 
+  // Kick off a fresh detection pass; individual results stream back via the
+  // cli:state-updated event. Clears the loading flag when the pass completes.
   const refreshStates = useCallback(
-    () => window.electronAPI.refreshCliStates(),
+    () =>
+      window.electronAPI
+        .refreshCliStates()
+        .catch(() => {})
+        .finally(() => setStatesLoading(false)),
     []
   )
 
@@ -55,9 +71,9 @@ export default function App() {
       const settings = await window.electronAPI.getSettings()
       if (settings.favorites) setFavorites(settings.favorites)
       if (settings.cliOrder) setCliOrder(settings.cliOrder)
-      if (settings.terminalEmulator) setTerminalEmulator(settings.terminalEmulator)
+      if (settings.theme) setTheme(settings.theme)
     } catch { /* ignore */ }
-  }, [])
+  }, [setTheme])
 
   const saveSettings = useCallback(async (updates: Partial<AppSettings>) => {
     try {
@@ -68,46 +84,66 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    window.electronAPI.getClis().then(setClis)
+    // Show the app as soon as the CLI list is available — never block the
+    // loader on the (potentially slow) status detection IPC.
+    window.electronAPI.getClis().then(setClis).then(() => setLoaded(true))
     window.electronAPI.checkDependencies().then(setDeps)
-    window.electronAPI.getAvailableTerminals().then(setAvailableTerminals)
-    loadStates()
+    loadStates()      // instant cache paint
+    refreshStates()   // background fresh detection
     loadSettings()
-  }, [loadStates, loadSettings])
+  }, [loadStates, refreshStates, loadSettings])
 
+  // Coalesce the burst of per-CLI state updates that arrive during a refresh
+  // into a single render per animation frame (avoids ~36 back-to-back renders
+  // of the whole grid on startup).
   useEffect(() => {
+    const pending: Record<string, CliState> = {}
+    let frame: number | null = null
+    const flush = () => {
+      frame = null
+      setStates((prev) => ({ ...prev, ...pending }))
+      for (const k of Object.keys(pending)) delete pending[k]
+    }
     const cleanup = window.electronAPI.onCliStateUpdate((cliId, state) => {
-      setStates((prev) => ({ ...prev, [cliId]: state }))
+      pending[cliId] = state
+      if (frame === null) frame = requestAnimationFrame(flush)
     })
-    return cleanup
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame)
+      cleanup()
+    }
   }, [])
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return
+      }
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 'f') {
           e.preventDefault()
           const input = document.querySelector<HTMLInputElement>('input[type="text"]')
           input?.focus()
-        }
-        if (e.key === 'd') {
+        } else if (e.key === 'd') {
           e.preventDefault()
           setShowDeps(true)
-        }
-        if (e.key >= '1' && e.key <= '9') {
-          const idx = parseInt(e.key) - 1
-          const installed = clis.filter((cli) => isInstalled(cli.id))
+        } else if (e.key >= '1' && e.key <= '9') {
+          const idx = parseInt(e.key, 10) - 1
+          const installed = clis.filter(
+            (cli) => states[cli.id]?.status === 'installed' || states[cli.id]?.status === 'update-available'
+          )
           if (installed[idx]) {
             e.preventDefault()
-            window.electronAPI.executeAction(installed[idx].id, 'open')
+            handleLaunch(installed[idx].id, 1)
           }
         }
       }
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  })
+  }, [clis, states])
 
   const isInstalled = (cliId: string) =>
     states[cliId]?.status === 'installed' || states[cliId]?.status === 'update-available'
@@ -131,16 +167,23 @@ export default function App() {
     })
   }
 
+  // The grid renders a filtered subset, so the drag indices are positions
+  // within `filtered`. Translate them to CLI ids and reorder the full global
+  // order, otherwise the wrong items move whenever a filter/search is active.
   const handleReorder = (fromIndex: number, toIndex: number) => {
-    setClis((prev) => {
-      const copy = [...prev]
-      const [moved] = copy.splice(fromIndex, 1)
-      copy.splice(toIndex, 0, moved)
-      const newOrder = copy.map((c) => c.id)
-      setCliOrder(newOrder)
-      saveSettings({ cliOrder: newOrder })
-      return copy
-    })
+    const fromId = filtered[fromIndex]?.id
+    const toId = filtered[toIndex]?.id
+    if (!fromId || !toId || fromId === toId) return
+
+    const fullOrder = orderedClis.map((c) => c.id)
+    const fi = fullOrder.indexOf(fromId)
+    const ti = fullOrder.indexOf(toId)
+    if (fi === -1 || ti === -1) return
+
+    fullOrder.splice(fi, 1)
+    fullOrder.splice(ti, 0, fromId)
+    setCliOrder(fullOrder)
+    saveSettings({ cliOrder: fullOrder })
   }
 
   const handleToggleFavorite = (cliId: string) => {
@@ -153,70 +196,59 @@ export default function App() {
     })
   }
 
-  const handleLaunch = (cliId: string, count: number) => {
+  const handleLaunch = async (cliId: string, count: number) => {
     const cli = clis.find((c) => c.id === cliId)
     if (!cli) return
     for (let i = 0; i < count; i++) {
-      window.electronAPI.executeAction(cliId, 'open')
+      const result = await window.electronAPI.launchCli({ cliId, permissionMode: 'normal' })
+      if (!result.success) {
+        addToast(result.error || 'Failed to launch', 'error')
+      }
     }
   }
 
-  const handleInstall = (cliId: string) => {
-    window.electronAPI.executeAction(cliId, 'install')
-  }
-
-  const handleUninstall = (cliId: string) => {
-    window.electronAPI.executeAction(cliId, 'uninstall')
-  }
-
+  // CliCard performs the repair/update itself (with its own toast + busy
+  // state); these callbacks let it notify the app afterwards so the shared
+  // state map is refreshed (e.g. the version/update badge updates).
   const handleRepair = (cliId: string) => {
-    window.electronAPI.executeAction(cliId, 'repair')
+    window.electronAPI.getCliState(cliId).catch(() => {})
   }
 
   const handleUpdate = (cliId: string) => {
-    window.electronAPI.executeAction(cliId, 'update')
+    window.electronAPI.getCliState(cliId).catch(() => {})
   }
 
-  const handleInstallAllMissing = async () => {
-    addToast('Installing all missing CLIs...', 'info')
-    const results = await window.electronAPI.installAllMissing()
-    const succeeded = results.filter((r) => r.success).length
-    const failed = results.filter((r) => !r.success).length
-    refreshStates()
-    if (failed === 0) {
-      addToast(`Installed ${succeeded} CLI(s) successfully`, 'success')
-    } else {
-      addToast(`Installed ${succeeded}, ${failed} failed`, 'error')
+  // Apply cliOrder to the list (memoized so it only recomputes when the list
+  // or the saved order actually changes).
+  const orderedClis = useMemo(() => {
+    const copy = [...clis]
+    if (cliOrder.length > 0) {
+      const orderMap = new Map(cliOrder.map((id, i) => [id, i]))
+      copy.sort((a, b) => {
+        const ai = orderMap.get(a.id)
+        const bi = orderMap.get(b.id)
+        if (ai !== undefined && bi !== undefined) return ai - bi
+        if (ai !== undefined) return -1
+        if (bi !== undefined) return 1
+        return 0
+      })
     }
-  }
+    return copy
+  }, [clis, cliOrder])
 
-  const handleTerminalChange = async (terminal: string) => {
-    setTerminalEmulator(terminal)
-    await saveSettings({ terminalEmulator: terminal || undefined })
-  }
-
-  // Apply cliOrder to the list
-  const orderedClis = [...clis]
-  if (cliOrder.length > 0) {
-    const orderMap = new Map(cliOrder.map((id, i) => [id, i]))
-    orderedClis.sort((a, b) => {
-      const ai = orderMap.get(a.id)
-      const bi = orderMap.get(b.id)
-      if (ai !== undefined && bi !== undefined) return ai - bi
-      if (ai !== undefined) return -1
-      if (bi !== undefined) return 1
-      return 0
-    })
-  }
-
-  // Main page shows only CLIs already installed
-  const sortedFavoriteIds = [...favorites].sort((a, b) => a.localeCompare(b))
-  const installedClis = orderedClis.filter((cli) => isInstalled(cli.id))
-  const filtered = installedClis.filter(
-    (cli) =>
-      cli.name.toLowerCase().includes(search.toLowerCase()) ||
-      cli.id.toLowerCase().includes(search.toLowerCase())
+  // Favorites first, then the rest — kept for the ordering the grid consumes.
+  const sortedFavoriteIds = useMemo(
+    () => [...favorites].sort((a, b) => a.localeCompare(b)),
+    [favorites]
   )
+
+  // Main page shows only CLIs already installed, then applies the search.
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase()
+    return orderedClis
+      .filter((cli) => isInstalled(cli.id))
+      .filter((cli) => cli.name.toLowerCase().includes(q) || cli.id.toLowerCase().includes(q))
+  }, [orderedClis, states, search])
 
   if (!loaded) return <Loader />
 
@@ -224,11 +256,6 @@ export default function App() {
     <LauncherWindow isDark={theme === 'dark'} onToggleTheme={toggleTheme}>
       <div className="px-4 pt-3 pb-2 shrink-0 flex items-center gap-2">
         <FolderPicker />
-        <TerminalPicker
-          options={availableTerminals}
-          value={terminalEmulator || ''}
-          onChange={handleTerminalChange}
-        />
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
@@ -236,6 +263,8 @@ export default function App() {
           clis={filtered}
           states={states}
           counts={counts}
+          totalCount={clis.length}
+          loading={statesLoading}
           onUpdateCount={handleUpdateCount}
           onLaunch={handleLaunch}
           onRepair={handleRepair}
@@ -259,11 +288,11 @@ export default function App() {
         states={states}
         onChanged={refreshStates}
         onToast={addToast}
+        updateToast={updateToast}
         onInstalled={(id) => {
           setJustInstalled(id)
           setTimeout(() => setJustInstalled(null), 5000)
         }}
-        onInstallAllMissing={handleInstallAllMissing}
       />
 
       {showDeps && deps && (
@@ -278,60 +307,4 @@ export default function App() {
   )
 }
 
-function TerminalPicker({
-  options,
-  value,
-  onChange,
-}: {
-  options: { value: string; label: string }[]
-  value: string
-  onChange: (v: string) => void
-}) {
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  const selected = options.find((o) => o.value === value)
-  const display = selected?.label || 'Auto'
-
-  return (
-    <div ref={ref} className="relative w-[140px] shrink-0">
-      <button
-        onClick={() => setOpen(!open)}
-        className="mac-input w-full flex items-center gap-2.5 px-3 py-2.5 text-left group hover:border-border-strong transition-colors"
-      >
-        <span className="flex items-center justify-center w-6 h-6 rounded-none bg-muted text-muted-foreground shrink-0 group-hover:text-foreground transition-colors">
-          <Terminal size={13} />
-        </span>
-        <div className="flex flex-col min-w-0 flex-1">
-          <span className="text-[10px] font-medium tracking-wide text-muted-foreground">Terminal</span>
-          <span className="text-[12px] font-mono truncate text-foreground">{display}</span>
-        </div>
-        <ChevronDown size={10} className={`text-muted-foreground shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      {open && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 mac-surface bg-popover text-popover-foreground p-1 anim-pop max-h-48 overflow-y-auto">
-          {options.map((opt) => (
-            <button
-              key={opt.value}
-              className={`w-full text-left px-2.5 py-1.5 text-[12px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors ${
-                value === opt.value ? 'bg-accent-soft text-primary' : ''
-              }`}
-              onClick={() => { onChange(opt.value); setOpen(false) }}
-            >
-              {opt.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
