@@ -12,8 +12,6 @@ export const IPC_CHANNELS = {
   SAVE_SETTINGS: 'settings:save',
   GET_SETTINGS: 'settings:get',
   INSTALL_ALL_MISSING: 'cli:install-all-missing',
-  EXPORT_CLI_LIST: 'cli:export-list',
-  IMPORT_CLI_LIST: 'cli:import-list',
   MINIMIZE_TO_TRAY: 'window:minimize-to-tray',
 } as const
 

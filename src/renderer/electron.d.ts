@@ -16,8 +16,6 @@ declare global {
       getSettings: () => Promise<AppSettings>
       saveSettings: (settings: AppSettings) => Promise<void>
       installAllMissing: () => Promise<{ id: string; name: string; success: boolean; error?: string }[]>
-      exportCliList: () => Promise<string | null>
-      importCliList: () => Promise<{ success: boolean; count?: number; error?: string } | null>
       minimizeWindow: () => void
       closeWindow: () => void
       minimizeToTray: () => void

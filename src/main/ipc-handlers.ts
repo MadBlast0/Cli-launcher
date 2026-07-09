@@ -202,40 +202,6 @@ export function registerIpcHandlers() {
     return results
   })
 
-  ipcMain.handle(IPC_CHANNELS.EXPORT_CLI_LIST, async () => {
-    const registry = getCliRegistry()
-    const states = readStateCache()
-    const settings = readSettings()
-    const data = { version: 1, exportedAt: new Date().toISOString(), clis: registry.map(c => c.id), states, settings }
-    const result = await dialog.showSaveDialog({
-      defaultPath: `cli-launcher-export-${Date.now()}.json`,
-      filters: [{ name: 'JSON', extensions: ['json'] }],
-    })
-    if (!result.canceled && result.filePath) {
-      fs.writeFileSync(result.filePath, JSON.stringify(data, null, 2), 'utf-8')
-      return result.filePath
-    }
-    return null
-  })
-
-  ipcMain.handle(IPC_CHANNELS.IMPORT_CLI_LIST, async () => {
-    const result = await dialog.showOpenDialog({
-      properties: ['openFile'],
-      filters: [{ name: 'JSON', extensions: ['json'] }],
-    })
-    if (!result.canceled && result.filePaths.length > 0) {
-      try {
-        const raw = fs.readFileSync(result.filePaths[0], 'utf-8')
-        const data = JSON.parse(raw)
-        if (data.settings) writeSettings({ ...readSettings(), ...data.settings })
-        return { success: true, count: data.clis?.length || 0 }
-      } catch (err) {
-        return { success: false, error: 'Invalid export file' }
-      }
-    }
-    return null
-  })
-
   ipcMain.on('window:close', () => {
     const win = BrowserWindow.getAllWindows()[0]
     if (win) win.close()

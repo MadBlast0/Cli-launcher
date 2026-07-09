@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { SearchInput, Button, Dropdown, Tooltip } from '../ui'
 import { CliCard } from './CliCard'
 import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
-import { Database, AlertTriangle, Terminal, Plus, Download, Upload, Star } from 'lucide-react'
+import { Database, AlertTriangle, Terminal, Plus, Download, Star } from 'lucide-react'
 
 interface CliGridProps {
   clis: CliDefinition[]
@@ -27,8 +27,6 @@ interface CliGridProps {
   justInstalled?: string | null
   onToast?: (message: string, type: 'success' | 'error' | 'info') => void
   onInstallAllMissing?: () => void
-  onExport?: () => void
-  onImport?: () => void
   onTerminalChange?: (terminal: string) => void
 }
 
@@ -47,7 +45,7 @@ const terminalOptions = [
 export function CliGrid({
   clis, states, counts, favorites, terminalEmulator, onUpdateCount, onLaunch, onInstall, onUninstall,
   onRepair, onUpdate, onReorder, onToggleFavorite, onOpenDeps, onOpenCatalog, onCliChanged,
-  deps, search, onSearchChange, justInstalled, onToast, onInstallAllMissing, onExport, onImport, onTerminalChange,
+  deps, search, onSearchChange, justInstalled, onToast, onInstallAllMissing, onTerminalChange,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
 
@@ -100,12 +98,6 @@ export function CliGrid({
           <Button variant="secondary" size="sm" icon={<Database size={14} />} onClick={onOpenDeps} aria-label="Dependencies">
             Deps
           </Button>
-        </Tooltip>
-        <Tooltip text="Export CLI list and settings">
-          <Button variant="secondary" size="sm" icon={<Upload size={14} />} onClick={onExport} aria-label="Export" />
-        </Tooltip>
-        <Tooltip text="Import CLI list and settings">
-          <Button variant="secondary" size="sm" icon={<Download size={14} />} onClick={onImport} aria-label="Import" />
         </Tooltip>
       </div>
 

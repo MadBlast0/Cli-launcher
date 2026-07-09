@@ -66,6 +66,7 @@ function createWindow() {
     },
   })
 
+  mainWindow.setIcon(appIcon)
   mainWindow.setMenuBarVisibility(false)
 
   mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {

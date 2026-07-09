@@ -187,19 +187,6 @@ export default function App() {
     }
   }
 
-  const handleExport = async () => {
-    const path = await window.electronAPI.exportCliList()
-    if (path) addToast(`Exported to ${path}`, 'success')
-  }
-
-  const handleImport = async () => {
-    const result = await window.electronAPI.importCliList()
-    if (result?.success) {
-      addToast(`Imported settings for ${result.count} CLI(s)`, 'success')
-      loadSettings()
-    }
-  }
-
   const handleTerminalChange = async (terminal: string) => {
     setTerminalEmulator(terminal)
     await saveSettings({ terminalEmulator: terminal || undefined })
@@ -260,8 +247,6 @@ export default function App() {
           justInstalled={justInstalled}
           onToast={addToast}
           onInstallAllMissing={handleInstallAllMissing}
-          onExport={handleExport}
-          onImport={handleImport}
           onTerminalChange={handleTerminalChange}
         />
       </div>
