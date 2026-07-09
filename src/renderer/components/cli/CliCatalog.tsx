@@ -11,9 +11,10 @@ interface CliCatalogProps {
   states: Record<string, CliState>
   onChanged: () => void
   onInstalled?: (cliId: string) => void
+  onToast?: (message: string, type: 'success' | 'error' | 'info') => void
 }
 
-export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled }: CliCatalogProps) {
+export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled, onToast }: CliCatalogProps) {
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [leaving, setLeaving] = useState<string | null>(null)
@@ -31,18 +32,28 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
 
   const handleInstall = async (cliId: string) => {
     setBusy(cliId)
-    await window.electronAPI.executeAction(cliId, 'install')
-    setBusy(null)
-    setLeaving(cliId)
-    setTimeout(() => {
-      setJustInstalled(cliId)
+    const result = await window.electronAPI.executeAction(cliId, 'install')
+    const cliName = clis.find((c) => c.id === cliId)?.name || cliId
+    const fresh = await window.electronAPI.getCliState(cliId)
+    const installed = fresh?.status === 'installed' || fresh?.status === 'update-available'
+
+    if (result.success && installed) {
+      onToast?.(`${cliName} installed successfully`, 'success')
+      setBusy(null)
+      setLeaving(cliId)
       setTimeout(() => {
-        setLeaving(null)
-        setJustInstalled(null)
-        onChanged()
-        onInstalled?.(cliId)
-      }, 50)
-    }, 250)
+        setJustInstalled(cliId)
+        setTimeout(() => {
+          setLeaving(null)
+          setJustInstalled(null)
+          onChanged()
+          onInstalled?.(cliId)
+        }, 50)
+      }, 250)
+    } else {
+      onToast?.(`${cliName} install failed: ${result.error || 'CLI not found after install'}`, 'error')
+      setBusy(null)
+    }
   }
 
   return (

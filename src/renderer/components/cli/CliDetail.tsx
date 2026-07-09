@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Button, Badge, Toggle, Panel } from '../ui'
+import { Button, Badge, Panel } from '../ui'
 import { CliActions } from './CliActions'
 import type { CliDefinition, CliState } from '@shared/types'
 import { ArrowLeft, Globe, Package, Terminal } from 'lucide-react'
@@ -75,19 +75,15 @@ export function CliDetail({ cli, onBack }: CliDetailProps) {
         </div>
       </div>
 
-      <Panel title="Permissions" className="shrink-0">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[13px] font-semibold tracking-tight text-card-foreground">
-              Skip Permissions
-            </p>
-            <p className="text-[10px] text-muted-foreground mt-0.5">
-              Passes the --dangerously-skip-permissions flag when launching
-            </p>
+      {cli.skipPermissions && (
+        <Panel title="Permissions" className="shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-mono text-muted-foreground">
+              --dangerously-skip-permissions flag enabled
+            </span>
           </div>
-          <Toggle checked={cli.skipPermissions} />
-        </div>
-      </Panel>
+        </Panel>
+      )}
 
       <CliActions cli={cli} state={state} onActionComplete={refreshState} />
     </div>

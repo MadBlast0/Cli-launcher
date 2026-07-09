@@ -5,8 +5,10 @@ import { CliCatalog } from './components/cli/CliCatalog'
 import { FolderPicker } from './components/cli/FolderPicker'
 import { DependencyModal } from './components/installer/DependencyModal'
 import { Loader } from './components/ui/Loader'
+import { ToastContainer } from './components/ui/Toast'
 import { useTheme } from './hooks/useTheme'
 import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
+import type { Toast, ToastType } from './components/ui/Toast'
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -19,6 +21,16 @@ export default function App() {
   const [search, setSearch] = useState('')
   const [counts, setCounts] = useState<CliCount[]>([])
   const [justInstalled, setJustInstalled] = useState<string | null>(null)
+  const [toasts, setToasts] = useState<Toast[]>([])
+
+  const addToast = useCallback((message: string, type: ToastType = 'info') => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+    setToasts((prev) => [...prev, { id, message, type }])
+  }, [])
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }, [])
 
   const loadStates = useCallback(
     () => window.electronAPI.getAllCliStates().then((cached) => {
@@ -80,22 +92,17 @@ export default function App() {
   const handleLaunch = (cliId: string, count: number) => {
     const cli = clis.find((c) => c.id === cliId)
     if (!cli) return
-    const flag = cli.skipPermissions ? ` ${cli.skipPermissionsFlag || '--dangerously-skip-permissions'}` : ''
     for (let i = 0; i < count; i++) {
       window.electronAPI.executeAction(cliId, 'open')
     }
   }
 
   const handleInstall = (cliId: string) => {
-    window.electronAPI.executeAction(cliId, 'install').then(() => {
-      setClis((prev) => [...prev])
-    })
+    window.electronAPI.executeAction(cliId, 'install')
   }
 
   const handleUninstall = (cliId: string) => {
-    window.electronAPI.executeAction(cliId, 'uninstall').then(() => {
-      setClis((prev) => [...prev])
-    })
+    window.electronAPI.executeAction(cliId, 'uninstall')
   }
 
   const handleRepair = (cliId: string) => {
@@ -114,17 +121,18 @@ export default function App() {
       cli.id.toLowerCase().includes(search.toLowerCase())
   )
 
-  if (!loaded) return <Loader onDone={() => setLoaded(true)} />
+  if (!loaded) return <Loader />
 
   return (
     <LauncherWindow isDark={theme === 'dark'} onToggleTheme={toggleTheme}>
       <div className="px-4 pt-3 pb-2 shrink-0">
-        <FolderPicker onFolderChange={() => {}} />
+        <FolderPicker />
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
         <CliGrid
           clis={filtered}
+          states={states}
           counts={counts}
           onUpdateCount={handleUpdateCount}
           onLaunch={handleLaunch}
@@ -140,6 +148,7 @@ export default function App() {
           search={search}
           onSearchChange={setSearch}
           justInstalled={justInstalled}
+          onToast={addToast}
         />
       </div>
 
@@ -149,6 +158,7 @@ export default function App() {
         clis={clis}
         states={states}
         onChanged={refreshStates}
+        onToast={addToast}
         onInstalled={(id) => {
           setJustInstalled(id)
           setTimeout(() => setJustInstalled(null), 5000)
@@ -162,6 +172,7 @@ export default function App() {
           onInstalled={(updated) => setDeps(updated)}
         />
       )}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </LauncherWindow>
   )
 }

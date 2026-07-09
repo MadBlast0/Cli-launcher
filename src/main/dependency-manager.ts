@@ -6,9 +6,10 @@ const isWin = platform() === 'win32'
 const isMac = platform() === 'darwin'
 
 function execCmd(command: string): Promise<string> {
-  return new Promise((resolve) => {
-    exec(command, { timeout: 10000 }, (_error, stdout) => {
-      resolve(stdout.trim())
+  return new Promise((resolve, reject) => {
+    exec(command, { timeout: 10000 }, (error, stdout) => {
+      if (error) reject(error)
+      else resolve(stdout.trim())
     })
   })
 }

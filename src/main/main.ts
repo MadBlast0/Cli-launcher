@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen } from 'electron'
+import { app, BrowserWindow, screen, nativeImage } from 'electron'
 import path from 'path'
 import { registerIpcHandlers } from './ipc-handlers'
 import { WINDOW_CONFIG, APP_NAME } from '../shared/constants'
@@ -6,7 +6,12 @@ import { WINDOW_CONFIG, APP_NAME } from '../shared/constants'
 let mainWindow: BrowserWindow | null = null
 
 function clamp(value: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, value))
+  return Math.max(min, Math.max(value))
+}
+
+function getIconPath(): string {
+  const iconFile = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+  return path.join(__dirname, '../../resources', iconFile)
 }
 
 function createWindow() {
@@ -16,6 +21,8 @@ function createWindow() {
   )
   // Lock to a 5:3 landscape aspect ratio; derive height from width.
   const height = Math.round((width * WINDOW_CONFIG.ASPECT_H) / WINDOW_CONFIG.ASPECT_W)
+
+  const appIcon = nativeImage.createFromPath(getIconPath())
 
   mainWindow = new BrowserWindow({
     width,
@@ -28,7 +35,7 @@ function createWindow() {
     hasShadow: false,
     center: true,
     title: APP_NAME,
-    icon: path.join(__dirname, '../../resources/icon.png'),
+    icon: appIcon,
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,

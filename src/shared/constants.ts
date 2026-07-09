@@ -23,9 +23,3 @@ export const WINDOW_CONFIG = {
 } as const
 
 export const APP_NAME = 'CLI Launcher'
-
-export const DEFAULT_CLI_ORDER = [
-  'claude', 'opencode', 'gemini', 'copilot', 'codex', 'aider',
-  'kilo', 'qwen', 'codebuff', 'goose', 'pi', 'crush', 'freebuff',
-  'commandcode', 'cursor', 'amp', 'amazonq',
-] as const

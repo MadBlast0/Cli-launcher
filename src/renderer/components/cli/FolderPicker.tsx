@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react'
 import { FolderIcon } from 'lucide-react'
 
-interface FolderPickerProps {
-  onFolderChange: (folder: string | null) => void
-}
-
-export function FolderPicker({ onFolderChange }: FolderPickerProps) {
+export function FolderPicker() {
   const [folder, setFolder] = useState<string | null>(null)
 
   useEffect(() => {
@@ -14,10 +10,7 @@ export function FolderPicker({ onFolderChange }: FolderPickerProps) {
 
   const handlePick = async () => {
     const result = await window.electronAPI.selectFolder()
-    if (result) {
-      setFolder(result)
-      onFolderChange(result)
-    }
+    if (result) setFolder(result)
   }
 
   return (

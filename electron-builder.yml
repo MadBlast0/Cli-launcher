@@ -6,6 +6,9 @@ directories:
 publish:
   - provider: github
     releaseType: release
+asarUnpack:
+  - "src/cli-registry/**"
+
 files:
   - dist/**/*
   - src/cli-registry/**/*.ps1

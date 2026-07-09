@@ -10,7 +10,6 @@ declare global {
       checkCliUpdate: (cliId: string) => Promise<{ updateAvailable: boolean; latestVersion?: string }>
       checkDependencies: () => Promise<DependencyCheck>
       installDependency: (type: 'node' | 'python') => Promise<string>
-      getAllCliStates: () => Promise<Record<string, CliState>>
       selectFolder: () => Promise<string | null>
       getSavedFolder: () => Promise<string | null>
       saveFolder: (folder: string) => Promise<void>

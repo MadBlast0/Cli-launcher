@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Tooltip } from '../ui'
 import { getCliLogo } from '../../logos'
 import type { CliDefinition, CliState } from '@shared/types'
@@ -6,6 +6,7 @@ import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUp
 
 interface CliCardProps {
   cli: CliDefinition
+  state: CliState | null
   count: number
   onCountChange: (delta: number) => void
   onLaunch: () => void
@@ -15,44 +16,70 @@ interface CliCardProps {
   onDrop: (e: React.DragEvent) => void
   index: number
   justInstalled?: string | null
+  onToast?: (message: string, type: 'success' | 'error' | 'info') => void
 }
 
 type Busy = 'install' | 'uninstall' | 'update' | 'repair' | null
 
 export function CliCard({
-  cli, count, onCountChange, onLaunch, onChanged,
-  onDragStart, onDragOver, onDrop, index, justInstalled,
+  cli, state, count, onCountChange, onLaunch, onChanged,
+  onDragStart, onDragOver, onDrop, index, justInstalled, onToast,
 }: CliCardProps) {
   const isNew = justInstalled === cli.id
-  const [state, setState] = useState<CliState | null>(null)
-  const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState<Busy>(null)
   const [latest, setLatest] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const installed = state?.status === 'installed' || state?.status === 'update-available'
   const updateAvailable = !!latest
 
-  const refresh = useCallback(async () => {
-    const s = await window.electronAPI.getCliState(cli.id)
-    setState(s)
-    setLoading(false)
-    if (s?.status === 'installed' || s?.status === 'update-available') {
-      const upd = await window.electronAPI.checkCliUpdate(cli.id)
-      setLatest(upd.updateAvailable ? upd.latestVersion ?? 'new' : null)
+  useEffect(() => {
+    if (state?.status === 'installed' || state?.status === 'update-available') {
+      window.electronAPI.checkCliUpdate(cli.id).then((upd) => {
+        setLatest(upd.updateAvailable ? upd.latestVersion ?? 'new' : null)
+      })
     } else {
       setLatest(null)
     }
-  }, [cli.id])
-
-  useEffect(() => { refresh() }, [refresh])
+  }, [state, cli.id])
 
   const runAction = async (action: Exclude<Busy, null>) => {
     if (busy) return
     setBusy(action)
+    setError(null)
     try {
-      await window.electronAPI.executeAction(cli.id, action)
-      await refresh()
-      if (action === 'install' || action === 'uninstall') onChanged?.()
+      const result = await window.electronAPI.executeAction(cli.id, action)
+      if (action === 'install' || action === 'uninstall') {
+        const fresh = await window.electronAPI.getCliState(cli.id)
+        const ok = fresh?.status === 'installed' || fresh?.status === 'update-available'
+        if (action === 'install') {
+          if (result.success && ok) {
+            onToast?.(`${cli.name} installed successfully`, 'success')
+          } else {
+            setError(result.error || 'Install failed')
+            onToast?.(`${cli.name} install failed: ${result.error || 'CLI not found after install'}`, 'error')
+          }
+        } else {
+          if (result.success && !ok) {
+            onToast?.(`${cli.name} uninstalled`, 'info')
+          } else {
+            setError(result.error || 'Uninstall may have failed')
+            onToast?.(`${cli.name} uninstall ${result.success ? 'reported success but CLI is still present' : 'failed'}: ${result.error || ''}`, 'error')
+          }
+        }
+        onChanged?.()
+      } else {
+        if (!result.success) {
+          setError(result.error || 'Action failed')
+          onToast?.(`${cli.name} ${action} failed: ${result.error}`, 'error')
+        } else {
+          onToast?.(`${cli.name} ${action} complete`, 'success')
+        }
+      }
+    } catch (err) {
+      const msg = String(err)
+      setError(msg)
+      onToast?.(`${cli.name} ${action} error: ${msg}`, 'error')
     } finally {
       setBusy(null)
     }
@@ -88,9 +115,12 @@ export function CliCard({
           {cli.name}
         </span>
         <div className="flex items-center gap-1.5 mt-0.5">
-          {loading ? (
-            <RefreshCw size={9} className="animate-spin text-muted-foreground" />
-          ) : (
+          {error && (
+            <span className="text-[10px] font-mono text-destructive truncate max-w-[120px]" title={error}>
+              {error}
+            </span>
+          )}
+          {!error && (
             <>
               <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${installed ? 'bg-success' : 'bg-muted-foreground/40'}`} />
               <span className="text-[10.5px] font-mono text-muted-foreground truncate">

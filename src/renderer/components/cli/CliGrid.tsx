@@ -1,11 +1,12 @@
 import { useState, useCallback } from 'react'
 import { SearchInput, Button } from '../ui'
 import { CliCard } from './CliCard'
-import type { CliDefinition, DependencyCheck, CliCount } from '@shared/types'
+import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
 import { Database, AlertTriangle, Terminal, Plus } from 'lucide-react'
 
 interface CliGridProps {
   clis: CliDefinition[]
+  states: Record<string, CliState>
   counts: CliCount[]
   onUpdateCount: (cliId: string, delta: number) => void
   onLaunch: (cliId: string, count: number) => void
@@ -21,12 +22,13 @@ interface CliGridProps {
   search: string
   onSearchChange: (value: string) => void
   justInstalled?: string | null
+  onToast?: (message: string, type: 'success' | 'error' | 'info') => void
 }
 
 export function CliGrid({
-  clis, counts, onUpdateCount, onLaunch, onInstall, onUninstall,
+  clis, states, counts, onUpdateCount, onLaunch, onInstall, onUninstall,
   onRepair, onUpdate, onReorder, onOpenDeps, onOpenCatalog, onCliChanged,
-  deps, search, onSearchChange, justInstalled,
+  deps, search, onSearchChange, justInstalled, onToast,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
 
@@ -109,6 +111,7 @@ export function CliGrid({
             <CliCard
               key={cli.id}
               cli={cli}
+              state={states[cli.id] ?? null}
               index={index}
               count={getCount(cli.id)}
               onCountChange={(delta) => onUpdateCount(cli.id, delta)}
@@ -118,6 +121,7 @@ export function CliGrid({
               onDragOver={(e) => handleDragOver(e, index)}
               onDrop={handleDrop}
               justInstalled={justInstalled}
+              onToast={onToast}
             />
         ))}
       </div>

@@ -2,12 +2,20 @@ import { execFile, spawn } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
+import { app } from 'electron'
 import { CliAction, CliActionResult, CliDefinition } from '../shared/types'
 
 const isWindows = os.platform() === 'win32'
 
+function getAppRoot(): string {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'app.asar.unpacked')
+  }
+  return path.join(__dirname, '../..')
+}
+
 function getScriptPath(cliId: string, action: CliAction): string {
-  const baseDir = path.join(__dirname, '../../src/cli-registry', cliId)
+  const baseDir = path.join(getAppRoot(), 'src/cli-registry', cliId)
   const ext = isWindows ? '.ps1' : '.sh'
   const scriptPath = path.join(baseDir, `${action}${ext}`)
 
@@ -94,7 +102,7 @@ function getNpmOutdated(): Promise<Record<string, { current: string; latest: str
     execFile(
       'npm',
       ['outdated', '-g', '--json'],
-      { timeout: 25000, shell: true, maxBuffer: 1024 * 1024 },
+      { timeout: 25000, maxBuffer: 1024 * 1024 },
       (_error: unknown, stdout: string) => {
         try {
           const data: Record<string, { current: string; latest: string }> = JSON.parse(stdout || '{}')
@@ -117,7 +125,7 @@ function getPipOutdated(): Promise<Record<string, { current: string; latest: str
     execFile(
       'pip',
       ['list', '--outdated', '--format=json'],
-      { timeout: 25000, shell: true, maxBuffer: 1024 * 1024 },
+      { timeout: 25000, maxBuffer: 1024 * 1024 },
       (_error: unknown, stdout: string) => {
         try {
           const list = JSON.parse(stdout || '[]')
