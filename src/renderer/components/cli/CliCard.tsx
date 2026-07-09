@@ -2,16 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { Tooltip } from '../ui'
 import { getCliLogo } from '../../logos'
 import type { CliDefinition, CliState } from '@shared/types'
-import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUpCircle, Star, ExternalLink, Globe, Copy } from 'lucide-react'
+import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUpCircle, ExternalLink, Globe, Copy } from 'lucide-react'
 
 interface CliCardProps {
   cli: CliDefinition
   state: CliState | null
   count: number
-  isFavorite?: boolean
   onCountChange: (delta: number) => void
   onLaunch: () => void
-  onToggleFavorite?: () => void
   onChanged?: () => void
   onDragStart: (e: React.DragEvent) => void
   onDragOver: (e: React.DragEvent) => void
@@ -24,7 +22,7 @@ interface CliCardProps {
 type Busy = 'install' | 'uninstall' | 'update' | 'repair' | null
 
 export function CliCard({
-  cli, state, count, isFavorite, onCountChange, onLaunch, onToggleFavorite, onChanged,
+  cli, state, count, onCountChange, onLaunch, onChanged,
   onDragStart, onDragOver, onDrop, index, justInstalled, onToast,
 }: CliCardProps) {
   const isNew = justInstalled === cli.id
@@ -134,22 +132,13 @@ export function CliCard({
       data-index={index}
       onContextMenu={handleContextMenu}
       role="listitem"
-      aria-label={`${cli.name}${installed ? `, version ${state?.version || 'installed'}` : ', not installed'}${isFavorite ? ', favorite' : ''}`}
+      aria-label={`${cli.name}${installed ? `, version ${state?.version || 'installed'}` : ', not installed'}`}
     >
       {index >= 0 && (
         <div className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground shrink-0 transition-colors" aria-hidden="true">
           <GripVertical size={14} />
         </div>
       )}
-
-      <button
-        onClick={onToggleFavorite}
-        className="shrink-0 p-0.5 text-muted-foreground/30 hover:text-warning transition-colors"
-        aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-      >
-        <Star size={11} fill={isFavorite ? 'var(--warning)' : 'none'} />
-      </button>
 
       <div className="w-9 h-9 flex items-center justify-center shrink-0">
         {logo ? (

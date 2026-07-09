@@ -3,6 +3,7 @@ import { LauncherWindow } from './components/layouts/LauncherWindow'
 import { CliGrid } from './components/cli/CliGrid'
 import { CliCatalog } from './components/cli/CliCatalog'
 import { FolderPicker } from './components/cli/FolderPicker'
+import { Dropdown } from './components/ui/Dropdown'
 import { DependencyModal } from './components/installer/DependencyModal'
 import { Loader } from './components/ui/Loader'
 import { ToastContainer } from './components/ui/Toast'
@@ -219,8 +220,25 @@ export default function App() {
 
   return (
     <LauncherWindow isDark={theme === 'dark'} onToggleTheme={toggleTheme}>
-      <div className="px-4 pt-3 pb-2 shrink-0">
+      <div className="px-4 pt-3 pb-2 shrink-0 flex items-center gap-2">
         <FolderPicker />
+        <div className="min-w-[120px]">
+          <Dropdown
+            options={[
+              { value: '', label: 'Auto' },
+              { value: 'cmd', label: 'CMD' },
+              { value: 'wt', label: 'Windows Terminal' },
+              { value: 'terminal', label: 'Terminal.app' },
+              { value: 'iterm', label: 'iTerm2' },
+              { value: 'gnome-terminal', label: 'GNOME Terminal' },
+              { value: 'konsole', label: 'Konsole' },
+              { value: 'xterm', label: 'XTerm' },
+            ]}
+            value={terminalEmulator || ''}
+            onChange={handleTerminalChange}
+            placeholder="Auto"
+          />
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
@@ -228,16 +246,11 @@ export default function App() {
           clis={filtered}
           states={states}
           counts={counts}
-          favorites={favorites}
-          terminalEmulator={terminalEmulator}
           onUpdateCount={handleUpdateCount}
           onLaunch={handleLaunch}
-          onInstall={handleInstall}
-          onUninstall={handleUninstall}
           onRepair={handleRepair}
           onUpdate={handleUpdate}
           onReorder={handleReorder}
-          onToggleFavorite={handleToggleFavorite}
           onOpenDeps={() => setShowDeps(true)}
           onOpenCatalog={() => setShowCatalog(true)}
           onCliChanged={refreshStates}
@@ -246,8 +259,6 @@ export default function App() {
           onSearchChange={setSearch}
           justInstalled={justInstalled}
           onToast={addToast}
-          onInstallAllMissing={handleInstallAllMissing}
-          onTerminalChange={handleTerminalChange}
         />
       </div>
 

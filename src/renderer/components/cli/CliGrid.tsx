@@ -1,23 +1,18 @@
 import { useState, useCallback } from 'react'
-import { SearchInput, Button, Dropdown, Tooltip } from '../ui'
+import { SearchInput, Button, Tooltip } from '../ui'
 import { CliCard } from './CliCard'
 import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
-import { Database, AlertTriangle, Terminal, Plus, Download, Star } from 'lucide-react'
+import { Database, AlertTriangle, Terminal, Plus } from 'lucide-react'
 
 interface CliGridProps {
   clis: CliDefinition[]
   states: Record<string, CliState>
   counts: CliCount[]
-  favorites: string[]
-  terminalEmulator?: string
   onUpdateCount: (cliId: string, delta: number) => void
   onLaunch: (cliId: string, count: number) => void
-  onInstall: (cliId: string) => void
-  onUninstall: (cliId: string) => void
   onRepair: (cliId: string) => void
   onUpdate: (cliId: string) => void
   onReorder: (fromIndex: number, toIndex: number) => void
-  onToggleFavorite: (cliId: string) => void
   onOpenDeps: () => void
   onOpenCatalog: () => void
   onCliChanged: () => void
@@ -26,26 +21,12 @@ interface CliGridProps {
   onSearchChange: (value: string) => void
   justInstalled?: string | null
   onToast?: (message: string, type: 'success' | 'error' | 'info') => void
-  onInstallAllMissing?: () => void
-  onTerminalChange?: (terminal: string) => void
 }
 
-const terminalOptions = [
-  { value: '', label: 'Auto-detect' },
-  { value: 'cmd', label: 'CMD (Windows)' },
-  { value: 'wt', label: 'Windows Terminal' },
-  { value: 'terminal', label: 'Terminal.app (macOS)' },
-  { value: 'iterm', label: 'iTerm2 (macOS)' },
-  { value: 'x-terminal-emulator', label: 'X Terminal' },
-  { value: 'gnome-terminal', label: 'GNOME Terminal' },
-  { value: 'konsole', label: 'Konsole' },
-  { value: 'xterm', label: 'XTerm' },
-]
-
 export function CliGrid({
-  clis, states, counts, favorites, terminalEmulator, onUpdateCount, onLaunch, onInstall, onUninstall,
-  onRepair, onUpdate, onReorder, onToggleFavorite, onOpenDeps, onOpenCatalog, onCliChanged,
-  deps, search, onSearchChange, justInstalled, onToast, onInstallAllMissing, onTerminalChange,
+  clis, states, counts, onUpdateCount, onLaunch,
+  onRepair, onUpdate, onReorder, onOpenDeps, onOpenCatalog, onCliChanged,
+  deps, search, onSearchChange, justInstalled, onToast,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
 
@@ -101,19 +82,6 @@ export function CliGrid({
         </Tooltip>
       </div>
 
-      {/* Terminal emulator choice */}
-      <div className="flex items-center gap-2 mt-2 shrink-0">
-        <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase shrink-0">Terminal:</span>
-        <div className="flex-1 max-w-[200px]">
-          <Dropdown
-            options={terminalOptions}
-            value={terminalEmulator || ''}
-            onChange={(v) => onTerminalChange?.(v)}
-            placeholder="Auto-detect"
-          />
-        </div>
-      </div>
-
       {/* Section label */}
       <div className="flex items-center justify-between px-1 pt-3 pb-2 shrink-0">
         <div className="flex items-center gap-2">
@@ -125,49 +93,11 @@ export function CliGrid({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {onInstallAllMissing && (
-            <Tooltip text="Install all CLIs that are not yet installed">
-              <Button variant="secondary" size="sm" icon={<Download size={14} />} onClick={onInstallAllMissing} aria-label="Install all missing">
-                Install All
-              </Button>
-            </Tooltip>
-          )}
           <Button variant="secondary" size="sm" icon={<Plus size={14} />} onClick={onOpenCatalog} aria-label="Browse CLI catalog">
             Catalog
           </Button>
         </div>
       </div>
-
-      {/* Favorites section */}
-      {favorites.length > 0 && search === '' && (
-        <>
-          <div className="flex items-center gap-2 px-1 pb-1.5 shrink-0">
-            <Star size={11} className="text-warning" />
-            <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">Favorites</span>
-          </div>
-          <div className="flex flex-col gap-2 mb-3">
-            {clis.filter((c) => favorites.includes(c.id)).map((cli) => (
-              <CliCard
-                key={cli.id}
-                cli={cli}
-                state={states[cli.id] ?? null}
-                index={-1}
-                count={getCount(cli.id)}
-                isFavorite={true}
-                onCountChange={(delta) => onUpdateCount(cli.id, delta)}
-                onLaunch={() => onLaunch(cli.id, getCount(cli.id))}
-                onToggleFavorite={() => onToggleFavorite(cli.id)}
-                onChanged={onCliChanged}
-                onDragStart={() => {}}
-                onDragOver={() => {}}
-                onDrop={() => {}}
-                justInstalled={justInstalled}
-                onToast={onToast}
-              />
-            ))}
-          </div>
-        </>
-      )}
 
       {/* CLI Rows */}
       <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto pr-0.5 -mr-0.5" role="list" aria-label="Installed CLI tools">
@@ -191,10 +121,8 @@ export function CliGrid({
             state={states[cli.id] ?? null}
             index={index}
             count={getCount(cli.id)}
-            isFavorite={favorites.includes(cli.id)}
             onCountChange={(delta) => onUpdateCount(cli.id, delta)}
             onLaunch={() => onLaunch(cli.id, getCount(cli.id))}
-            onToggleFavorite={() => onToggleFavorite(cli.id)}
             onChanged={onCliChanged}
             onDragStart={(e) => handleDragStart(e, index)}
             onDragOver={(e) => handleDragOver(e, index)}
