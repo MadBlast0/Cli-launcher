@@ -12,6 +12,7 @@ export interface CliDefinition {
   homepage?: string
   skipPermissions: boolean
   skipPermissionsFlag?: string
+  wslExecutable?: boolean
 }
 
 export interface CliState {

@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Terminal, ChevronDown } from 'lucide-react'
 import { LauncherWindow } from './components/layouts/LauncherWindow'
 import { CliGrid } from './components/cli/CliGrid'
 import { CliCatalog } from './components/cli/CliCatalog'
 import { FolderPicker } from './components/cli/FolderPicker'
-import { Dropdown } from './components/ui/Dropdown'
 import { DependencyModal } from './components/installer/DependencyModal'
 import { Loader } from './components/ui/Loader'
 import { ToastContainer } from './components/ui/Toast'
@@ -26,6 +26,7 @@ export default function App() {
   const [favorites, setFavorites] = useState<string[]>([])
   const [cliOrder, setCliOrder] = useState<string[]>([])
   const [terminalEmulator, setTerminalEmulator] = useState<string | undefined>(undefined)
+  const [availableTerminals, setAvailableTerminals] = useState<{ value: string; label: string }[]>([])
 
   const addToast = useCallback((message: string, type: ToastType = 'info') => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -69,6 +70,7 @@ export default function App() {
   useEffect(() => {
     window.electronAPI.getClis().then(setClis)
     window.electronAPI.checkDependencies().then(setDeps)
+    window.electronAPI.getAvailableTerminals().then(setAvailableTerminals)
     loadStates()
     loadSettings()
   }, [loadStates, loadSettings])
@@ -222,23 +224,11 @@ export default function App() {
     <LauncherWindow isDark={theme === 'dark'} onToggleTheme={toggleTheme}>
       <div className="px-4 pt-3 pb-2 shrink-0 flex items-center gap-2">
         <FolderPicker />
-        <div className="min-w-[120px]">
-          <Dropdown
-            options={[
-              { value: '', label: 'Auto' },
-              { value: 'cmd', label: 'CMD' },
-              { value: 'wt', label: 'Windows Terminal' },
-              { value: 'terminal', label: 'Terminal.app' },
-              { value: 'iterm', label: 'iTerm2' },
-              { value: 'gnome-terminal', label: 'GNOME Terminal' },
-              { value: 'konsole', label: 'Konsole' },
-              { value: 'xterm', label: 'XTerm' },
-            ]}
-            value={terminalEmulator || ''}
-            onChange={handleTerminalChange}
-            placeholder="Auto"
-          />
-        </div>
+        <TerminalPicker
+          options={availableTerminals}
+          value={terminalEmulator || ''}
+          onChange={handleTerminalChange}
+        />
       </div>
 
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
@@ -285,5 +275,63 @@ export default function App() {
       )}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </LauncherWindow>
+  )
+}
+
+function TerminalPicker({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: string; label: string }[]
+  value: string
+  onChange: (v: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const selected = options.find((o) => o.value === value)
+  const display = selected?.label || 'Auto'
+
+  return (
+    <div ref={ref} className="relative w-[140px] shrink-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="mac-input w-full flex items-center gap-2.5 px-3 py-2.5 text-left group hover:border-border-strong transition-colors"
+      >
+        <span className="flex items-center justify-center w-6 h-6 rounded-none bg-muted text-muted-foreground shrink-0 group-hover:text-foreground transition-colors">
+          <Terminal size={13} />
+        </span>
+        <div className="flex flex-col min-w-0 flex-1">
+          <span className="text-[10px] font-medium tracking-wide text-muted-foreground">Terminal</span>
+          <span className="text-[12px] font-mono truncate text-foreground">{display}</span>
+        </div>
+        <ChevronDown size={10} className={`text-muted-foreground shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute z-50 top-full left-0 right-0 mt-1 mac-surface bg-popover text-popover-foreground p-1 anim-pop max-h-48 overflow-y-auto">
+          {options.map((opt) => (
+            <button
+              key={opt.value}
+              className={`w-full text-left px-2.5 py-1.5 text-[12px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors ${
+                value === opt.value ? 'bg-accent-soft text-primary' : ''
+              }`}
+              onClick={() => { onChange(opt.value); setOpen(false) }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   )
 }

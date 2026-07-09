@@ -15,6 +15,7 @@ const api = {
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (settings: AppSettings) => ipcRenderer.invoke('settings:save', settings),
   installAllMissing: () => ipcRenderer.invoke('cli:install-all-missing'),
+  getAvailableTerminals: () => ipcRenderer.invoke('terminal:get-available'),
   minimizeWindow: () => ipcRenderer.send('window:minimize'),
   closeWindow: () => ipcRenderer.send('window:close'),
   minimizeToTray: () => ipcRenderer.send('window:minimize-to-tray'),

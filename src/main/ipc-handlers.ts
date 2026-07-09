@@ -1,6 +1,6 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
-import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate } from './cli-engine'
+import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate, detectAvailableTerminals } from './cli-engine'
 import { checkDependencies, installNode, installPython } from './dependency-manager'
 import { getCliRegistry } from '../cli-registry'
 import { CliAction, CliState, CliDefinition, AppSettings } from '../shared/types'
@@ -68,16 +68,23 @@ function saveFolder(folder: string) {
   } catch { /* ignore */ }
 }
 
-async function checkCliStatus(cliId: string, executable: string): Promise<CliState> {
+async function checkCliStatus(cli: CliDefinition): Promise<CliState> {
   try {
     const version = await new Promise<string>((resolve) => {
-      const which = isWindows ? 'where' : 'which'
-      exec(`${which} ${executable}`, { timeout: 5000 }, (err) => {
-        if (err) { resolve(''); return }
-        exec(`${executable} --version`, { timeout: 5000 }, (_err, stdout) => {
+      if (cli.wslExecutable && isWindows) {
+        exec(`wsl -e bash -lc "${cli.executable} --version"`, { timeout: 10000 }, (err, stdout) => {
+          if (err) { resolve(''); return }
           resolve(stdout.trim().split('\n')[0] || 'installed')
         })
-      })
+      } else {
+        const which = isWindows ? 'where' : 'which'
+        exec(`${which} ${cli.executable}`, { timeout: 5000 }, (err) => {
+          if (err) { resolve(''); return }
+          exec(`${cli.executable} --version`, { timeout: 5000 }, (_err, stdout) => {
+            resolve(stdout.trim().split('\n')[0] || 'installed')
+          })
+        })
+      }
     })
     if (!version) return { status: 'not-installed' }
     return { status: 'installed', version }
@@ -91,7 +98,7 @@ async function refreshAllStates(registry: CliDefinition[], sender: Electron.WebC
 
   await Promise.all(
     registry.map(async (cli) => {
-      const state = await checkCliStatus(cli.id, cli.executable)
+      const state = await checkCliStatus(cli)
       freshStates[cli.id] = state
       cliStatusCache.set(cli.id, state)
       try { sender.send('cli:state-updated', cli.id, state) } catch { /* window closed */ }
@@ -107,7 +114,7 @@ export function registerIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.GET_CLI_STATE, async (_event, cliId: string) => {
     const cli = getCliRegistry().find((c) => c.id === cliId)
     if (!cli) return null
-    const state = await checkCliStatus(cliId, cli.executable)
+    const state = await checkCliStatus(cli)
     cliStatusCache.set(cliId, state)
     return state
   })
@@ -136,7 +143,7 @@ export function registerIpcHandlers() {
 
     const result = await executeCliAction(cliId, action)
     if (result.success) {
-      const newState = await checkCliStatus(cliId, cli.executable)
+      const newState = await checkCliStatus(cli)
       cliStatusCache.set(cliId, newState)
     }
     return result
@@ -192,14 +199,18 @@ export function registerIpcHandlers() {
     const registry = getCliRegistry()
     const results: { id: string; name: string; success: boolean; error?: string }[] = []
     for (const cli of registry) {
-      const state = await checkCliStatus(cli.id, cli.executable)
+      const state = await checkCliStatus(cli)
       if (state.status === 'not-installed') {
         const result = await executeCliAction(cli.id, 'install')
         results.push({ id: cli.id, name: cli.name, success: result.success, error: result.error })
-        try { event.sender.send('cli:state-updated', cli.id, await checkCliStatus(cli.id, cli.executable)) } catch { /* ignore */ }
+        try { event.sender.send('cli:state-updated', cli.id, await checkCliStatus(cli)) } catch { /* ignore */ }
       }
     }
     return results
+  })
+
+  ipcMain.handle(IPC_CHANNELS.GET_AVAILABLE_TERMINALS, async () => {
+    return await detectAvailableTerminals()
   })
 
   ipcMain.on('window:close', () => {

@@ -2,11 +2,71 @@ import { execFile, spawn, exec } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
+import { promisify } from 'util'
 import { app } from 'electron'
 import { CliAction, CliActionResult, CliDefinition } from '../shared/types'
 
 const isWindows = os.platform() === 'win32'
 const isMac = os.platform() === 'darwin'
+const execFileAsync = promisify(execFile)
+
+async function checkOnPath(exe: string): Promise<boolean> {
+  try {
+    const cmd = isWindows ? 'where.exe' : 'which'
+    await execFileAsync(cmd, [exe])
+    return true
+  } catch {
+    return false
+  }
+}
+
+const WINDOWS_TERMINALS: { exe: string; value: string; label: string }[] = [
+  { exe: 'wt.exe', value: 'wt', label: 'Windows Terminal' },
+  { exe: 'pwsh.exe', value: 'pwsh', label: 'PowerShell 7' },
+  { exe: 'powershell.exe', value: 'powershell', label: 'Windows PowerShell' },
+  { exe: 'alacritty.exe', value: 'alacritty', label: 'Alacritty' },
+  { exe: 'wezterm.exe', value: 'wezterm', label: 'WezTerm' },
+  { exe: 'hyper.exe', value: 'hyper', label: 'Hyper' },
+  { exe: 'tabby.exe', value: 'tabby', label: 'Tabby' },
+]
+
+const WINDOWS_TERMINAL_FALLBACK_PATHS: { exe: string; lookup: string; value: string; label: string }[] = [
+  {
+    exe: 'wt.exe',
+    lookup: path.join(process.env['LOCALAPPDATA'] || '', 'Microsoft', 'WindowsApps', 'wt.exe'),
+    value: 'wt',
+    label: 'Windows Terminal',
+  },
+  {
+    exe: 'wt.exe',
+    lookup: path.join(process.env['ProgramFiles'] || 'C:\\Program Files', 'WindowsApps', 'wt.exe'),
+    value: 'wt',
+    label: 'Windows Terminal',
+  },
+]
+
+const MAC_TERMINALS: { path: string; value: string; label: string }[] = [
+  { path: '/Applications/iTerm.app', value: 'iterm', label: 'iTerm2' },
+  { path: '/Applications/Warp.app', value: 'warp', label: 'Warp' },
+  { path: '/Applications/Alacritty.app', value: 'alacritty', label: 'Alacritty' },
+  { path: '/Applications/Hyper.app', value: 'hyper', label: 'Hyper' },
+  { path: '/Applications/Kitty.app', value: 'kitty', label: 'Kitty' },
+  { path: '/Applications/WezTerm.app', value: 'wezterm', label: 'WezTerm' },
+  { path: '/Applications/Tabby.app', value: 'tabby', label: 'Tabby' },
+]
+
+const LINUX_TERMINALS: { exe: string; value: string; label: string }[] = [
+  { exe: 'x-terminal-emulator', value: 'x-terminal-emulator', label: 'X Terminal' },
+  { exe: 'gnome-terminal', value: 'gnome-terminal', label: 'GNOME Terminal' },
+  { exe: 'konsole', value: 'konsole', label: 'Konsole' },
+  { exe: 'xterm', value: 'xterm', label: 'XTerm' },
+  { exe: 'alacritty', value: 'alacritty', label: 'Alacritty' },
+  { exe: 'kitty', value: 'kitty', label: 'Kitty' },
+  { exe: 'tilix', value: 'tilix', label: 'Tilix' },
+  { exe: 'terminator', value: 'terminator', label: 'Terminator' },
+  { exe: 'wezterm', value: 'wezterm', label: 'WezTerm' },
+  { exe: 'hyper', value: 'hyper', label: 'Hyper' },
+]
 
 function getAppRoot(): string {
   if (app.isPackaged) {
@@ -46,20 +106,22 @@ function runScript(scriptPath: string): Promise<CliActionResult> {
 
 function detectTerminalEmulator(): string {
   if (isWindows) {
-    const wt = process.env.WT_SESSION ? 'wt' : null
-    const programFiles = process.env['ProgramFiles'] || 'C:\\Program Files'
-    const wtPath = path.join(programFiles, 'WindowsApps', 'wt.exe')
-    if (wt || fs.existsSync(wtPath)) return 'wt'
+    if (process.env.WT_SESSION) return 'wt'
+    for (const t of WINDOWS_TERMINALS) {
+      if (t.value === 'wt' && fs.existsSync(
+        path.join(process.env['LOCALAPPDATA'] || '', 'Microsoft', 'WindowsApps', 'wt.exe')
+      )) return 'wt'
+    }
     return 'cmd'
   }
   if (isMac) {
-    const iterm = '/Applications/iTerm.app/Contents/MacOS/iTerm2'
-    if (fs.existsSync(iterm)) return 'iterm'
+    for (const t of MAC_TERMINALS) {
+      if (fs.existsSync(t.path)) return t.value
+    }
     return 'terminal'
   }
-  const terminals = ['x-terminal-emulator', 'gnome-terminal', 'konsole', 'xterm']
-  for (const t of terminals) {
-    if (fs.existsSync(`/usr/bin/${t}`)) return t
+  for (const t of LINUX_TERMINALS) {
+    if (fs.existsSync(`/usr/bin/${t.exe}`) || fs.existsSync(`/usr/local/bin/${t.exe}`)) return t.value
   }
   return 'xterm'
 }
@@ -74,20 +136,39 @@ export function openCli(cli: CliDefinition, folder: string | null, terminalOverr
     const terminal = terminalOverride || detectTerminalEmulator()
 
     if (isWindows) {
-      const inner = folder
-        ? `Set-Location -LiteralPath "${folder}"; ${exeCmd}`
-        : exeCmd
+      if (cli.wslExecutable) {
+        const wslDir = folder ? `cd '${folder.replace(/\\/g, '/')}' && ` : ''
+        const wslCmd = `${wslDir}${exeCmd}`
 
-      if (terminal === 'wt') {
-        spawn('wt.exe', ['-d', folder || process.env.USERPROFILE || '', 'powershell', '-NoExit', '-Command', inner], { detached: true, stdio: 'ignore' }).unref()
+        if (terminal === 'wt') {
+          spawn('wt.exe', ['-d', folder || process.env.USERPROFILE || '', 'wsl', '-e', 'bash', '-lc', wslCmd], { detached: true, stdio: 'ignore' }).unref()
+        } else if (terminal === 'pwsh') {
+          spawn('pwsh.exe', ['-NoExit', '-Command', `wsl -e bash -lc "${wslCmd.replace(/"/g, '\\"')}"`], { cwd: folder || undefined, detached: true, stdio: 'ignore' }).unref()
+        } else {
+          spawn('cmd.exe', ['/c', 'start', '', 'wsl', '-e', 'bash', '-lc', wslCmd], { detached: true, stdio: 'ignore', windowsHide: false }).unref()
+        }
       } else {
-        spawn('cmd.exe', ['/c', 'start', '', 'powershell', '-NoExit', '-Command', inner], { detached: true, stdio: 'ignore', windowsHide: false }).unref()
+        const inner = folder
+          ? `Set-Location -LiteralPath "${folder}"; ${exeCmd}`
+          : exeCmd
+
+        if (terminal === 'wt') {
+          spawn('wt.exe', ['-d', folder || process.env.USERPROFILE || '', 'powershell', '-NoExit', '-Command', inner], { detached: true, stdio: 'ignore' }).unref()
+        } else if (terminal === 'pwsh') {
+          spawn('pwsh.exe', ['-NoExit', '-Command', inner], { cwd: folder || undefined, detached: true, stdio: 'ignore' }).unref()
+        } else {
+          spawn('cmd.exe', ['/c', 'start', '', 'powershell', '-NoExit', '-Command', inner], { detached: true, stdio: 'ignore', windowsHide: false }).unref()
+        }
       }
     } else if (isMac) {
       const inner = folder ? `cd "${folder}" && ${exeCmd}` : exeCmd
       if (terminal === 'iterm') {
         const script = `tell application "iTerm" to create window with default profile command "${inner.replace(/"/g, '\\"')}"`
         spawn('osascript', ['-e', script], { detached: true, stdio: 'ignore' }).unref()
+      } else if (terminal === 'warp') {
+        spawn('open', ['-a', 'Warp', inner], { detached: true, stdio: 'ignore' }).unref()
+      } else if (terminal === 'alacritty') {
+        spawn('/Applications/Alacritty.app/Contents/MacOS/alacritty', ['-e', 'bash', '-c', inner], { detached: true, stdio: 'ignore' }).unref()
       } else {
         const script = `tell application "Terminal" to do script "${inner.replace(/"/g, '\\"')}"`
         spawn('osascript', ['-e', script], { detached: true, stdio: 'ignore' }).unref()
@@ -212,7 +293,10 @@ export async function checkStandaloneUpdate(
 
   try {
     const current = await new Promise<string>((resolve) => {
-      exec(`${cli.executable} --version`, { timeout: 5000 }, (_err, stdout) => {
+      const cmd = cli.wslExecutable && isWindows
+        ? `wsl -e bash -lc "${cli.executable} --version"`
+        : `${cli.executable} --version`
+      exec(cmd, { timeout: 5000 }, (_err, stdout) => {
         resolve(stdout.trim().split('\n')[0] || '')
       })
     })
@@ -235,6 +319,62 @@ export async function executeCliAction(cliId: string, action: CliAction): Promis
       error: err instanceof Error ? err.message : 'Unknown error',
     }
   }
+}
+
+export async function detectAvailableTerminals(): Promise<{ value: string; label: string }[]> {
+  const terminals: { value: string; label: string }[] = [{ value: '', label: 'Auto' }]
+  const seen = new Set<string>()
+
+  if (isWindows) {
+    terminals.push({ value: 'cmd', label: 'CMD' })
+    seen.add('cmd')
+
+    for (const t of WINDOWS_TERMINALS) {
+      if (seen.has(t.value)) continue
+      if (await checkOnPath(t.exe)) {
+        terminals.push({ value: t.value, label: t.label })
+        seen.add(t.value)
+      }
+    }
+
+    for (const t of WINDOWS_TERMINAL_FALLBACK_PATHS) {
+      if (seen.has(t.value)) continue
+      if (fs.existsSync(t.lookup)) {
+        terminals.push({ value: t.value, label: t.label })
+        seen.add(t.value)
+      }
+    }
+  } else if (isMac) {
+    terminals.push({ value: 'terminal', label: 'Terminal.app' })
+    seen.add('terminal')
+
+    for (const t of MAC_TERMINALS) {
+      if (seen.has(t.value)) continue
+      if (fs.existsSync(t.path)) {
+        terminals.push({ value: t.value, label: t.label })
+        seen.add(t.value)
+      }
+    }
+
+    for (const t of MAC_TERMINALS) {
+      if (seen.has(t.value)) continue
+      if (await checkOnPath(t.value)) {
+        terminals.push({ value: t.value, label: t.label })
+        seen.add(t.value)
+      }
+    }
+  } else {
+    for (const t of LINUX_TERMINALS) {
+      if (seen.has(t.value)) continue
+      if (await checkOnPath(t.exe) ||
+          fs.existsSync(`/usr/bin/${t.exe}`) ||
+          fs.existsSync(`/usr/local/bin/${t.exe}`)) {
+        terminals.push({ value: t.value, label: t.label })
+        seen.add(t.value)
+      }
+    }
+  }
+  return terminals
 }
 
 export { isWindows }

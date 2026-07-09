@@ -1,5 +1,10 @@
 import type { CliDefinition, CliState, CliActionResult, DependencyCheck, AppSettings } from '@shared/types'
 
+interface TerminalOption {
+  value: string
+  label: string
+}
+
 declare global {
   interface Window {
     electronAPI: {
@@ -16,6 +21,7 @@ declare global {
       getSettings: () => Promise<AppSettings>
       saveSettings: (settings: AppSettings) => Promise<void>
       installAllMissing: () => Promise<{ id: string; name: string; success: boolean; error?: string }[]>
+      getAvailableTerminals: () => Promise<TerminalOption[]>
       minimizeWindow: () => void
       closeWindow: () => void
       minimizeToTray: () => void

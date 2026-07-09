@@ -114,10 +114,10 @@ The macOS universal binaries (fat binaries containing both x64 and arm64 slices)
 
 ## Star History
 
-<a href="https://star-history.com/#MadBlast0/Cli-launcher&Date">
+<a href="https://www.star-history.com/?repos=MadBlast0%2FCli-launcher&type=date&legend=top-left">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=MadBlast0/Cli-launcher&type=Date&theme=dark" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MadBlast0/Cli-launcher&type=Date" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=MadBlast0/Cli-launcher&type=date&theme=dark" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MadBlast0/Cli-launcher&type=date" />
   </picture>
 </a>
 
