@@ -27,9 +27,23 @@ export function buildPSCommand(exe: string, args: string[], folder: string | nul
   return `${dir}& ${tokens}`
 }
 
+/**
+ * Convert a Windows path to the WSL mount path bash can `cd` into, e.g.
+ * `C:\Users\x` → `/mnt/c/Users/x`. A path that is already POSIX-style (or has
+ * no drive letter) only gets its separators normalised. Without this the inner
+ * `cd 'C:/…'` fails inside WSL and the `&&`-chained launch never runs.
+ */
+export function toWslPath(p: string): string {
+  const drive = p.match(/^([A-Za-z]):[\\/](.*)$/)
+  if (drive) {
+    return `/mnt/${drive[1].toLowerCase()}/${drive[2].replace(/\\/g, '/')}`
+  }
+  return p.replace(/\\/g, '/')
+}
+
 /** Build a WSL bash command-string (POSIX-quoted, single argument to bash -lc). */
 export function buildWSLCommand(exe: string, args: string[], folder: string | null): string {
-  const dir = folder ? `cd ${qSH(folder.replace(/\\/g, '/'))} && ` : ''
+  const dir = folder ? `cd ${qSH(toWslPath(folder))} && ` : ''
   const tokens = [exe, ...args].map(qSH).join(' ')
   return `${dir}${tokens}`
 }

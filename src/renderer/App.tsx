@@ -11,7 +11,7 @@ import type { CliDefinition, DependencyCheck, CliCount, CliState, AppSettings } 
 import type { Toast, ToastType } from './components/ui/Toast'
 
 export default function App() {
-  const { theme, toggleTheme, setTheme } = useTheme()
+  const { theme, toggleTheme } = useTheme()
   const [loaded, setLoaded] = useState(false)
   const [statesLoading, setStatesLoading] = useState(true)
   const [clis, setClis] = useState<CliDefinition[]>([])
@@ -71,27 +71,35 @@ export default function App() {
       const settings = await window.electronAPI.getSettings()
       if (settings.favorites) setFavorites(settings.favorites)
       if (settings.cliOrder) setCliOrder(settings.cliOrder)
-      if (settings.theme) setTheme(settings.theme)
+      // Theme is owned by useTheme (localStorage) as the single source of
+      // truth; it also persists into settings, so we don't re-apply it here.
     } catch { /* ignore */ }
-  }, [setTheme])
+  }, [])
 
+  // Send only the changed keys; the main process merges them into the stored
+  // settings. Doing the merge in one place (there) avoids a renderer-side
+  // read-modify-write race between concurrent saves (e.g. order + favorites).
   const saveSettings = useCallback(async (updates: Partial<AppSettings>) => {
     try {
-      const current = await window.electronAPI.getSettings()
-      const merged = { ...current, ...updates }
-      await window.electronAPI.saveSettings(merged)
+      await window.electronAPI.saveSettings(updates)
     } catch { /* ignore */ }
   }, [])
 
   useEffect(() => {
     // Show the app as soon as the CLI list is available — never block the
-    // loader on the (potentially slow) status detection IPC.
-    window.electronAPI.getClis().then(setClis).then(() => setLoaded(true))
-    window.electronAPI.checkDependencies().then(setDeps)
+    // loader on the (potentially slow) status detection IPC. Always clear the
+    // loader even if the list IPC rejects, so a failure can't strand the app
+    // on the spinner forever.
+    window.electronAPI
+      .getClis()
+      .then(setClis)
+      .catch(() => addToast('Failed to load CLI list', 'error'))
+      .finally(() => setLoaded(true))
+    window.electronAPI.checkDependencies().then(setDeps).catch(() => {})
     loadStates()      // instant cache paint
     refreshStates()   // background fresh detection
     loadSettings()
-  }, [loadStates, refreshStates, loadSettings])
+  }, [loadStates, refreshStates, loadSettings, addToast])
 
   // Coalesce the burst of per-CLI state updates that arrive during a refresh
   // into a single render per animation frame (avoids ~36 back-to-back renders
@@ -113,37 +121,6 @@ export default function App() {
       cleanup()
     }
   }, [])
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
-        return
-      }
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'f') {
-          e.preventDefault()
-          const input = document.querySelector<HTMLInputElement>('input[type="text"]')
-          input?.focus()
-        } else if (e.key === 'd') {
-          e.preventDefault()
-          setShowDeps(true)
-        } else if (e.key >= '1' && e.key <= '9') {
-          const idx = parseInt(e.key, 10) - 1
-          const installed = clis.filter(
-            (cli) => states[cli.id]?.status === 'installed' || states[cli.id]?.status === 'update-available'
-          )
-          if (installed[idx]) {
-            e.preventDefault()
-            handleLaunch(installed[idx].id, 1)
-          }
-        }
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [clis, states])
 
   const isInstalled = (cliId: string) =>
     states[cliId]?.status === 'installed' || states[cliId]?.status === 'update-available'
@@ -170,6 +147,11 @@ export default function App() {
   // The grid renders a filtered subset, so the drag indices are positions
   // within `filtered`. Translate them to CLI ids and reorder the full global
   // order, otherwise the wrong items move whenever a filter/search is active.
+  // This only updates in-memory state (called live during drag); persistence
+  // happens once on drop via handleReorderCommit.
+  const cliOrderRef = useRef<string[]>([])
+  useEffect(() => { cliOrderRef.current = cliOrder }, [cliOrder])
+
   const handleReorder = (fromIndex: number, toIndex: number) => {
     const fromId = filtered[fromIndex]?.id
     const toId = filtered[toIndex]?.id
@@ -183,8 +165,11 @@ export default function App() {
     fullOrder.splice(fi, 1)
     fullOrder.splice(ti, 0, fromId)
     setCliOrder(fullOrder)
-    saveSettings({ cliOrder: fullOrder })
   }
+
+  const handleReorderCommit = useCallback(() => {
+    saveSettings({ cliOrder: cliOrderRef.current })
+  }, [saveSettings])
 
   const handleToggleFavorite = (cliId: string) => {
     setFavorites((prev) => {
@@ -196,7 +181,7 @@ export default function App() {
     })
   }
 
-  const handleLaunch = async (cliId: string, count: number) => {
+  const handleLaunch = useCallback(async (cliId: string, count: number) => {
     const cli = clis.find((c) => c.id === cliId)
     if (!cli) return
     for (let i = 0; i < count; i++) {
@@ -205,7 +190,7 @@ export default function App() {
         addToast(result.error || 'Failed to launch', 'error')
       }
     }
-  }
+  }, [clis, addToast])
 
   // CliCard performs the repair/update itself (with its own toast + busy
   // state); these callbacks let it notify the app afterwards so the shared
@@ -218,29 +203,60 @@ export default function App() {
     window.electronAPI.getCliState(cliId).catch(() => {})
   }
 
-  // Apply cliOrder to the list (memoized so it only recomputes when the list
-  // or the saved order actually changes).
+  // Keyboard shortcuts. Declared after handleLaunch/getCount so it can list
+  // them as dependencies (avoids a stale-closure hazard) and honour the
+  // per-CLI launch count instead of always opening a single terminal.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return
+      }
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'f') {
+          e.preventDefault()
+          const input = document.querySelector<HTMLInputElement>('input[type="text"]')
+          input?.focus()
+        } else if (e.key === 'd') {
+          e.preventDefault()
+          setShowDeps(true)
+        } else if (e.key >= '1' && e.key <= '9') {
+          const idx = parseInt(e.key, 10) - 1
+          const installed = clis.filter(
+            (cli) => states[cli.id]?.status === 'installed' || states[cli.id]?.status === 'update-available'
+          )
+          if (installed[idx]) {
+            e.preventDefault()
+            handleLaunch(installed[idx].id, getCount(installed[idx].id))
+          }
+        }
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [clis, states, handleLaunch, getCount])
+
+  // Order the list favorites-first, then by the saved manual order (memoized so
+  // it only recomputes when the list, saved order, or favorites change).
   const orderedClis = useMemo(() => {
     const copy = [...clis]
-    if (cliOrder.length > 0) {
-      const orderMap = new Map(cliOrder.map((id, i) => [id, i]))
-      copy.sort((a, b) => {
+    const favSet = new Set(favorites)
+    const orderMap = cliOrder.length > 0 ? new Map(cliOrder.map((id, i) => [id, i])) : null
+    copy.sort((a, b) => {
+      const fa = favSet.has(a.id) ? 0 : 1
+      const fb = favSet.has(b.id) ? 0 : 1
+      if (fa !== fb) return fa - fb
+      if (orderMap) {
         const ai = orderMap.get(a.id)
         const bi = orderMap.get(b.id)
         if (ai !== undefined && bi !== undefined) return ai - bi
         if (ai !== undefined) return -1
         if (bi !== undefined) return 1
-        return 0
-      })
-    }
+      }
+      return 0
+    })
     return copy
-  }, [clis, cliOrder])
-
-  // Favorites first, then the rest — kept for the ordering the grid consumes.
-  const sortedFavoriteIds = useMemo(
-    () => [...favorites].sort((a, b) => a.localeCompare(b)),
-    [favorites]
-  )
+  }, [clis, cliOrder, favorites])
 
   // Main page shows only CLIs already installed, then applies the search.
   const filtered = useMemo(() => {
@@ -270,6 +286,7 @@ export default function App() {
           onRepair={handleRepair}
           onUpdate={handleUpdate}
           onReorder={handleReorder}
+          onReorderCommit={handleReorderCommit}
           onOpenDeps={() => setShowDeps(true)}
           onOpenCatalog={() => setShowCatalog(true)}
           onCliChanged={refreshStates}

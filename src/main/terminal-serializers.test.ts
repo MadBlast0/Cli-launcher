@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { qPS, qSH, qCMD, buildPSCommand, buildWSLCommand } from './terminal-serializers'
+import { qPS, qSH, qCMD, buildPSCommand, buildWSLCommand, toWslPath } from './terminal-serializers'
 
 // ---------------------------------------------------------------------------
 // PowerShell quoting
@@ -165,8 +165,33 @@ describe('buildWSLCommand', () => {
     expect(result).toBe("cd '/mnt/c/John'\"'\"'s App' && 'codebuff'")
   })
 
-  it('converts backslashes to forward slashes in folder', () => {
+  it('converts a Windows drive path to a WSL mount path', () => {
     const result = buildWSLCommand('codebuff', [], 'C:\\My Project')
-    expect(result).toBe("cd 'C:/My Project' && 'codebuff'")
+    expect(result).toBe("cd '/mnt/c/My Project' && 'codebuff'")
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Windows → WSL path conversion (toWslPath)
+// ---------------------------------------------------------------------------
+describe('toWslPath', () => {
+  it('maps a Windows drive path to /mnt/<drive>', () => {
+    expect(toWslPath('C:\\Users\\me\\proj')).toBe('/mnt/c/Users/me/proj')
+  })
+
+  it('lowercases the drive letter', () => {
+    expect(toWslPath('D:\\Work')).toBe('/mnt/d/Work')
+  })
+
+  it('handles a drive path that already uses forward slashes', () => {
+    expect(toWslPath('C:/foo/bar')).toBe('/mnt/c/foo/bar')
+  })
+
+  it('leaves an existing POSIX path unchanged', () => {
+    expect(toWslPath('/mnt/c/foo')).toBe('/mnt/c/foo')
+  })
+
+  it('normalises separators for a driveless path', () => {
+    expect(toWslPath('relative\\path')).toBe('relative/path')
   })
 })

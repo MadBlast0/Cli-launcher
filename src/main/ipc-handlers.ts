@@ -1,6 +1,7 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
 import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate } from './cli-engine'
+import { qSH } from './terminal-serializers'
 import { checkDependencies, installNode, installPython } from './dependency-manager'
 import { getCliRegistry } from '../cli-registry'
 import { CliAction, CliState, CliDefinition, AppSettings, LaunchCliRequest, LaunchErrorCode } from '../shared/types'
@@ -93,43 +94,57 @@ const PKG_CACHE_TTL = 60000
 let npmGlobalCache: { data: Set<string> | null; ts: number } = { data: null, ts: 0 }
 let pipGlobalCache: { data: Set<string> | null; ts: number } = { data: null, ts: 0 }
 
+// `npm ls -g --json` / `pip list --json` routinely exceed the 1 MB default
+// stdout buffer on machines with many global packages; without a raised
+// maxBuffer the child errors with ENOBUFS, every CLI is misreported as
+// not-installed, and (previously) that empty result was cached for the full
+// TTL. We now use a generous buffer and only cache a *successful* parse so a
+// transient failure retries on the next call instead of poisoning the cache.
+const PKG_MAX_BUFFER = 16 * 1024 * 1024
+
 async function npmGlobalPackages(): Promise<Set<string>> {
   if (npmGlobalCache.data && Date.now() - npmGlobalCache.ts < PKG_CACHE_TTL) {
     return npmGlobalCache.data
   }
-  const set = await new Promise<Set<string>>((resolve) => {
-    exec('npm ls -g --depth=0 --json', { timeout: 20000 }, (_err, stdout) => {
-      const s = new Set<string>()
+  const result = await new Promise<Set<string> | null>((resolve) => {
+    // `npm ls -g` exits non-zero when there are peer-dep warnings even though
+    // it still prints valid JSON, so we parse stdout regardless of `err`.
+    exec('npm ls -g --depth=0 --json', { timeout: 20000, maxBuffer: PKG_MAX_BUFFER }, (_err, stdout) => {
+      if (!stdout) { resolve(null); return }
       try {
-        const json = JSON.parse(stdout || '{}')
+        const json = JSON.parse(stdout)
         const deps = json.dependencies || {}
-        for (const name of Object.keys(deps)) s.add(name)
-      } catch { /* ignore */ }
-      resolve(s)
+        resolve(new Set<string>(Object.keys(deps)))
+      } catch { resolve(null) }
     })
   })
-  npmGlobalCache.data = set
-  npmGlobalCache.ts = Date.now()
-  return set
+  if (result) {
+    npmGlobalCache.data = result
+    npmGlobalCache.ts = Date.now()
+    return result
+  }
+  return npmGlobalCache.data ?? new Set<string>()
 }
 
 async function pipGlobalPackages(): Promise<Set<string>> {
   if (pipGlobalCache.data && Date.now() - pipGlobalCache.ts < PKG_CACHE_TTL) {
     return pipGlobalCache.data
   }
-  const set = await new Promise<Set<string>>((resolve) => {
-    exec('pip list --format=json', { timeout: 20000 }, (_err, stdout) => {
-      const s = new Set<string>()
+  const result = await new Promise<Set<string> | null>((resolve) => {
+    exec('pip list --format=json', { timeout: 20000, maxBuffer: PKG_MAX_BUFFER }, (_err, stdout) => {
+      if (!stdout) { resolve(null); return }
       try {
-        const list = JSON.parse(stdout || '[]')
-        for (const p of list) s.add(p.name)
-      } catch { /* ignore */ }
-      resolve(s)
+        const list = JSON.parse(stdout)
+        resolve(new Set<string>(list.map((p: { name: string }) => p.name)))
+      } catch { resolve(null) }
     })
   })
-  pipGlobalCache.data = set
-  pipGlobalCache.ts = Date.now()
-  return set
+  if (result) {
+    pipGlobalCache.data = result
+    pipGlobalCache.ts = Date.now()
+    return result
+  }
+  return pipGlobalCache.data ?? new Set<string>()
 }
 
 async function checkCliStatus(cli: CliDefinition): Promise<CliState> {
@@ -149,9 +164,9 @@ async function checkCliStatus(cli: CliDefinition): Promise<CliState> {
       }
     }
 
-    // 2) For WSL-only CLIs, try WSL first...
+    // 2) For WSL-only CLIs, try WSL first... (executable POSIX-quoted for bash)
     if (!version && cli.wslExecutable && isWindows) {
-      version = await getVersion(`wsl -e bash -lc "${cli.executable} --version"`)
+      version = await getVersion(`wsl -e bash -lc "${qSH(cli.executable)} --version"`)
     }
 
     // 3) ...then fall back to a native PATH lookup (fixes Amazon Q installed
@@ -226,6 +241,11 @@ export function registerIpcHandlers() {
 
   // --- Dedicated launch IPC with full runtime validation ---
   ipcMain.handle(IPC_CHANNELS.LAUNCH_CLI, async (_event, request: LaunchCliRequest) => {
+    // Guard against a null/non-object payload before touching its keys, so the
+    // handler always returns a structured error instead of throwing/rejecting.
+    if (!request || typeof request !== 'object') {
+      return { success: false, output: '', error: 'Request must be an object', errorCode: 'INVALID_REQUEST' as LaunchErrorCode }
+    }
     // Reject unexpected properties
     const allowed = new Set(['cliId', 'cwd', 'permissionMode'])
     for (const key of Object.keys(request)) {
@@ -264,9 +284,17 @@ export function registerIpcHandlers() {
     return openCli(cli, cwd, request.permissionMode)
   })
 
+  // Only these actions map to a real registry script. Validating against an
+  // allow-list stops a crafted `action` (e.g. `../../evil`) from being joined
+  // into the script path and executed (path traversal → arbitrary script run).
+  const VALID_ACTIONS = new Set<CliAction>(['install', 'update', 'uninstall', 'repair'])
+
   ipcMain.handle(IPC_CHANNELS.EXECUTE_ACTION, async (_event, cliId: string, action: CliAction) => {
     const cli = getCliRegistry().find((c) => c.id === cliId)
     if (!cli) return { success: false, output: '', error: 'Unknown CLI' }
+    if (!VALID_ACTIONS.has(action)) {
+      return { success: false, output: '', error: `Invalid action: ${String(action)}` }
+    }
 
     const result = await executeCliAction(cliId, action)
     if (result.success) {
@@ -291,7 +319,10 @@ export function registerIpcHandlers() {
 
   ipcMain.handle(IPC_CHANNELS.INSTALL_DEPENDENCY, async (_event, type: 'node' | 'python') => {
     if (type === 'node') return await installNode()
-    return await installPython()
+    if (type === 'python') return await installPython()
+    // Reject anything else so an unexpected value can't silently trigger the
+    // wrong (privileged) system installer.
+    throw new Error(`Invalid dependency type: ${String(type)}`)
   })
 
   ipcMain.handle(IPC_CHANNELS.SELECT_FOLDER, async () => {
@@ -310,10 +341,6 @@ export function registerIpcHandlers() {
     return getSavedFolder()
   })
 
-  ipcMain.handle(IPC_CHANNELS.SAVE_FOLDER, (_event, folder: string) => {
-    saveFolder(folder)
-  })
-
   ipcMain.handle(IPC_CHANNELS.GET_SETTINGS, () => {
     return readSettings()
   })
@@ -326,20 +353,6 @@ export function registerIpcHandlers() {
     writeSettings({ ...current, ...settings })
   })
 
-  ipcMain.handle(IPC_CHANNELS.INSTALL_ALL_MISSING, async (event) => {
-    const registry = getCliRegistry()
-    const results: { id: string; name: string; success: boolean; error?: string }[] = []
-    for (const cli of registry) {
-      const state = await checkCliStatus(cli)
-      if (state.status === 'not-installed') {
-        const result = await executeCliAction(cli.id, 'install')
-        results.push({ id: cli.id, name: cli.name, success: result.success, error: result.error })
-        try { event.sender.send('cli:state-updated', cli.id, await checkCliStatus(cli)) } catch { /* ignore */ }
-      }
-    }
-    return results
-  })
-
   ipcMain.on('window:close', () => {
     const win = BrowserWindow.getAllWindows()[0]
     if (win) win.close()
@@ -348,10 +361,5 @@ export function registerIpcHandlers() {
   ipcMain.on('window:minimize', () => {
     const win = BrowserWindow.getAllWindows()[0]
     if (win) win.minimize()
-  })
-
-  ipcMain.on('window:minimize-to-tray', () => {
-    const win = BrowserWindow.getAllWindows()[0]
-    if (win) win.hide()
   })
 }

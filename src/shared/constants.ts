@@ -8,11 +8,8 @@ export const IPC_CHANNELS = {
   INSTALL_DEPENDENCY: 'deps:install',
   SELECT_FOLDER: 'folder:select',
   GET_SAVED_FOLDER: 'folder:get-saved',
-  SAVE_FOLDER: 'folder:save',
   SAVE_SETTINGS: 'settings:save',
   GET_SETTINGS: 'settings:get',
-  INSTALL_ALL_MISSING: 'cli:install-all-missing',
-  MINIMIZE_TO_TRAY: 'window:minimize-to-tray',
   LAUNCH_CLI: 'cli:launch',
 } as const
 

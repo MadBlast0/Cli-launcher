@@ -13,10 +13,10 @@ const isMac = os.platform() === 'darwin'
 const MAC_DEFAULT = 'terminal'
 const LINUX_DEFAULT = 'x-terminal-emulator'
 
-function detectWindowsTerminal(): string {
+async function detectWindowsTerminal(): Promise<string> {
   // Prefer Windows Terminal when it's present (nicer tabs/UX); otherwise fall
   // back to a classic PowerShell window, which always exists.
-  if (commandExists('wt')) return 'wt'
+  if (await commandExistsAsync('wt')) return 'wt'
   return 'powershell'
 }
 
@@ -60,7 +60,7 @@ function runScript(scriptPath: string): Promise<CliActionResult> {
   })
 }
 
-function detectTerminalEmulator(): string {
+async function detectTerminalEmulator(): Promise<string> {
   if (isWindows) return detectWindowsTerminal()
   if (isMac) return MAC_DEFAULT
   return LINUX_DEFAULT
@@ -88,15 +88,17 @@ function commandExists(cmd: string): boolean {
   }
 }
 
-/** Whether a CLI's native executable is resolvable on PATH (Windows/Unix). */
-function nativeExecutablePresent(exe: string): boolean {
-  try {
-    execSync(isWindows ? `where ${exe}` : `which ${exe}`, { stdio: 'ignore' })
-    return true
-  } catch {
-    return false
-  }
+// Async equivalents used on the launch/detection hot path so they never block
+// the Electron main (UI) thread while shelling out to `where`/`which`.
+function pathLookupAsync(exe: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const detector = isWindows ? 'where' : 'which'
+    execFile(detector, [exe], { timeout: 5000 }, (err) => resolve(!err))
+  })
 }
+
+const commandExistsAsync = (cmd: string): Promise<boolean> => pathLookupAsync(cmd)
+const nativeExecutablePresentAsync = (exe: string): Promise<boolean> => pathLookupAsync(exe)
 
 // ---------------------------------------------------------------------------
 // Terminal launcher registry
@@ -124,7 +126,7 @@ type LauncherFn = (
 /** Shared Windows launcher: opens a new PowerShell window that runs the CLI. */
 function launchViaPowershellStart(exe: string, args: string[], folder: string | null): ChildProcess {
   const psCmd = buildPSCommand(exe, args, folder)
-  return spawnSafe('cmd.exe', ['/c', 'start', '""', 'powershell', '-NoExit', '-Command', psCmd], { detached: true, stdio: 'ignore', windowsHide: false })
+  return spawnSafe('cmd.exe', ['/c', 'start', '""', 'powershell', '-NoExit', '-Command', qCMD(psCmd)], { detached: true, stdio: 'ignore', windowsHide: false })
 }
 
 const WINDOWS_LAUNCHERS: Record<string, LauncherFn> = {
@@ -147,7 +149,7 @@ const WINDOWS_LAUNCHERS: Record<string, LauncherFn> = {
   },
   pwsh: (exe, args, folder) => {
     const psCmd = buildPSCommand(exe, args, folder)
-    return spawnSafe('cmd.exe', ['/c', 'start', '""', 'pwsh', '-NoExit', '-Command', psCmd], { detached: true, stdio: 'ignore', windowsHide: false })
+    return spawnSafe('cmd.exe', ['/c', 'start', '""', 'pwsh', '-NoExit', '-Command', qCMD(psCmd)], { detached: true, stdio: 'ignore', windowsHide: false })
   },
   alacritty: (exe, args, folder) => {
     // Alacritty -e receives the command; we pass the tokens directly (no shell).
@@ -293,10 +295,12 @@ const LINUX_LAUNCHERS: Record<string, LauncherFn> = {
     return spawnSafe('konsole', all, { detached: true, stdio: 'ignore' })
   },
   'xfce4-terminal': (exe, args, folder) => {
-    // xfce4-terminal requires a single command string.
+    // Use `-x` (execute) which treats the remaining argv as the command to run,
+    // so we pass `sh -c <inner>` as separate tokens and avoid re-wrapping the
+    // already-POSIX-quoted command inside a second layer of double quotes.
     const tokens = [exe, ...args].map(qSH).join(' ')
     const inner = folder ? `cd ${qSH(folder)} && ${tokens}` : tokens
-    return spawnSafe('xfce4-terminal', ['-e', `sh -c "${inner.replace(/"/g, '\\"')}"`], { cwd: folder || undefined, detached: true, stdio: 'ignore' })
+    return spawnSafe('xfce4-terminal', ['-x', 'sh', '-c', inner], { cwd: folder || undefined, detached: true, stdio: 'ignore' })
   },
   xterm: (exe, args, folder) => {
     return spawnSafe('xterm', ['-e', exe, ...args], { cwd: folder || undefined, detached: true, stdio: 'ignore' })
@@ -324,21 +328,12 @@ function getWindowsLauncher(terminal: string, isWsl: boolean): LauncherFn {
   return map[terminal] || map['powershell'] || WINDOWS_LAUNCHERS['powershell']
 }
 
-function getLinuxLauncher(configured?: string | null): LauncherFn {
+async function getLinuxLauncher(configured?: string | null): Promise<LauncherFn> {
   if (configured && LINUX_LAUNCHERS[configured]) {
     return LINUX_LAUNCHERS[configured]
   }
   for (const id of LINUX_ADAPTER_ORDER) {
-    if (id === 'x-terminal-emulator') {
-      try {
-        execSync('which x-terminal-emulator', { stdio: 'ignore' })
-        return LINUX_LAUNCHERS[id]
-      } catch { continue }
-    }
-    try {
-      execSync(`which ${id}`, { stdio: 'ignore' })
-      return LINUX_LAUNCHERS[id]
-    } catch { continue }
+    if (await commandExistsAsync(id)) return LINUX_LAUNCHERS[id]
   }
   return LINUX_LAUNCHERS['_fallback']
 }
@@ -347,7 +342,7 @@ function makeError(code: LaunchErrorCode, message: string): CliLaunchResult {
   return { success: false, output: '', error: message, errorCode: code }
 }
 
-export function openCli(cli: CliDefinition, folder: string | null, permissionMode?: 'normal' | 'dangerous'): CliLaunchResult {
+export async function openCli(cli: CliDefinition, folder: string | null, permissionMode?: 'normal' | 'dangerous'): Promise<CliLaunchResult> {
   // --- validation ---
   if (!cli) {
     return makeError('UNKNOWN_CLI', 'The selected CLI does not exist.')
@@ -374,9 +369,9 @@ export function openCli(cli: CliDefinition, folder: string | null, permissionMod
   try {
     // A `wslExecutable` CLI should only be launched via WSL when no native
     // Windows build is present. If the executable exists natively, prefer that.
-    const isWsl = isWindows && !!cli.wslExecutable && !nativeExecutablePresent(cli.executable)
+    const isWsl = isWindows && !!cli.wslExecutable && !(await nativeExecutablePresentAsync(cli.executable))
     const configured = getConfiguredTerminal()
-    const terminal = configured || detectTerminalEmulator()
+    const terminal = configured || (await detectTerminalEmulator())
 
     let launcher: LauncherFn
     if (isWindows) {
@@ -384,7 +379,7 @@ export function openCli(cli: CliDefinition, folder: string | null, permissionMod
     } else if (isMac) {
       launcher = MAC_LAUNCHERS[terminal] || MAC_LAUNCHERS['_fallback']
     } else {
-      launcher = getLinuxLauncher(configured)
+      launcher = await getLinuxLauncher(configured)
     }
 
     const child = launcher(cli.executable, dangerousArgs, folder)
@@ -512,7 +507,7 @@ export async function checkStandaloneUpdate(
     const current = await new Promise<string>((resolve) => {
       const cmd =
         cli.wslExecutable && isWindows
-          ? `wsl -e bash -lc "${cli.executable} --version"`
+          ? `wsl -e bash -lc "${qSH(cli.executable)} --version"`
           : `${cli.executable} --version`
       exec(cmd, { timeout: 5000 }, (_err, stdout) => {
         resolve(stdout.trim().split('\n')[0] || '')

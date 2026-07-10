@@ -13,13 +13,10 @@ declare global {
       installDependency: (type: 'node' | 'python') => Promise<string>
       selectFolder: () => Promise<string | null>
       getSavedFolder: () => Promise<string | null>
-      saveFolder: (folder: string) => Promise<void>
       getSettings: () => Promise<AppSettings>
-      saveSettings: (settings: AppSettings) => Promise<void>
-      installAllMissing: () => Promise<{ id: string; name: string; success: boolean; error?: string }[]>
+      saveSettings: (settings: Partial<AppSettings>) => Promise<void>
       minimizeWindow: () => void
       closeWindow: () => void
-      minimizeToTray: () => void
       refreshCliStates: () => Promise<void>
       onCliStateUpdate: (callback: (cliId: string, state: CliState) => void) => () => void
     }

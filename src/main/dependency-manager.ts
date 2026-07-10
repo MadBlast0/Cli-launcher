@@ -1,9 +1,18 @@
 import { exec } from 'child_process'
 import { platform } from 'os'
 import { DependencyCheck } from '../shared/types'
+import { qSH } from './terminal-serializers'
 
 const isWin = platform() === 'win32'
 const isMac = platform() === 'darwin'
+
+// A version string is only ever `MAJOR.MINOR.PATCH` digits. Anything else is
+// rejected so a poisoned remote response can't inject shell/URL metacharacters
+// into the download command that interpolates it.
+const SAFE_VERSION = /^\d+\.\d+\.\d+$/
+function safeVersion(v: string, fallback: string): string {
+  return SAFE_VERSION.test(v) ? v : fallback
+}
 
 // Resolves with the trimmed stdout, or '' when the command fails. Detection
 // must never throw just because a runtime is absent (that previously left the
@@ -33,7 +42,7 @@ async function getLatestNodeVersion(): Promise<string> {
     const html = await fetchText('https://nodejs.org/dist/index.json')
     const releases = JSON.parse(html)
     const latest = releases.find((r: any) => r.lts) || releases[0]
-    return latest.version.replace(/^v/, '')
+    return safeVersion(String(latest.version).replace(/^v/, ''), '22.14.0')
   } catch {
     return '22.14.0'
   }
@@ -58,7 +67,7 @@ async function getLatestPythonVersion(): Promise<string> {
           return 0
         })
         .reverse()
-      return sorted[0] || '3.12.8'
+      return safeVersion(sorted[0] || '', '3.12.8')
     }
   } catch { /* ignore */ }
   return '3.12.8'
@@ -86,6 +95,44 @@ export async function checkDependencies(): Promise<DependencyCheck> {
       version: pythonVersion || undefined,
     },
   }
+}
+
+/** Whether a command is resolvable on PATH (Unix). */
+function unixHasCommand(cmd: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    exec(`command -v ${cmd}`, { timeout: 5000 }, (error, stdout) => {
+      resolve(!error && !!stdout.trim())
+    })
+  })
+}
+
+/**
+ * Runs a shell command with elevated privileges via a GRAPHICAL prompt, because
+ * the app has no controlling TTY — a plain `sudo` would hang or fail. macOS uses
+ * osascript's "with administrator privileges" dialog; Linux uses PolicyKit's
+ * `pkexec`. If no graphical elevation path exists we reject with an actionable
+ * message instead of silently blocking on a password that can never be typed.
+ */
+async function runElevated(innerCmd: string, timeout: number): Promise<void> {
+  let cmd: string
+  if (isMac) {
+    const escaped = innerCmd.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    cmd = `osascript -e 'do shell script "${escaped}" with administrator privileges'`
+  } else {
+    if (!(await unixHasCommand('pkexec'))) {
+      throw new Error(
+        "Automatic install needs 'pkexec' (PolicyKit) for a graphical admin prompt. " +
+        'Please install it, or install Node.js/Python manually.'
+      )
+    }
+    cmd = `pkexec bash -c ${qSH(innerCmd)}`
+  }
+  await new Promise<void>((resolve, reject) => {
+    exec(cmd, { timeout }, (error) => {
+      if (error) reject(error)
+      else resolve()
+    })
+  })
 }
 
 function download(url: string, output: string): Promise<void> {
@@ -123,21 +170,14 @@ export async function installNode(): Promise<string> {
     const url = `https://nodejs.org/dist/v${nodeVersion}/node-v${nodeVersion}.pkg`
     const output = '/tmp/node-installer.pkg'
     await download(url, output)
-    push('Installing Node.js...')
-    await new Promise<void>((resolve, reject) => {
-      exec(`sudo installer -pkg "${output}" -target /`, { timeout: 300000 }, (error) => {
-        if (error) reject(error)
-        else resolve()
-      })
-    })
+    push('Installing Node.js (admin authorization required)...')
+    await runElevated(`installer -pkg "${output}" -target /`, 300000)
   } else {
-    push(`Installing Node.js v${nodeVersion} via NodeSource...`)
-    await new Promise<void>((resolve, reject) => {
-      exec(`curl -fsSL https://deb.nodesource.com/setup_${major}.x | sudo -E bash - && sudo apt-get install -y nodejs`, { timeout: 300000 }, (error) => {
-        if (error) reject(error)
-        else resolve()
-      })
-    })
+    push(`Installing Node.js v${nodeVersion} via NodeSource (admin authorization required)...`)
+    await runElevated(
+      `curl -fsSL https://deb.nodesource.com/setup_${major}.x | bash - && apt-get install -y nodejs`,
+      300000
+    )
   }
 
   push(`Node.js v${nodeVersion} installed successfully`)
@@ -166,21 +206,11 @@ export async function installPython(): Promise<string> {
     const url = `https://www.python.org/ftp/python/${pythonVersion}/python-${pythonVersion}-macos11.pkg`
     const output = '/tmp/python-installer.pkg'
     await download(url, output)
-    push('Installing Python...')
-    await new Promise<void>((resolve, reject) => {
-      exec(`sudo installer -pkg "${output}" -target /`, { timeout: 300000 }, (error) => {
-        if (error) reject(error)
-        else resolve()
-      })
-    })
+    push('Installing Python (admin authorization required)...')
+    await runElevated(`installer -pkg "${output}" -target /`, 300000)
   } else {
-    push('Installing Python via apt...')
-    await new Promise<void>((resolve, reject) => {
-      exec('sudo apt-get update && sudo apt-get install -y python3 python3-pip', { timeout: 300000 }, (error) => {
-        if (error) reject(error)
-        else resolve()
-      })
-    })
+    push('Installing Python via apt (admin authorization required)...')
+    await runElevated('apt-get update && apt-get install -y python3 python3-pip', 300000)
   }
 
   push(`Python ${pythonVersion} installed successfully`)

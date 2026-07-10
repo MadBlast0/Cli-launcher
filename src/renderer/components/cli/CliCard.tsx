@@ -47,6 +47,9 @@ function CliCardInner({
   const installed = state?.status === 'installed' || state?.status === 'update-available'
   const updateAvailable = !!latest
 
+  // Key on the primitive status/version rather than the `state` object: the
+  // startup refresh coalesces updates into a fresh object each frame, so keying
+  // on object identity re-ran this update check on every unrelated tick.
   useEffect(() => {
     if (state?.status === 'installed' || state?.status === 'update-available') {
       window.electronAPI.checkCliUpdate(cli.id).then((upd) => {
@@ -55,14 +58,19 @@ function CliCardInner({
     } else {
       setLatest(null)
     }
-  }, [state, cli.id])
+  }, [state?.status, state?.version, cli.id])
 
-  // Close context menu on outside click
+  // Close the context menu on an outside click OR the Escape key.
   useEffect(() => {
     if (!contextMenu) return
     const handleClick = () => setContextMenu(null)
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setContextMenu(null) }
     document.addEventListener('click', handleClick)
-    return () => document.removeEventListener('click', handleClick)
+    document.addEventListener('keydown', handleKey)
+    return () => {
+      document.removeEventListener('click', handleClick)
+      document.removeEventListener('keydown', handleKey)
+    }
   }, [contextMenu])
 
   const runAction = async (action: Exclude<Busy, null>) => {
@@ -114,7 +122,13 @@ function CliCardInner({
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault()
-    setContextMenu({ x: e.clientX, y: e.clientY })
+    // Clamp to the viewport so the menu never renders off-screen near the
+    // right/bottom edges (approximate menu size: 190×150).
+    const MENU_W = 190
+    const MENU_H = 150
+    const x = Math.max(4, Math.min(e.clientX, window.innerWidth - MENU_W))
+    const y = Math.max(4, Math.min(e.clientY, window.innerHeight - MENU_H))
+    setContextMenu({ x, y })
   }
 
   const copyInstallCommand = async () => {
@@ -141,8 +155,8 @@ function CliCardInner({
     <div
       ref={cardRef}
       className={`mac-card flex items-center gap-2 pl-2 pr-2 py-2 ${isNew ? 'anim-slide-in' : ''} relative`}
-      draggable={index >= 0}
-      onDragStart={index >= 0 ? onDragStart : undefined}
+      draggable
+      onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
       data-index={index}
@@ -150,11 +164,9 @@ function CliCardInner({
       role="listitem"
       aria-label={`${cli.name}${installed ? `, version ${state?.version || 'installed'}` : ', not installed'}`}
     >
-      {index >= 0 && (
-        <div className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground shrink-0 transition-colors" aria-hidden="true">
-          <GripVertical size={14} />
-        </div>
-      )}
+      <div className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground shrink-0 transition-colors" aria-hidden="true">
+        <GripVertical size={14} />
+      </div>
 
       <div className="w-9 h-9 flex items-center justify-center shrink-0">
         {logo ? (

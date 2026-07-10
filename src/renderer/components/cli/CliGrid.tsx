@@ -15,6 +15,7 @@ interface CliGridProps {
   onRepair: (cliId: string) => void
   onUpdate: (cliId: string) => void
   onReorder: (fromIndex: number, toIndex: number) => void
+  onReorderCommit: () => void
   onOpenDeps: () => void
   onOpenCatalog: () => void
   onCliChanged: () => void
@@ -27,10 +28,11 @@ interface CliGridProps {
 
 export function CliGrid({
   clis, states, counts, totalCount, loading = false, onUpdateCount, onLaunch,
-  onRepair, onUpdate, onReorder, onOpenDeps, onOpenCatalog, onCliChanged,
+  onRepair, onUpdate, onReorder, onReorderCommit, onOpenDeps, onOpenCatalog, onCliChanged,
   deps, search, onSearchChange, justInstalled, onToast,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [reordered, setReordered] = useState(false)
 
   const getCount = useCallback(
     (cliId: string) => counts.find((c) => c.cliId === cliId)?.count ?? 1,
@@ -46,13 +48,21 @@ export function CliGrid({
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault()
     if (dragIndex === null || dragIndex === index) return
+    // Reorder live in memory for visual feedback, but do NOT persist here —
+    // dragover fires continuously, so persisting on every event thrashes the
+    // settings file and IPC. The order is committed once on drop instead.
     onReorder(dragIndex, index)
     setDragIndex(index)
+    setReordered(true)
   }
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setDragIndex(null)
+    if (reordered) {
+      onReorderCommit()
+      setReordered(false)
+    }
   }
 
   const missingDeps = [

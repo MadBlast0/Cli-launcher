@@ -61,51 +61,64 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
     return groups
   }, [filtered])
 
+  const setToast = (toastId: string | void, message: string, type: ToastType) => {
+    if (toastId && updateToast) updateToast(toastId, message, type)
+    else onToast?.(message, type)
+  }
+
   const handleInstall = async (cliId: string) => {
     setBusy(cliId)
     const cliName = clis.find((c) => c.id === cliId)?.name || cliId
     const toastId = onToast?.(`Installing ${cliName}…`, 'loading')
 
-    const result = await window.electronAPI.executeAction(cliId, 'install')
-    const fresh = await window.electronAPI.getCliState(cliId)
-    const installed = fresh?.status === 'installed' || fresh?.status === 'update-available'
+    try {
+      const result = await window.electronAPI.executeAction(cliId, 'install')
+      const fresh = await window.electronAPI.getCliState(cliId)
+      const installed = fresh?.status === 'installed' || fresh?.status === 'update-available'
 
-    if (result.success && installed) {
-      if (toastId && updateToast) updateToast(toastId, `${cliName} installed successfully`, 'success')
-      else onToast?.(`${cliName} installed successfully`, 'success')
-      setBusy(null)
-      setLeaving(cliId)
-      setTimeout(() => {
-        setJustInstalled(cliId)
+      if (result.success && installed) {
+        setToast(toastId, `${cliName} installed successfully`, 'success')
+        setBusy(null)
+        setLeaving(cliId)
         setTimeout(() => {
-          setLeaving(null)
-          setJustInstalled(null)
-          onChanged()
-          onInstalled?.(cliId)
-        }, 50)
-      }, 250)
-    } else {
-      if (toastId && updateToast) updateToast(toastId, `${cliName} install failed: ${result.error || 'CLI not found after install'}`, 'error')
-      else onToast?.(`${cliName} install failed: ${result.error || 'CLI not found after install'}`, 'error')
-      setBusy(null)
+          setJustInstalled(cliId)
+          setTimeout(() => {
+            setLeaving(null)
+            setJustInstalled(null)
+            onChanged()
+            onInstalled?.(cliId)
+          }, 50)
+        }, 250)
+        return
+      }
+      setToast(toastId, `${cliName} install failed: ${result.error || 'CLI not found after install'}`, 'error')
+    } catch (err) {
+      // An IPC rejection must never leave the row stuck spinning.
+      setToast(toastId, `${cliName} install error: ${String(err)}`, 'error')
+    } finally {
+      // On the success path busy was already cleared before the animation; this
+      // guarantees it is cleared on every failure/error path too.
+      setBusy((cur) => (cur === cliId ? null : cur))
     }
   }
 
   const installAll = async (list: CliDefinition[]) => {
     for (const cli of list) {
       const toastId = onToast?.(`Installing ${cli.name}…`, 'loading')
-      const result = await window.electronAPI.executeAction(cli.id, 'install')
-      const fresh = await window.electronAPI.getCliState(cli.id)
-      const installed = fresh?.status === 'installed' || fresh?.status === 'update-available'
+      try {
+        const result = await window.electronAPI.executeAction(cli.id, 'install')
+        const fresh = await window.electronAPI.getCliState(cli.id)
+        const installed = fresh?.status === 'installed' || fresh?.status === 'update-available'
 
-      if (result.success && installed) {
-        if (toastId && updateToast) updateToast(toastId, `${cli.name} installed successfully`, 'success')
-        else onToast?.(`${cli.name} installed successfully`, 'success')
-        onChanged()
-        onInstalled?.(cli.id)
-      } else {
-        if (toastId && updateToast) updateToast(toastId, `${cli.name} install failed: ${result.error || 'CLI not found after install'}`, 'error')
-        else onToast?.(`${cli.name} install failed: ${result.error || 'CLI not found after install'}`, 'error')
+        if (result.success && installed) {
+          setToast(toastId, `${cli.name} installed successfully`, 'success')
+          onChanged()
+          onInstalled?.(cli.id)
+        } else {
+          setToast(toastId, `${cli.name} install failed: ${result.error || 'CLI not found after install'}`, 'error')
+        }
+      } catch (err) {
+        setToast(toastId, `${cli.name} install error: ${String(err)}`, 'error')
       }
     }
   }

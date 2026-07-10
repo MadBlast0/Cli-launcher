@@ -1,4 +1,4 @@
-import { app, BrowserWindow, screen, nativeImage, Tray, Menu } from 'electron'
+import { app, BrowserWindow, screen, nativeImage, Tray, Menu, shell, session } from 'electron'
 import path from 'path'
 import { registerIpcHandlers } from './ipc-handlers'
 import { WINDOW_CONFIG, APP_NAME } from '../shared/constants'
@@ -75,6 +75,20 @@ function createWindow() {
   mainWindow.setIcon(appIcon)
   mainWindow.setMenuBarVisibility(false)
 
+  // Security: never let the renderer open new windows in-app or navigate away
+  // from the app shell. External http(s) links are handed to the OS browser.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url)
+    return { action: 'deny' }
+  })
+
+  mainWindow.webContents.on('will-navigate', (event, url) => {
+    const devUrl = 'http://localhost:5173'
+    if (process.env.NODE_ENV === 'development' && url.startsWith(devUrl)) return
+    event.preventDefault()
+    if (/^https?:\/\//i.test(url)) shell.openExternal(url)
+  })
+
   // Handle both the legacy positional signature and the newer details-object
   // form (Electron changed this API), so log forwarding survives upgrades.
   mainWindow.webContents.on('console-message', (...cmArgs: any[]) => {
@@ -127,7 +141,36 @@ function checkForUpdates() {
 
 if (process.platform === 'win32') app.setAppUserModelId('com.cli-launcher.app')
 
+/**
+ * Content-Security-Policy for the renderer. Applied only in packaged builds —
+ * in development Vite serves over http with HMR (websocket + eval for
+ * react-refresh), which a strict policy would break. The production renderer
+ * loads everything from the bundled `file://` origin, so `'self'` is enough.
+ */
+function applyContentSecurityPolicy() {
+  if (!app.isPackaged) return
+  const csp =
+    "default-src 'self'; " +
+    "script-src 'self'; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "img-src 'self' data:; " +
+    "font-src 'self' data:; " +
+    "connect-src 'self'; " +
+    "base-uri 'none'; " +
+    "form-action 'none'; " +
+    "object-src 'none'"
+  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [csp],
+      },
+    })
+  })
+}
+
 app.whenReady().then(() => {
+  applyContentSecurityPolicy()
   createWindow()
   createTray()
   registerIpcHandlers()

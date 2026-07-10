@@ -12,13 +12,10 @@ const api = {
   installDependency: (type: 'node' | 'python') => ipcRenderer.invoke('deps:install', type),
   selectFolder: () => ipcRenderer.invoke('folder:select'),
   getSavedFolder: () => ipcRenderer.invoke('folder:get-saved'),
-  saveFolder: (folder: string) => ipcRenderer.invoke('folder:save', folder),
   getSettings: () => ipcRenderer.invoke('settings:get'),
-  saveSettings: (settings: AppSettings) => ipcRenderer.invoke('settings:save', settings),
-  installAllMissing: () => ipcRenderer.invoke('cli:install-all-missing'),
+  saveSettings: (settings: Partial<AppSettings>) => ipcRenderer.invoke('settings:save', settings),
   minimizeWindow: () => ipcRenderer.send('window:minimize'),
   closeWindow: () => ipcRenderer.send('window:close'),
-  minimizeToTray: () => ipcRenderer.send('window:minimize-to-tray'),
   refreshCliStates: () => ipcRenderer.invoke('cli:refresh-all-states'),
   onCliStateUpdate: (callback: (cliId: string, state: CliState) => void) => {
     const handler = (_event: any, cliId: string, state: CliState) => callback(cliId, state)
