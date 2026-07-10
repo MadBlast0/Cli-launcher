@@ -160,9 +160,69 @@
         </div>
       </div>
 
-      <!-- Right Column: App Screenshot -->
-      <div class="lg:col-span-7 flex justify-center">
-        <img src="media/screenshot.png" alt="CLI Launcher window displaying the CLI registry grid with options to install and launch various coding agents" class="w-full h-auto object-contain border border-border shadow-flat select-none pointer-events-none max-w-[580px] mx-auto lg:ml-auto" draggable="false">
+      <!-- Right Column: Live interactive replica of the app UI -->
+      <div class="lg:col-span-7 flex flex-col items-center lg:items-end">
+        <div id="app-demo" class="app-demo w-full max-w-[580px] border border-border shadow-flat select-none" role="img" aria-label="Interactive preview of the CLI Launcher window displaying the CLI registry with options to install, update and launch coding agents">
+
+          <!-- Title bar -->
+          <div class="demo-titlebar">
+            <div class="demo-title-left">
+              <img src="media/app-logo.png" alt="" class="demo-app-logo" draggable="false">
+              <span class="demo-title-text">CLI Launcher</span>
+            </div>
+            <div class="demo-title-right">
+              <button id="demo-theme-toggle" class="demo-theme-pill" aria-label="Toggle theme" title="Toggle theme">
+                <span class="demo-theme-knob"></span>
+                <svg class="demo-theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+              </button>
+              <button class="demo-win-btn" data-demo-toast="This is just a preview — nothing to close!" aria-label="Close (demo)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Working directory -->
+          <div class="demo-workdir">
+            <span class="demo-folder-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+            </span>
+            <div class="demo-workdir-text">
+              <span class="demo-workdir-label">Working directory</span>
+              <span class="demo-workdir-path">C:\Projects\my-app</span>
+            </div>
+          </div>
+
+          <!-- Search + Deps -->
+          <div class="demo-searchrow">
+            <div class="demo-search">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="demo-search-input" type="text" placeholder="Search CLIs..." autocomplete="off" spellcheck="false" aria-label="Search CLIs (demo)">
+            </div>
+            <button class="demo-btn demo-btn-soft" data-demo-toast="All dependencies OK — Node.js, Python, Git detected">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+              Deps
+            </button>
+          </div>
+
+          <!-- Section header -->
+          <div class="demo-sectionrow">
+            <span class="demo-section-label">INSTALLED&nbsp;&nbsp;<span id="demo-installed-count">6</span></span>
+            <button class="demo-btn demo-btn-soft" data-demo-toast="The catalog holds 30+ agents ready to install">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg>
+              Catalog
+            </button>
+          </div>
+
+          <!-- CLI rows (populated by main.js) -->
+          <div id="demo-rows" class="demo-rows"></div>
+
+          <!-- In-window toast -->
+          <div id="demo-toast" class="demo-toast" role="status" aria-live="polite"></div>
+        </div>
+
+        <p class="text-[11px] font-mono text-muted-foreground mt-3 select-none">
+          ▲ Live preview — try the search, counters, and theme switch
+        </p>
       </div>
 
     </div>

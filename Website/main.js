@@ -18,7 +18,154 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch (e) {
     console.error('Error fetching latest release:', e);
   }
+
+  try {
+    initAppDemo();
+  } catch (e) {
+    console.error('Error initializing app demo:', e);
+  }
 });
+
+/**
+ * Interactive replica of the actual app window shown in the hero.
+ * Search, launch counters, update flow, and theme all work for real.
+ */
+function initAppDemo() {
+  const demo = document.getElementById('app-demo');
+  const rowsEl = document.getElementById('demo-rows');
+  if (!demo || !rowsEl) return;
+
+  const clis = [
+    { id: 'claude', name: 'Claude Code', version: '2.1.202 (Claude Code)', logo: 'media/cli/claude.svg' },
+    { id: 'opencode', name: 'OpenCode', version: '1.17.15', logo: 'media/cli/opencode.svg' },
+    { id: 'gemini', name: 'Gemini CLI', version: '0.21.3', logo: 'media/cli/gemini.svg', update: '0.22.0' },
+    { id: 'copilot', name: 'GitHub Copilot CLI', version: '1.8.0', logo: 'media/cli/copilot.svg' },
+    { id: 'kilo', name: 'Kilo CLI', version: 'installed', logo: 'media/cli/kilo.png' },
+    { id: 'aider', name: 'Aider', version: '0.86.1', logo: 'media/cli/aider.png' },
+  ];
+
+  const ICONS = {
+    grip: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="5" r="1.4"/><circle cx="9" cy="12" r="1.4"/><circle cx="9" cy="19" r="1.4"/><circle cx="15" cy="5" r="1.4"/><circle cx="15" cy="12" r="1.4"/><circle cx="15" cy="19" r="1.4"/></svg>',
+    wrench: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+    trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    minus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg>',
+    up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/><path d="M12 16V8"/></svg>',
+    spinner: '<svg class="demo-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>',
+  };
+
+  // --- In-window toast -------------------------------------------------
+  const toastEl = document.getElementById('demo-toast');
+  let toastTimer = null;
+  function toast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg;
+    toastEl.classList.add('demo-toast-show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('demo-toast-show'), 2200);
+  }
+
+  // --- Build rows -------------------------------------------------------
+  clis.forEach((cli) => {
+    const row = document.createElement('div');
+    row.className = 'demo-row';
+    row.dataset.name = cli.name.toLowerCase();
+
+    row.innerHTML =
+      '<span class="demo-grip" aria-hidden="true">' + ICONS.grip + '</span>' +
+      '<span class="demo-row-logo"><img src="' + cli.logo + '" alt="" draggable="false"></span>' +
+      '<span class="demo-row-info">' +
+        '<span class="demo-row-name">' + cli.name + '</span>' +
+        '<span class="demo-row-status"><span class="demo-status-dot"></span>' +
+        '<span class="demo-row-version">' + cli.version + '</span></span>' +
+      '</span>' +
+      (cli.update ? '<button class="demo-update-btn" title="Update to ' + cli.update + '">' + ICONS.up + ' Update</button>' : '') +
+      '<button class="demo-icon-btn" data-act="repair" title="Repair">' + ICONS.wrench + '</button>' +
+      '<button class="demo-icon-btn" data-act="uninstall" title="Uninstall">' + ICONS.trash + '</button>' +
+      '<span class="demo-counter">' +
+        '<button data-act="dec" aria-label="Fewer terminals" disabled>' + ICONS.minus + '</button>' +
+        '<span class="demo-count">1</span>' +
+        '<button data-act="inc" aria-label="More terminals">' + ICONS.plus + '</button>' +
+      '</span>' +
+      '<button class="demo-open-btn">Open</button>';
+
+    // Counter
+    let count = 1;
+    const countEl = row.querySelector('.demo-count');
+    const decBtn = row.querySelector('[data-act="dec"]');
+    const incBtn = row.querySelector('[data-act="inc"]');
+    function setCount(n) {
+      count = Math.min(9, Math.max(1, n));
+      countEl.textContent = String(count);
+      decBtn.disabled = count <= 1;
+      incBtn.disabled = count >= 9;
+    }
+    decBtn.addEventListener('click', () => setCount(count - 1));
+    incBtn.addEventListener('click', () => setCount(count + 1));
+
+    // Open
+    row.querySelector('.demo-open-btn').addEventListener('click', () => {
+      toast(count > 1
+        ? 'Opened ' + count + ' ' + cli.name + ' terminals'
+        : 'Opened ' + cli.name + ' in a new terminal');
+    });
+
+    // Repair / uninstall (demo-safe)
+    row.querySelector('[data-act="repair"]').addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      const original = btn.innerHTML;
+      btn.innerHTML = ICONS.spinner;
+      setTimeout(() => { btn.innerHTML = original; toast(cli.name + ' repair complete'); }, 900);
+    });
+    row.querySelector('[data-act="uninstall"]').addEventListener('click', () => {
+      toast('Relax — it’s a demo. ' + cli.name + ' is safe.');
+    });
+
+    // Update flow
+    const updateBtn = row.querySelector('.demo-update-btn');
+    if (updateBtn) {
+      updateBtn.addEventListener('click', () => {
+        updateBtn.innerHTML = ICONS.spinner + ' Updating';
+        updateBtn.style.pointerEvents = 'none';
+        setTimeout(() => {
+          updateBtn.remove();
+          row.querySelector('.demo-row-version').textContent = cli.update;
+          toast(cli.name + ' updated to ' + cli.update);
+        }, 1400);
+      });
+    }
+
+    rowsEl.appendChild(row);
+  });
+
+  // --- Search filter ----------------------------------------------------
+  const searchInput = document.getElementById('demo-search-input');
+  const installedCount = document.getElementById('demo-installed-count');
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim().toLowerCase();
+      let visible = 0;
+      rowsEl.querySelectorAll('.demo-row').forEach((row) => {
+        const match = row.dataset.name.indexOf(q) !== -1;
+        row.classList.toggle('demo-hidden', !match);
+        if (match) visible++;
+      });
+      if (installedCount) installedCount.textContent = String(visible);
+    });
+  }
+
+  // --- Theme toggle mirrors the site toggle ------------------------------
+  const demoTheme = document.getElementById('demo-theme-toggle');
+  const siteTheme = document.getElementById('theme-toggle');
+  if (demoTheme && siteTheme) {
+    demoTheme.addEventListener('click', () => siteTheme.click());
+  }
+
+  // --- Generic toast buttons (close, deps, catalog) ----------------------
+  demo.querySelectorAll('[data-demo-toast]').forEach((btn) => {
+    btn.addEventListener('click', () => toast(btn.getAttribute('data-demo-toast')));
+  });
+}
 
 /**
  * Theme initialization and toggling
