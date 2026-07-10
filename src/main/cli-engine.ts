@@ -139,12 +139,15 @@ const WINDOWS_LAUNCHERS: Record<string, LauncherFn> = {
   },
   powershell: (exe, args, folder) => launchViaPowershellStart(exe, args, folder),
   wt: (exe, args, folder) => {
-    // Windows Terminal: `-d <dir>` sets the working directory; the rest is the
-    // profile command line.
-    const psCmd = buildPSCommand(exe, args, folder)
+    // Windows Terminal uses `&` as a command separator in its own argument
+    // parser, so the `& 'exe'` PowerShell call operator in buildPSCommand
+    // would be misinterpreted (opening a spurious empty tab + failing to
+    // launch the CLI).  Use `cmd /k` instead — this avoids the separator
+    // issue AND runs the CLI directly via cmd.exe's PATHEXT resolution
+    // (handles .cmd / .exe shims correctly on Windows).
     const all = folder
-      ? ['-d', folder, 'powershell', '-NoExit', '-Command', psCmd]
-      : ['powershell', '-NoExit', '-Command', psCmd]
+      ? ['-d', folder, 'cmd', '/k', exe, ...args]
+      : ['cmd', '/k', exe, ...args]
     return spawnSafe('wt.exe', all, { detached: true, stdio: 'ignore', windowsHide: false })
   },
   pwsh: (exe, args, folder) => {

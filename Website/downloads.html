@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <!-- SEO & Metadata -->
+  <title>Downloads - CLI Launcher</title>
+  <meta name="description" content="Download the latest version of CLI Launcher for Windows, macOS, and Linux. Choose between native installers, portable binaries, and repository mirrors.">
+  <link rel="canonical" href="https://madblast0.github.io/Cli-launcher/downloads.html">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1a1a1a">
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://madblast0.github.io/Cli-launcher/downloads.html">
+  <meta property="og:title" content="Downloads - CLI Launcher">
+  <meta property="og:description" content="Download the latest native packages of CLI Launcher for Windows, macOS, and Linux. Access signed builds and release mirrors.">
+  <meta property="og:image" content="https://raw.githubusercontent.com/MadBlast0/Cli-launcher/main/media/screenshot.png">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://madblast0.github.io/Cli-launcher/downloads.html">
+  <meta property="twitter:title" content="Downloads - CLI Launcher">
+  <meta property="twitter:description" content="Download the latest native packages of CLI Launcher for Windows, macOS, and Linux. Access signed builds and release mirrors.">
+  <meta property="twitter:image" content="https://raw.githubusercontent.com/MadBlast0/Cli-launcher/main/media/screenshot.png">
+  
+  <!-- Custom Stylesheet (app theme color tokens & fonts) -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Tailwind CSS Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Theme Configuration using CSS variables -->
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: 'var(--background)',
+            foreground: 'var(--foreground)',
+            card: 'var(--card)',
+            'card-foreground': 'var(--card-foreground)',
+            popover: 'var(--popover)',
+            'popover-foreground': 'var(--popover-foreground)',
+            primary: 'var(--primary)',
+            'primary-foreground': 'var(--primary-foreground)',
+            secondary: 'var(--secondary)',
+            'secondary-foreground': 'var(--secondary-foreground)',
+            muted: 'var(--muted)',
+            'muted-foreground': 'var(--muted-foreground)',
+            accent: 'var(--accent)',
+            'accent-foreground': 'var(--accent-foreground)',
+            'accent-soft': 'var(--accent-soft)',
+            border: 'var(--border)',
+            'border-strong': 'var(--border-strong)',
+            input: 'var(--input)',
+            ring: 'var(--ring)',
+            success: 'var(--success)',
+            warning: 'var(--warning)',
+          },
+          fontFamily: {
+            sans: ['var(--font-sans)', 'sans-serif'],
+            mono: ['var(--font-mono)', 'monospace'],
+          },
+          boxShadow: {
+            'flat-sm': '0px 1px 0px 0px var(--border-strong)',
+            'flat': '0px 2px 0px 0px var(--border-strong)',
+            'flat-md': '0px 2px 0px 0px var(--border-strong)',
+            'flat-lg': '0px 3px 0px 0px var(--border-strong)',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col bg-background text-foreground font-sans relative">
+
+  <!-- Topbar -->
+  <header class="w-full border-b border-border bg-card/90 backdrop-blur-md sticky top-0 z-40 h-14 flex items-center justify-between px-6 select-none">
+    <a href="index.html" class="flex items-center gap-2.5 focus-visible:outline-none">
+      <img src="media/app-logo.png" alt="CLI Launcher Logo" class="w-6 h-6 object-contain">
+      <span class="text-xs font-bold font-mono tracking-widest uppercase text-foreground">CLI Launcher</span>
+    </a>
+    
+    <nav class="flex items-center gap-6 text-xs font-bold font-mono">
+      <a href="downloads.html" class="hover:text-foreground text-foreground transition-colors">Downloads</a>
+      <a href="https://github.com/MadBlast0/Cli-launcher" target="_blank" rel="noopener noreferrer" class="hover:text-foreground text-muted-foreground transition-colors">GitHub</a>
+      
+      <button id="theme-toggle" class="mac-btn mac-btn-soft mac-btn-icon w-8 h-8 flex items-center justify-center border border-border focus-visible:outline-none" aria-label="Toggle theme">
+        <!-- Sun Icon (visible in dark mode) -->
+        <svg id="sun-icon" class="hidden w-4 h-4 text-foreground" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2"></path>
+          <path d="M12 20v2"></path>
+          <path d="m4.93 4.93 1.41 1.41"></path>
+          <path d="m17.66 17.66 1.41 1.41"></path>
+          <path d="M2 12h2"></path>
+          <path d="M20 12h2"></path>
+          <path d="m6.34 17.66-1.41 1.41"></path>
+          <path d="m19.07 4.93-1.41 1.41"></path>
+        </svg>
+        <!-- Moon Icon (visible in light mode) -->
+        <svg id="moon-icon" class="w-4 h-4 text-foreground" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+        </svg>
+      </button>
+    </nav>
+  </header>
+
+  <!-- Downloads Content Area -->
+  <main class="max-w-4xl mx-auto px-6 py-12 flex-1 w-full">
+    <div class="mb-10">
+      <h1 class="text-3xl font-extrabold tracking-tighter mb-3">Available Downloads</h1>
+      <p class="text-sm text-muted-foreground leading-relaxed max-w-[65ch]">
+        Select your platform to download the latest signed build of CLI Launcher. All installation files are compiled via GitHub CI and mirrored on the official GitHub Release CDN.
+      </p>
+    </div>
+
+    <!-- Windows Category -->
+    <div class="mb-12">
+      <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-4 select-none">
+        Windows builds
+      </h2>
+      <div class="border border-border bg-card divide-y divide-border select-none">
+        <!-- MSI Installer -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">MSI Installer</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">x64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">Standard Windows installer package for system-wide installation.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="win-msi-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download .msi</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- EXE Setup -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">EXE Installer (NSIS)</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">x64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">Standard executable installer package with simple wizard setup.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="win-exe-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download .exe</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Portable EXE -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">Portable Binary</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">x64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">Standalone executable file, runs instantly without installation.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="win-portable-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download Portable</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- macOS Category -->
+    <div class="mb-12">
+      <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-4 select-none">
+        macOS builds
+      </h2>
+      <div class="border border-border bg-card divide-y divide-border select-none">
+        <!-- DMG Universal -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">DMG Installer (Universal)</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">x64 + arm64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">Fat binary installer. Recommended for both Intel and Apple Silicon Macs.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="mac-dmg-universal-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download .dmg</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- DMG Apple Silicon -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">DMG Installer (Apple Silicon)</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">arm64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">Native installer package compiled specifically for Apple M-series chips.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="mac-dmg-arm64-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download .dmg</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- DMG Intel -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">DMG Installer (Intel)</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">x64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">Native installer package compiled specifically for Intel-based Macs.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="mac-dmg-x64-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download .dmg</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- ZIP Universal -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">ZIP Archive (Universal)</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">x64 + arm64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">Compressed ZIP containing the standalone application folder.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="mac-zip-universal-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download .zip</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Linux Category -->
+    <div class="mb-12">
+      <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-4 select-none">
+        Linux builds
+      </h2>
+      <div class="border border-border bg-card divide-y divide-border select-none">
+        <!-- AppImage -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">AppImage Binary</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">x64, arm64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">Universal Linux package. Runs instantly on most distributions without install.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="linux-appimage-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download AppImage</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Debian DEB -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">Debian Package (.deb)</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">x64, arm64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">For Debian-based distributions including Ubuntu, Mint, and Pop!_OS.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="linux-deb-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download .deb</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- RedHat RPM -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">Red Hat Package (.rpm)</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">x64, arm64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">For Red Hat-based distributions including Fedora, RHEL, CentOS, and openSUSE.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="linux-rpm-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download .rpm</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Tarball Archive -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between p-4 gap-4">
+          <div class="flex flex-col">
+            <div class="flex items-center gap-2 mb-1 flex-wrap">
+              <span class="text-xs font-bold font-mono uppercase text-foreground">Tarball Archive (.tar.gz)</span>
+              <span class="text-[9px] font-bold font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border">x64, arm64</span>
+            </div>
+            <p class="text-xs text-muted-foreground leading-relaxed">Compressed tarball archive containing native compiled binaries.</p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="text-[10px] font-mono text-muted-foreground hidden md:inline">GitHub CDN</span>
+            <a id="linux-tar-link" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-soft text-xs py-2 px-4 flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+              <span>Download .tar.gz</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Verification / Mirrors Notice -->
+    <div class="p-4 border border-border bg-card text-xs text-muted-foreground font-mono select-none">
+      <strong class="text-foreground uppercase block mb-1">Mirror & Checksum Details</strong>
+      All artifacts listed here are compiled automatically from the open-source repository files via GitHub Actions. If a download from the primary GitHub CDN fails, you can find alternative mirrors and release package checksums directly on the official 
+      <a href="https://github.com/MadBlast0/Cli-launcher/releases" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">Releases page</a>. To build from source, clone the repository locally and run "npm install && npm run build".
+    </div>
+  </main>
+
+  <!-- Minimal Footer -->
+  <footer class="border-t border-border py-8 text-center text-xs text-muted-foreground font-mono mt-auto select-none">
+    <p>
+      CLI Launcher is open-source under the MIT License. View on 
+      <a href="https://github.com/MadBlast0/Cli-launcher" class="underline hover:text-foreground transition-colors">GitHub</a>.
+    </p>
+  </footer>
+
+  <!-- Vanilla JavaScript Logic -->
+  <script src="main.js"></script>
+</body>
+</html>

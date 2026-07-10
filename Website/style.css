@@ -1,0 +1,205 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --background: #f0f0f0;
+  --foreground: #333333;
+  --card: #f5f5f5;
+  --card-foreground: #333333;
+  --popover: #f5f5f5;
+  --popover-foreground: #333333;
+  --primary: #606060;
+  --primary-foreground: #ffffff;
+  --secondary: #e0e0e0;
+  --secondary-foreground: #333333;
+  --muted: #d9d9d9;
+  --muted-foreground: #666666;
+  --accent: #c0c0c0;
+  --accent-foreground: #333333;
+  --destructive: #cc3333;
+  --destructive-foreground: #ffffff;
+  --border: #d0d0d0;
+  --input: #e0e0e0;
+  --ring: #606060;
+
+  --accent-soft: #e6e6e6;
+  --border-strong: #b8b8b8;
+  --success: #476666;
+  --warning: #9a6a20;
+
+  --font-sans: 'Geist', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  --radius: 0rem;
+}
+
+html.dark {
+  --background: #1a1a1a;
+  --foreground: #d9d9d9;
+  --card: #202020;
+  --card-foreground: #d9d9d9;
+  --popover: #202020;
+  --popover-foreground: #d9d9d9;
+  --primary: #a0a0a0;
+  --primary-foreground: #1a1a1a;
+  --secondary: #303030;
+  --secondary-foreground: #d9d9d9;
+  --muted: #2a2a2a;
+  --muted-foreground: #808080;
+  --accent: #404040;
+  --accent-foreground: #d9d9d9;
+  --destructive: #e06666;
+  --destructive-foreground: #ffffff;
+  --border: #353535;
+  --input: #303030;
+  --ring: #a0a0a0;
+
+  --accent-soft: #2f2f2f;
+  --border-strong: #454545;
+  --success: #7e9ca0;
+  --warning: #cc9a4a;
+
+  --font-sans: 'Geist', sans-serif;
+  --font-mono: 'Geist Mono', monospace;
+  --radius: 0rem;
+}
+
+/* Base resets & styles matching the app theme */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  transition: background-color 0.2s ease, color 0.2s ease;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Sharp scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+  background-clip: padding-box;
+}
+
+/* App flat elements */
+.mac-surface {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.mac-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: background-color 0.12s ease;
+}
+
+.mac-card:hover {
+  background: var(--accent-soft);
+}
+
+.mac-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  transition: transform 0.08s ease, background-color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+}
+
+.mac-btn:active {
+  transform: translateY(1px);
+}
+
+.mac-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+  transform: none;
+}
+
+.mac-btn-soft {
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border-color: var(--border);
+}
+
+.mac-btn-soft:hover {
+  background: var(--accent);
+}
+
+.mac-btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--border-strong);
+}
+
+.mac-btn-primary:hover {
+  filter: brightness(1.08);
+}
+
+.mac-btn-icon {
+  padding: 0 !important;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+/* Theme toggle transition helper */
+.theme-transition * {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
+}
+
+/* Infinite scrolling marquee animation */
+.marquee-content {
+  display: flex;
+  width: max-content;
+  animation: scroll 35s linear infinite;
+}
+
+.marquee-content:hover {
+  animation-play-state: paused;
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-content {
+    animation: none;
+    width: auto;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .mac-btn:active {
+    transform: none;
+  }
+}
