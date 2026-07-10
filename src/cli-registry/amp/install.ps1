@@ -1,5 +1,5 @@
-Write-Output "Installing @sourcegraph/amp..."
-npm install -g @sourcegraph/amp
+Write-Output "Installing @ampcode/cli..."
+npm install -g @ampcode/cli
 if ($LASTEXITCODE -eq 0) {
   Write-Output "Amp CLI installed successfully"
 } else {

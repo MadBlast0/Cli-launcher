@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, memo, type RefObject } from 'react'
 import { SearchInput, Button, Tooltip, CliCardSkeleton } from '../ui'
 import { CliCard } from './CliCard'
 import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
@@ -24,12 +24,13 @@ interface CliGridProps {
   onSearchChange: (value: string) => void
   justInstalled?: string | null
   onToast?: (message: string, type: 'success' | 'error' | 'info') => void
+  searchInputRef?: RefObject<HTMLInputElement | null>
 }
 
 export function CliGrid({
   clis, states, counts, totalCount, loading = false, onUpdateCount, onLaunch,
   onRepair, onUpdate, onReorder, onReorderCommit, onOpenDeps, onOpenCatalog, onCliChanged,
-  deps, search, onSearchChange, justInstalled, onToast,
+  deps, search, onSearchChange, justInstalled, onToast, searchInputRef,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [reordered, setReordered] = useState(false)
@@ -39,13 +40,13 @@ export function CliGrid({
     [counts]
   )
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
+  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
     setDragIndex(index)
     e.dataTransfer.effectAllowed = 'move'
     e.dataTransfer.setData('text/plain', String(index))
-  }
+  }, [])
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragOver = useCallback((e: React.DragEvent, index: number) => {
     e.preventDefault()
     if (dragIndex === null || dragIndex === index) return
     // Reorder live in memory for visual feedback, but do NOT persist here —
@@ -54,21 +55,20 @@ export function CliGrid({
     onReorder(dragIndex, index)
     setDragIndex(index)
     setReordered(true)
-  }
+  }, [dragIndex, onReorder])
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setDragIndex(null)
     if (reordered) {
       onReorderCommit()
       setReordered(false)
     }
-  }
+  }, [reordered, onReorderCommit])
 
-  const missingDeps = [
-    !deps?.node.installed && 'Node.js',
-    !deps?.python.installed && 'Python',
-  ].filter(Boolean)
+  const missingDeps = deps
+    ? [!deps.node.installed && 'Node.js', !deps.python.installed && 'Python'].filter(Boolean)
+    : []
 
   const installedCount = clis.length
   const allClisCount = totalCount
@@ -78,7 +78,7 @@ export function CliGrid({
       {/* Search + Deps + Tools */}
       <div className="flex items-center gap-2 shrink-0">
         <div className="flex-1">
-          <SearchInput value={search} onChange={onSearchChange} placeholder="Search CLIs…" aria-label="Search CLIs" />
+          <SearchInput ref={searchInputRef} value={search} onChange={onSearchChange} placeholder="Search CLIs…" aria-label="Search CLIs" />
         </div>
         {missingDeps.length > 0 && (
           <Tooltip text="Install missing dependencies">
@@ -130,20 +130,20 @@ export function CliGrid({
           </div>
         )}
         {clis.map((cli, index) => (
-          <CliCard
+          <CliGridRow
             key={cli.id}
             cli={cli}
             state={states[cli.id] ?? null}
             index={index}
             count={getCount(cli.id)}
-            onCountChange={(delta) => onUpdateCount(cli.id, delta)}
-            onLaunch={() => onLaunch(cli.id, getCount(cli.id))}
-            onChanged={onCliChanged}
-            onRepaired={() => onRepair(cli.id)}
-            onUpdated={() => onUpdate(cli.id)}
-            onDragStart={(e) => handleDragStart(e, index)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDrop={handleDrop}
+            onUpdateCount={onUpdateCount}
+            onLaunch={onLaunch}
+            onCliChanged={onCliChanged}
+            onRepair={onRepair}
+            onUpdate={onUpdate}
+            handleDragStart={handleDragStart}
+            handleDragOver={handleDragOver}
+            handleDrop={handleDrop}
             justInstalled={justInstalled}
             onToast={onToast}
           />
@@ -152,3 +152,66 @@ export function CliGrid({
     </div>
   )
 }
+
+// Per-row wrapper that owns the per-card callbacks so they keep stable
+// identities across CliGrid re-renders (enabling CliCard's React.memo to
+// actually skip re-rendering unchanged cards).
+interface CliGridRowProps {
+  cli: CliDefinition
+  state: CliState | null
+  index: number
+  count: number
+  onUpdateCount: (cliId: string, delta: number) => void
+  onLaunch: (cliId: string, count: number) => void
+  onCliChanged: () => void
+  onRepair: (cliId: string) => void
+  onUpdate: (cliId: string) => void
+  handleDragStart: (e: React.DragEvent, index: number) => void
+  handleDragOver: (e: React.DragEvent, index: number) => void
+  handleDrop: (e: React.DragEvent) => void
+  justInstalled?: string | null
+  onToast?: (message: string, type: 'success' | 'error' | 'info') => void
+}
+
+const CliGridRow = memo(function CliGridRow({
+  cli, state, index, count, onUpdateCount, onLaunch, onCliChanged, onRepair,
+  onUpdate, handleDragStart, handleDragOver, handleDrop, justInstalled, onToast,
+}: CliGridRowProps) {
+  const handleCountChange = useCallback(
+    (delta: number) => onUpdateCount(cli.id, delta),
+    [onUpdateCount, cli.id]
+  )
+  const handleLaunch = useCallback(
+    () => onLaunch(cli.id, count),
+    [onLaunch, cli.id, count]
+  )
+  const handleRepaired = useCallback(() => onRepair(cli.id), [onRepair, cli.id])
+  const handleUpdated = useCallback(() => onUpdate(cli.id), [onUpdate, cli.id])
+  const onDragStart = useCallback(
+    (e: React.DragEvent) => handleDragStart(e, index),
+    [handleDragStart, index]
+  )
+  const onDragOver = useCallback(
+    (e: React.DragEvent) => handleDragOver(e, index),
+    [handleDragOver, index]
+  )
+
+  return (
+    <CliCard
+      cli={cli}
+      state={state}
+      index={index}
+      count={count}
+      onCountChange={handleCountChange}
+      onLaunch={handleLaunch}
+      onChanged={onCliChanged}
+      onRepaired={handleRepaired}
+      onUpdated={handleUpdated}
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDrop={handleDrop}
+      justInstalled={justInstalled}
+      onToast={onToast}
+    />
+  )
+})

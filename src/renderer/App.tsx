@@ -25,6 +25,7 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [favorites, setFavorites] = useState<string[]>([])
   const [cliOrder, setCliOrder] = useState<string[]>([])
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
 
   const addToast = useCallback((message: string, type: ToastType = 'info'): string => {
@@ -130,7 +131,7 @@ export default function App() {
     [counts]
   )
 
-  const handleUpdateCount = (cliId: string, delta: number) => {
+  const handleUpdateCount = useCallback((cliId: string, delta: number) => {
     setCounts((prev) => {
       const existing = prev.find((c) => c.cliId === cliId)
       if (existing) {
@@ -142,7 +143,7 @@ export default function App() {
       if (next < 1 || next > 9) return prev
       return [...prev, { cliId, count: next }]
     })
-  }
+  }, [])
 
   // The grid renders a filtered subset, so the drag indices are positions
   // within `filtered`. Translate them to CLI ids and reorder the full global
@@ -152,12 +153,18 @@ export default function App() {
   const cliOrderRef = useRef<string[]>([])
   useEffect(() => { cliOrderRef.current = cliOrder }, [cliOrder])
 
-  const handleReorder = (fromIndex: number, toIndex: number) => {
-    const fromId = filtered[fromIndex]?.id
-    const toId = filtered[toIndex]?.id
+  // Refs mirroring the derived lists so handleReorder (which must stay a stable
+  // callback to keep drag handlers memoized) can read the latest values without
+  // taking them as dependencies.
+  const filteredRef = useRef<CliDefinition[]>([])
+  const orderedClisRef = useRef<CliDefinition[]>([])
+
+  const handleReorder = useCallback((fromIndex: number, toIndex: number) => {
+    const fromId = filteredRef.current[fromIndex]?.id
+    const toId = filteredRef.current[toIndex]?.id
     if (!fromId || !toId || fromId === toId) return
 
-    const fullOrder = orderedClis.map((c) => c.id)
+    const fullOrder = orderedClisRef.current.map((c) => c.id)
     const fi = fullOrder.indexOf(fromId)
     const ti = fullOrder.indexOf(toId)
     if (fi === -1 || ti === -1) return
@@ -165,7 +172,7 @@ export default function App() {
     fullOrder.splice(fi, 1)
     fullOrder.splice(ti, 0, fromId)
     setCliOrder(fullOrder)
-  }
+  }, [])
 
   const handleReorderCommit = useCallback(() => {
     saveSettings({ cliOrder: cliOrderRef.current })
@@ -195,13 +202,13 @@ export default function App() {
   // CliCard performs the repair/update itself (with its own toast + busy
   // state); these callbacks let it notify the app afterwards so the shared
   // state map is refreshed (e.g. the version/update badge updates).
-  const handleRepair = (cliId: string) => {
+  const handleRepair = useCallback((cliId: string) => {
     window.electronAPI.getCliState(cliId).catch(() => {})
-  }
+  }, [])
 
-  const handleUpdate = (cliId: string) => {
+  const handleUpdate = useCallback((cliId: string) => {
     window.electronAPI.getCliState(cliId).catch(() => {})
-  }
+  }, [])
 
   // Keyboard shortcuts. Declared after handleLaunch/getCount so it can list
   // them as dependencies (avoids a stale-closure hazard) and honour the
@@ -215,8 +222,7 @@ export default function App() {
       if (e.ctrlKey || e.metaKey) {
         if (e.key === 'f') {
           e.preventDefault()
-          const input = document.querySelector<HTMLInputElement>('input[type="text"]')
-          input?.focus()
+          searchInputRef.current?.focus()
         } else if (e.key === 'd') {
           e.preventDefault()
           setShowDeps(true)
@@ -257,6 +263,7 @@ export default function App() {
     })
     return copy
   }, [clis, cliOrder, favorites])
+  useEffect(() => { orderedClisRef.current = orderedClis }, [orderedClis])
 
   // Main page shows only CLIs already installed, then applies the search.
   const filtered = useMemo(() => {
@@ -265,6 +272,23 @@ export default function App() {
       .filter((cli) => isInstalled(cli.id))
       .filter((cli) => cli.name.toLowerCase().includes(q) || cli.id.toLowerCase().includes(q))
   }, [orderedClis, states, search])
+  useEffect(() => { filteredRef.current = filtered }, [filtered])
+
+  if (!window.electronAPI) {
+    return (
+      <LauncherWindow isDark={theme === 'dark'} onToggleTheme={toggleTheme}>
+        <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-3 text-center px-6">
+          <p className="text-sm text-white/80">
+            This window must be opened from inside the Electron app.
+          </p>
+          <p className="text-xs text-white/50">
+            Run <code className="px-1 rounded bg-white/10">npm run dev</code> (not just Vite) so the
+            native bridge is available.
+          </p>
+        </div>
+      </LauncherWindow>
+    )
+  }
 
   if (!loaded) return <Loader />
 
@@ -295,6 +319,7 @@ export default function App() {
           onSearchChange={setSearch}
           justInstalled={justInstalled}
           onToast={addToast}
+          searchInputRef={searchInputRef}
         />
       </div>
 

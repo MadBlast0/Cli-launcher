@@ -19,14 +19,10 @@ import ampDef from './amp'
 import amazonqDef from './amazonq'
 import clineDef from './cline'
 import codyDef from './cody'
-import skiDef from './ski'
-import boltDef from './bolt'
-import replitAgentDef from './replit-agent'
 import interpreterDef from './interpreter'
 import openhandsDef from './openhands'
 import plandexDef from './plandex'
 import continueDef from './continue'
-import cursorAgentDef from './cursor-agent'
 import droidDef from './droid'
 import auggieDef from './auggie'
 import grokDef from './grok'
@@ -57,14 +53,10 @@ const registry: CliDefinition[] = [
   amazonqDef,
   clineDef,
   codyDef,
-  skiDef,
-  boltDef,
-  replitAgentDef,
   interpreterDef,
   openhandsDef,
   plandexDef,
   continueDef,
-  cursorAgentDef,
   droidDef,
   auggieDef,
   grokDef,

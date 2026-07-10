@@ -7,6 +7,7 @@ const pi: CliDefinition = {
   packageName: '@mariozechner/pi-coding-agent',
   dependencyType: 'node',
   description: 'Terminal AI coding agent by Mario Zechner',
+  homepage: 'https://github.com/mariozechner/pi-coding-agent',
   skipPermissions: false,
 }
 

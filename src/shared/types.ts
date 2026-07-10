@@ -1,5 +1,5 @@
 export type DependencyType = 'node' | 'python' | 'standalone'
-export type CliAction = 'install' | 'update' | 'uninstall' | 'repair' | 'open'
+export type CliAction = 'install' | 'update' | 'uninstall' | 'repair'
 export type CliStatus = 'not-installed' | 'installed' | 'update-available' | 'error'
 
 export interface CliDefinition {
@@ -13,17 +13,13 @@ export interface CliDefinition {
   skipPermissions: boolean
   skipPermissionsFlag?: string
   wslExecutable?: boolean
+  skipUpdateCheck?: boolean
 }
 
 export interface CliState {
   status: CliStatus
   version?: string
   latestVersion?: string
-}
-
-export interface CliActionRequest {
-  cliId: string
-  action: CliAction
 }
 
 export interface CliActionResult {

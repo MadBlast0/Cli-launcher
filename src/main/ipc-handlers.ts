@@ -94,6 +94,12 @@ const PKG_CACHE_TTL = 60000
 let npmGlobalCache: { data: Set<string> | null; ts: number } = { data: null, ts: 0 }
 let pipGlobalCache: { data: Set<string> | null; ts: number } = { data: null, ts: 0 }
 
+// In-flight refresh promises used to dedupe concurrent cold-cache calls so a
+// burst of `checkCliStatus` requests doesn't spawn many `npm ls -g` / `pip
+// list` processes at once. If a refresh is already running, callers await it.
+let npmGlobalRefresh: Promise<Set<string>> | null = null
+let pipGlobalRefresh: Promise<Set<string>> | null = null
+
 // `npm ls -g --json` / `pip list --json` routinely exceed the 1 MB default
 // stdout buffer on machines with many global packages; without a raised
 // maxBuffer the child errors with ENOBUFS, every CLI is misreported as
@@ -106,45 +112,61 @@ async function npmGlobalPackages(): Promise<Set<string>> {
   if (npmGlobalCache.data && Date.now() - npmGlobalCache.ts < PKG_CACHE_TTL) {
     return npmGlobalCache.data
   }
-  const result = await new Promise<Set<string> | null>((resolve) => {
-    // `npm ls -g` exits non-zero when there are peer-dep warnings even though
-    // it still prints valid JSON, so we parse stdout regardless of `err`.
-    exec('npm ls -g --depth=0 --json', { timeout: 20000, maxBuffer: PKG_MAX_BUFFER }, (_err, stdout) => {
-      if (!stdout) { resolve(null); return }
-      try {
-        const json = JSON.parse(stdout)
-        const deps = json.dependencies || {}
-        resolve(new Set<string>(Object.keys(deps)))
-      } catch { resolve(null) }
-    })
-  })
-  if (result) {
-    npmGlobalCache.data = result
-    npmGlobalCache.ts = Date.now()
-    return result
-  }
-  return npmGlobalCache.data ?? new Set<string>()
+  if (npmGlobalRefresh) return npmGlobalRefresh
+  npmGlobalRefresh = (async () => {
+    try {
+      const result = await new Promise<Set<string> | null>((resolve) => {
+        // `npm ls -g` exits non-zero when there are peer-dep warnings even though
+        // it still prints valid JSON, so we parse stdout regardless of `err`.
+        exec('npm ls -g --depth=0 --json', { timeout: 20000, maxBuffer: PKG_MAX_BUFFER }, (_err, stdout) => {
+          if (!stdout) { resolve(null); return }
+          try {
+            const json = JSON.parse(stdout)
+            const deps = json.dependencies || {}
+            resolve(new Set<string>(Object.keys(deps)))
+          } catch { resolve(null) }
+        })
+      })
+      if (result) {
+        npmGlobalCache.data = result
+        npmGlobalCache.ts = Date.now()
+        return result
+      }
+      return npmGlobalCache.data ?? new Set<string>()
+    } finally {
+      npmGlobalRefresh = null
+    }
+  })()
+  return npmGlobalRefresh
 }
 
 async function pipGlobalPackages(): Promise<Set<string>> {
   if (pipGlobalCache.data && Date.now() - pipGlobalCache.ts < PKG_CACHE_TTL) {
     return pipGlobalCache.data
   }
-  const result = await new Promise<Set<string> | null>((resolve) => {
-    exec('pip list --format=json', { timeout: 20000, maxBuffer: PKG_MAX_BUFFER }, (_err, stdout) => {
-      if (!stdout) { resolve(null); return }
-      try {
-        const list = JSON.parse(stdout)
-        resolve(new Set<string>(list.map((p: { name: string }) => p.name)))
-      } catch { resolve(null) }
-    })
-  })
-  if (result) {
-    pipGlobalCache.data = result
-    pipGlobalCache.ts = Date.now()
-    return result
-  }
-  return pipGlobalCache.data ?? new Set<string>()
+  if (pipGlobalRefresh) return pipGlobalRefresh
+  pipGlobalRefresh = (async () => {
+    try {
+      const result = await new Promise<Set<string> | null>((resolve) => {
+        exec('pip list --format=json', { timeout: 20000, maxBuffer: PKG_MAX_BUFFER }, (_err, stdout) => {
+          if (!stdout) { resolve(null); return }
+          try {
+            const list = JSON.parse(stdout)
+            resolve(new Set<string>(list.map((p: { name: string }) => p.name)))
+          } catch { resolve(null) }
+        })
+      })
+      if (result) {
+        pipGlobalCache.data = result
+        pipGlobalCache.ts = Date.now()
+        return result
+      }
+      return pipGlobalCache.data ?? new Set<string>()
+    } finally {
+      pipGlobalRefresh = null
+    }
+  })()
+  return pipGlobalRefresh
 }
 
 async function checkCliStatus(cli: CliDefinition): Promise<CliState> {
@@ -155,12 +177,12 @@ async function checkCliStatus(cli: CliDefinition): Promise<CliState> {
     if (cli.dependencyType === 'node' && cli.packageName) {
       const globals = await npmGlobalPackages()
       if (globals.has(cli.packageName)) {
-        version = (await getVersion(`${cli.executable} --version`)) || 'installed'
+        version = (await getVersion(`${cli.executable} --version`)) || ''
       }
     } else if (cli.dependencyType === 'python' && cli.packageName) {
       const globals = await pipGlobalPackages()
       if (globals.has(cli.packageName)) {
-        version = (await getVersion(`${cli.executable} --version`)) || 'installed'
+        version = (await getVersion(`${cli.executable} --version`)) || ''
       }
     }
 
@@ -176,7 +198,7 @@ async function checkCliStatus(cli: CliDefinition): Promise<CliState> {
         const detector = isWindows ? 'where' : 'which'
         exec(`${detector} ${cli.executable}`, { timeout: 5000 }, (err) => resolve(!err))
       })
-      if (found) version = (await getVersion(`${cli.executable} --version`)) || 'installed'
+      if (found) version = (await getVersion(`${cli.executable} --version`)) || ''
     }
 
     if (!version) return { status: 'not-installed' }
@@ -209,7 +231,7 @@ async function refreshAllStates(registry: CliDefinition[], sender: Electron.WebC
     const state = await checkCliStatus(cli)
     freshStates[cli.id] = state
     cliStatusCache.set(cli.id, state)
-    try { sender.send('cli:state-updated', cli.id, state) } catch { /* window closed */ }
+    try { sender.send(IPC_CHANNELS.CLI_STATE_UPDATED, cli.id, state) } catch { /* window closed */ }
   })
 
   writeStateCache(freshStates)
@@ -223,7 +245,7 @@ export function registerIpcHandlers() {
     if (!cli) return null
     const state = await checkCliStatus(cli)
     cliStatusCache.set(cliId, state)
-    try { event.sender.send('cli:state-updated', cliId, state) } catch { /* window closed */ }
+    try { event.sender.send(IPC_CHANNELS.CLI_STATE_UPDATED, cliId, state) } catch { /* window closed */ }
     return state
   })
 
@@ -234,7 +256,7 @@ export function registerIpcHandlers() {
     return readStateCache()
   })
 
-  ipcMain.handle('cli:refresh-all-states', async (event) => {
+  ipcMain.handle(IPC_CHANNELS.CLI_REFRESH_ALL_STATES, async (event) => {
     const registry = getCliRegistry()
     await refreshAllStates(registry, event.sender)
   })
@@ -353,12 +375,12 @@ export function registerIpcHandlers() {
     writeSettings({ ...current, ...settings })
   })
 
-  ipcMain.on('window:close', () => {
+  ipcMain.on(IPC_CHANNELS.WINDOW_CLOSE, () => {
     const win = BrowserWindow.getAllWindows()[0]
     if (win) win.close()
   })
 
-  ipcMain.on('window:minimize', () => {
+  ipcMain.on(IPC_CHANNELS.WINDOW_MINIMIZE, () => {
     const win = BrowserWindow.getAllWindows()[0]
     if (win) win.minimize()
   })

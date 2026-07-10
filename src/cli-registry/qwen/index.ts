@@ -7,7 +7,7 @@ const qwen: CliDefinition = {
   packageName: '@qwen-code/qwen-code',
   dependencyType: 'node',
   description: 'Alibaba\'s Qwen-powered AI coding agent',
-  homepage: 'https://github.com/Qwen-code/Qwen-code',
+  homepage: 'https://github.com/QwenLM/Qwen-Code',
   skipPermissions: false,
 }
 

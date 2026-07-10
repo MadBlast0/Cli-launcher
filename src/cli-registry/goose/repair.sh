@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-echo "Repairing Goose CLI..."
-npm uninstall -g @block/goose
-npm install -g @block/goose
-echo "Goose CLI repaired successfully"
+echo "Installing Goose CLI..."
+curl -fsSL https://github.com/block/goose/releases/download/stable/download_cli.sh | bash
+echo "Goose CLI installed successfully"

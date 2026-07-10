@@ -1,6 +1,6 @@
-Write-Output "Repairing @sourcegraph/amp..."
-npm uninstall -g @sourcegraph/amp
-npm install -g @sourcegraph/amp
+Write-Output "Repairing @ampcode/cli..."
+npm uninstall -g @ampcode/cli
+npm install -g @ampcode/cli
 if ($LASTEXITCODE -eq 0) {
   Write-Output "Amp CLI repaired successfully"
 } else {

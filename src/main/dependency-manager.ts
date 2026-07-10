@@ -80,8 +80,10 @@ export async function checkDependencies(): Promise<DependencyCheck> {
   const nodeVersion = await execCmd(nodeCmd)
   let pythonVersion = await execCmd(pythonCmd)
   // On Windows, `python` may be the Microsoft Store stub (prints nothing / errors).
-  // Fall back to the `py` launcher before deciding Python is missing.
-  if (isWin && !pythonVersion.toLowerCase().includes('python')) {
+  // Fall back to the `py` launcher before deciding Python is missing. Detect a
+  // real Python by looking for a version-like string rather than the word
+  // "python", which avoids false-pos/neg on stubs and localized output.
+  if (isWin && !/\d+\.\d+/.test(pythonVersion)) {
     pythonVersion = await execCmd('py --version')
   }
 
@@ -91,7 +93,7 @@ export async function checkDependencies(): Promise<DependencyCheck> {
       version: nodeVersion || undefined,
     },
     python: {
-      installed: pythonVersion.toLowerCase().includes('python'),
+      installed: /\d+\.\d+/.test(pythonVersion),
       version: pythonVersion || undefined,
     },
   }

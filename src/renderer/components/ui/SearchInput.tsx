@@ -1,3 +1,4 @@
+import { forwardRef } from 'react'
 import { Search } from 'lucide-react'
 
 interface SearchInputProps {
@@ -6,15 +7,15 @@ interface SearchInputProps {
   placeholder?: string
 }
 
-export function SearchInput({
-  value,
-  onChange,
-  placeholder = 'Search CLIs…',
-}: SearchInputProps) {
+export const SearchInput = forwardRef<HTMLInputElement, SearchInputProps>(function SearchInput(
+  { value, onChange, placeholder = 'Search CLIs…' },
+  ref
+) {
   return (
     <div className="mac-input flex items-center gap-2 px-3 py-2">
       <Search size={15} className="text-muted-foreground shrink-0" />
       <input
+        ref={ref}
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -23,4 +24,4 @@ export function SearchInput({
       />
     </div>
   )
-}
+})

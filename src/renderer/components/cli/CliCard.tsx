@@ -142,7 +142,7 @@ function CliCardInner({
 
   const openHomepage = () => {
     if (cli.homepage) {
-      try { window.open(cli.homepage, '_blank') } catch { /* ignore */ }
+      try { window.open(cli.homepage, '_blank', 'noopener,noreferrer') } catch { /* ignore */ }
     }
     setContextMenu(null)
   }

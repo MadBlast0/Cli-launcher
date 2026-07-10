@@ -34,7 +34,6 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [leaving, setLeaving] = useState<string | null>(null)
-  const [justInstalled, setJustInstalled] = useState<string | null>(null)
 
   const notInstalled = clis.filter(
     (cli) => states[cli.id]?.status !== 'installed' && states[cli.id]?.status !== 'update-available'
@@ -76,21 +75,19 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
       const fresh = await window.electronAPI.getCliState(cliId)
       const installed = fresh?.status === 'installed' || fresh?.status === 'update-available'
 
-      if (result.success && installed) {
-        setToast(toastId, `${cliName} installed successfully`, 'success')
-        setBusy(null)
-        setLeaving(cliId)
-        setTimeout(() => {
-          setJustInstalled(cliId)
+        if (result.success && installed) {
+          setToast(toastId, `${cliName} installed successfully`, 'success')
+          setBusy(null)
+          setLeaving(cliId)
           setTimeout(() => {
-            setLeaving(null)
-            setJustInstalled(null)
-            onChanged()
-            onInstalled?.(cliId)
-          }, 50)
-        }, 250)
-        return
-      }
+            setTimeout(() => {
+              setLeaving(null)
+              onChanged()
+              onInstalled?.(cliId)
+            }, 50)
+          }, 250)
+          return
+        }
       setToast(toastId, `${cliName} install failed: ${result.error || 'CLI not found after install'}`, 'error')
     } catch (err) {
       // An IPC rejection must never leave the row stuck spinning.
@@ -104,6 +101,12 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
 
   const installAll = async (list: CliDefinition[]) => {
     for (const cli of list) {
+      // Skip CLIs that are already installed so we don't re-trigger an install
+      // for items that became installed (or were installed already) — e.g. if
+      // `states` updated while the catalog was open.
+      if (states[cli.id]?.status === 'installed' || states[cli.id]?.status === 'update-available') {
+        continue
+      }
       const toastId = onToast?.(`Installing ${cli.name}…`, 'loading')
       try {
         const result = await window.electronAPI.executeAction(cli.id, 'install')

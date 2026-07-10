@@ -2,7 +2,7 @@
 
 # CLI Launcher
 
-Cross-platform desktop launcher for AI coding CLIs. Install, update, uninstall, and launch 17 terminal AI agents — all from one mac-style panel.
+Cross-platform desktop launcher for AI coding CLIs. Install, update, uninstall, and launch 32 terminal AI agents — all from one mac-style panel.
 
 <!-- Badges -->
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/stars/MadBlast0/Cli-launcher.svg?variant=secondary&amp;size=sm&amp;mode=dark"><img alt="GitHub Stars" src="https://www.shieldcn.dev/github/stars/MadBlast0/Cli-launcher.svg?variant=secondary&amp;size=sm&amp;mode=light"></picture>
@@ -30,27 +30,42 @@ Cross-platform desktop launcher for AI coding CLIs. Install, update, uninstall, 
 
 | CLI | Package | Type |
 | --- | ------- | ---- |
-| Claude Code | `@anthropic-ai/claude-code` | npm |
-| OpenCode | `opencode-ai` | npm |
-| Gemini CLI | `@google/gemini-cli` | npm |
-| GitHub Copilot | `@github/copilot` | npm |
-| OpenAI Codex | `@openai/codex` | npm |
-| Aider | `aider-chat` | pip |
-| Kilo Code | `@kilocode/cli` | npm |
-| Qwen Code | `@qwen-code/qwen-code` | npm |
-| Codebuff | `codebuff` | npm |
-| Goose CLI | `@block/goose` | npm |
-| PI Coding Agent | `@mariozechner/pi-coding-agent` | npm |
-| Crush | `@charmland/crush` | npm |
-| Freebuff | `freebuff` | npm |
-| Command Code | `command-code` | npm |
-| Cursor CLI | standalone | curl |
-| Amp CLI | `@sourcegraph/amp` | npm |
-| Amazon Q | standalone | wsl/curl |
+| Claude Code | `@anthropic-ai/claude-code` | node |
+| OpenCode | `opencode-ai` | node |
+| Gemini CLI | `@google/gemini-cli` | node |
+| GitHub Copilot CLI | `@github/copilot` | node |
+| Codex CLI | `@openai/codex` | node |
+| Aider | `aider-chat` | python |
+| Kilo CLI | `@kilocode/cli` | node |
+| Qwen Code | `@qwen-code/qwen-code` | node |
+| Codebuff | `codebuff` | node |
+| Goose CLI | `—` | standalone |
+| PI Coding Agent | `@mariozechner/pi-coding-agent` | node |
+| Crush | `@charmland/crush` | node |
+| Freebuff | `freebuff` | node |
+| Command Code | `command-code` | node |
+| Cursor CLI | `—` | standalone |
+| Amp CLI | `@ampcode/cli` | node |
+| Amazon Q Developer CLI | `—` | standalone |
+| Cline | `cline` | node |
+| Cody CLI | `@sourcegraph/cody` | node |
+| Open Interpreter | `open-interpreter` | python |
+| OpenHands CLI | `openhands-ai` | python |
+| Plandex | `—` | standalone |
+| Continue CLI | `@continuedev/cli` | node |
+| Droid (Factory) | `—` | standalone |
+| Auggie | `@augmentcode/auggie` | node |
+| Grok CLI | `@vibe-kit/grok-cli` | node |
+| Mods | `—` | standalone |
+| aichat | `—` | standalone |
+| gptme | `gptme` | python |
+| Shell-GPT | `shell-gpt` | python |
+| RA.Aid | `ra-aid` | python |
+| Fabric | `—` | standalone |
 
 ## Features
 
-- **17 AI coding CLIs** — manage all major terminal AI agents (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Aider, and more) in one place.
+- **32 AI coding CLIs** — manage all major terminal AI agents (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Aider, and more) in one place.
 - **Install / Update / Uninstall / Repair** — per-CLI actions with real-time progress feedback. Each CLI gets its own install script generated dynamically for your platform.
 - **Open terminal** — launches a terminal (cmd, PowerShell, or your default shell) pre-configured in your chosen working directory.
 - **Drag to reorder** — rearrange CLI cards to your preference; layout persists across sessions.

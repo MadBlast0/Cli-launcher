@@ -89,12 +89,11 @@ function createWindow() {
     if (/^https?:\/\//i.test(url)) shell.openExternal(url)
   })
 
-  // Handle both the legacy positional signature and the newer details-object
-  // form (Electron changed this API), so log forwarding survives upgrades.
+  // The `console-message` event receives positional args (level, message,
+  // lineNumber, sourceId) — the first arg is the Event object and carries no
+  // useful data, so we use the positional fallback directly.
   mainWindow.webContents.on('console-message', (...cmArgs: any[]) => {
-    const d = cmArgs[0] && typeof cmArgs[0] === 'object' && 'message' in cmArgs[0]
-      ? { level: cmArgs[0].level, message: cmArgs[0].message, line: cmArgs[0].lineNumber, sourceId: cmArgs[0].sourceId }
-      : { level: cmArgs[1], message: cmArgs[2], line: cmArgs[3], sourceId: cmArgs[4] }
+    const d = { level: cmArgs[1], message: cmArgs[2], line: cmArgs[3], sourceId: cmArgs[4] }
     const levels: Record<string, string> = { 0: 'verbose', 1: 'info', 2: 'warning', 3: 'error', 4: 'debug' }
     const prefix = levels[d.level] ?? String(d.level ?? 'log')
     console.log(`[renderer:${prefix}] ${d.message} (${d.sourceId}:${d.line})`)

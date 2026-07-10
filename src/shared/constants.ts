@@ -11,6 +11,10 @@ export const IPC_CHANNELS = {
   SAVE_SETTINGS: 'settings:save',
   GET_SETTINGS: 'settings:get',
   LAUNCH_CLI: 'cli:launch',
+  CLI_REFRESH_ALL_STATES: 'cli:refresh-all-states',
+  CLI_STATE_UPDATED: 'cli:state-updated',
+  WINDOW_MINIMIZE: 'window:minimize',
+  WINDOW_CLOSE: 'window:close',
 } as const
 
 export const WINDOW_CONFIG = {

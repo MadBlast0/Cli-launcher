@@ -1,4 +1,4 @@
-import { execFile, spawn, exec, execSync, ChildProcess } from 'child_process'
+import { execFile, spawn, execSync, ChildProcess } from 'child_process'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
@@ -49,7 +49,7 @@ function runScript(scriptPath: string): Promise<CliActionResult> {
       ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath]
       : [scriptPath]
 
-    const child = execFile(cmd, args, { maxBuffer: 1024 * 1024, timeout: 300000 }, (error, stdout, stderr) => {
+    const child = execFile(cmd, args, { maxBuffer: 10 * 1024 * 1024, timeout: 300000 }, (error, stdout, stderr) => {
       if (error) {
         resolve({ success: false, output: stdout, error: stderr || error.message })
       } else {
@@ -383,7 +383,16 @@ export async function openCli(cli: CliDefinition, folder: string | null, permiss
     }
 
     const child = launcher(cli.executable, dangerousArgs, folder)
-    child.unref()
+
+    // A failed spawn (e.g. ENOENT) surfaces asynchronously via an 'error'
+    // event rather than a synchronous throw, so wait a tick to catch it before
+    // reporting success.
+    const spawnError = await new Promise<Error | null>((resolve) => {
+      child.on('error', resolve)
+      child.unref()
+      setImmediate(() => resolve(null))
+    })
+    if (spawnError) return makeError('SPAWN_FAILED', spawnError.message)
 
     return { success: true, output: `Opened ${cli.name} in ${terminal}`, errorCode: undefined }
   } catch (err) {
@@ -409,7 +418,7 @@ function getNpmOutdated(): Promise<Record<string, { current: string; latest: str
     execFile(
       'npm',
       ['outdated', '-g', '--json'],
-      { timeout: 25000, maxBuffer: 1024 * 1024 },
+      { timeout: 25000, maxBuffer: 10 * 1024 * 1024 },
       (_error: unknown, stdout: string) => {
         try {
           const data: Record<string, { current: string; latest: string }> = JSON.parse(stdout || '{}')
@@ -432,7 +441,7 @@ function getPipOutdated(): Promise<Record<string, { current: string; latest: str
     execFile(
       'pip',
       ['list', '--outdated', '--format=json'],
-      { timeout: 25000, maxBuffer: 1024 * 1024 },
+      { timeout: 25000, maxBuffer: 10 * 1024 * 1024 },
       (_error: unknown, stdout: string) => {
         try {
           const list = JSON.parse(stdout || '[]')
@@ -475,49 +484,13 @@ export async function checkCliUpdate(
   return { updateAvailable: false }
 }
 
-const standaloneVersionCache: { data: Record<string, string>; ts: number } = { data: {}, ts: 0 }
-
 export async function checkStandaloneUpdate(
   cli: CliDefinition
 ): Promise<{ updateAvailable: boolean; latestVersion?: string }> {
-  const pkg = cli.packageName || cli.id
-
-  if (!isCacheFresh(standaloneVersionCache)) {
-    standaloneVersionCache.data = {}
-    standaloneVersionCache.ts = Date.now()
-  }
-
-  // Each standalone CLI is queried (and cached) under its own id so that one
-  // CLI's lookup never overwrites or poisons another's.
-  if (!standaloneVersionCache.data[cli.id]) {
-    try {
-      const npmView = await new Promise<string>((resolve) => {
-        exec(`npm view ${pkg} version`, { timeout: 10000 }, (_err, stdout) => {
-          resolve(stdout.trim())
-        })
-      })
-      if (npmView) standaloneVersionCache.data[cli.id] = npmView
-    } catch { /* not published on npm */ }
-  }
-
-  const latest = standaloneVersionCache.data[cli.id]
-  if (!latest) return { updateAvailable: false }
-
-  try {
-    const current = await new Promise<string>((resolve) => {
-      const cmd =
-        cli.wslExecutable && isWindows
-          ? `wsl -e bash -lc "${qSH(cli.executable)} --version"`
-          : `${cli.executable} --version`
-      exec(cmd, { timeout: 5000 }, (_err, stdout) => {
-        resolve(stdout.trim().split('\n')[0] || '')
-      })
-    })
-    if (current && current !== latest) {
-      return { updateAvailable: true, latestVersion: latest }
-    }
-  } catch { /* ignore */ }
-
+  // Standalone CLIs (cargo crates, prebuilt binaries, e.g. aichat, amazonq,
+  // cursor, droid, plandex) are not npm packages, so an `npm view` lookup would
+  // return a bogus or empty version and falsely report an update. Non-npm
+  // versions can't be reliably checked, so we never report one.
   return { updateAvailable: false }
 }
 

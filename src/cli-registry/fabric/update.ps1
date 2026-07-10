@@ -1,5 +1,5 @@
 Write-Output "Updating Fabric..."
-go install github.com/danielmiessler/fabric@latest
+go install github.com/danielmiessler/fabric/cmd/fabric@latest
 if ($LASTEXITCODE -eq 0) {
   Write-Output "Fabric updated successfully"
 } else {

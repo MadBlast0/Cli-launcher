@@ -1,5 +1,5 @@
-Write-Output "Updating @sourcegraph/amp..."
-npm install -g @sourcegraph/amp@latest
+Write-Output "Updating @ampcode/cli..."
+npm install -g @ampcode/cli@latest
 if ($LASTEXITCODE -eq 0) {
   Write-Output "Amp CLI updated successfully"
 } else {

@@ -13,5 +13,6 @@
     "rootDir": "src",
     "moduleResolution": "node16"
   },
-  "include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*", "src/cli-registry/**/*"]
+  "include": ["src/main/**/*", "src/preload/**/*", "src/shared/**/*", "src/cli-registry/**/*"],
+  "exclude": ["**/*.test.ts"]
 }

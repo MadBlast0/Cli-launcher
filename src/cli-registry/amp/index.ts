@@ -4,7 +4,7 @@ const amp: CliDefinition = {
   id: 'amp',
   name: 'Amp CLI',
   executable: 'amp',
-  packageName: '@sourcegraph/amp',
+  packageName: '@ampcode/cli',
   dependencyType: 'node',
   description: 'Sourcegraph\'s agentic coding tool for the terminal',
   homepage: 'https://ampcode.com',

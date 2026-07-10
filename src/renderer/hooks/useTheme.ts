@@ -9,17 +9,18 @@ export function useTheme() {
   })
 
   // localStorage is the single source of truth for the theme; always apply it
-  // to the DOM + storage. The settings.json mirror is only written on an actual
-  // user change (not on the initial mount), so it can't clobber the stored
-  // value during startup before the rest of the app has read settings.
-  const mounted = useRef(false)
+  // to the DOM + storage, and mirror it into settings.json on every change.
+  // `savedThemeRef` tracks the last theme actually persisted so this effect
+  // does NOT write settings on mount (or under StrictMode's double-invoke) —
+  // only a real user change triggers a settings write.
+  const savedThemeRef = useRef<Theme>(theme)
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
     localStorage.setItem('cli-launcher-theme', theme)
-    if (mounted.current) {
-      try { window.electronAPI.saveSettings({ theme }) } catch { /* ignore */ }
-    } else {
-      mounted.current = true
+    if (savedThemeRef.current !== theme) {
+      savedThemeRef.current = theme
+      window.electronAPI.saveSettings({ theme }).catch(() => {})
     }
   }, [theme])
 

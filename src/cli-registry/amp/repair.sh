@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 echo "Repairing Amp CLI..."
-npm uninstall -g @sourcegraph/amp
-npm install -g @sourcegraph/amp
+npm uninstall -g @ampcode/cli
+npm install -g @ampcode/cli
 echo "Amp CLI repaired successfully"
