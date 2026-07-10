@@ -1,6 +1,6 @@
 {
   "name": "cli-launcher",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Floating launcher for terminal AI CLIs",
   "author": {
     "name": "Mad Blast",
