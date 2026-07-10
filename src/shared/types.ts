@@ -67,3 +67,19 @@ export interface CliCount {
   cliId: string
   count: number
 }
+
+export interface AppUpdateInfo {
+  updateAvailable: boolean
+  version?: string
+  releaseNotes?: string
+  error?: string
+}
+
+export type AppUpdateStatusType = 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+
+export interface AppUpdateStatus {
+  type: AppUpdateStatusType
+  version?: string
+  progress?: number
+  error?: string
+}

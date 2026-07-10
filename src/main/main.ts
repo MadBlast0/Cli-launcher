@@ -1,7 +1,8 @@
 import { app, BrowserWindow, screen, nativeImage, Tray, Menu, shell, session } from 'electron'
 import path from 'path'
 import { registerIpcHandlers } from './ipc-handlers'
-import { WINDOW_CONFIG, APP_NAME } from '../shared/constants'
+import { WINDOW_CONFIG, APP_NAME, IPC_CHANNELS } from '../shared/constants'
+import type { AppUpdateStatus } from '../shared/types'
 
 let mainWindow: BrowserWindow | null = null
 let tray: Tray | null = null
@@ -122,11 +123,12 @@ function createWindow() {
   })
 }
 
-function checkForUpdates() {
-  // Only check for updates in packaged builds (skip during development).
+let autoUpdaterInitialized = false
+
+function initAutoUpdater() {
+  if (autoUpdaterInitialized) return
+  autoUpdaterInitialized = true
   if (!app.isPackaged) return
-  // Auto-update: notifies the user about newer GitHub releases. The user
-  // decides whether to install via the notification (no forced restart).
   try {
     const { autoUpdater } = require('electron-updater')
     autoUpdater.setFeedURL({
@@ -134,8 +136,37 @@ function checkForUpdates() {
       owner: 'MadBlast0',
       repo: 'Cli-launcher',
     })
-    autoUpdater.checkForUpdatesAndNotify()
+    autoUpdater.autoDownload = false
+
+    autoUpdater.on('checking-for-update', () => {
+      sendUpdateStatus({ type: 'checking' })
+    })
+
+    autoUpdater.on('update-available', (info: any) => {
+      sendUpdateStatus({ type: 'available', version: info.version })
+    })
+
+    autoUpdater.on('update-not-available', () => {
+      sendUpdateStatus({ type: 'not-available' })
+    })
+
+    autoUpdater.on('download-progress', (progress: any) => {
+      sendUpdateStatus({ type: 'downloading', progress: progress.percent })
+    })
+
+    autoUpdater.on('update-downloaded', (info: any) => {
+      sendUpdateStatus({ type: 'downloaded', version: info.version })
+    })
+
+    autoUpdater.on('error', (err: any) => {
+      sendUpdateStatus({ type: 'error', error: err?.message ?? String(err) })
+    })
   } catch { /* electron-updater not installed */ }
+}
+
+function sendUpdateStatus(status: AppUpdateStatus) {
+  const win = BrowserWindow.getAllWindows()[0]
+  if (win) win.webContents.send(IPC_CHANNELS.APP_UPDATE_STATUS, status)
 }
 
 if (process.platform === 'win32') app.setAppUserModelId('com.cli-launcher.app')
@@ -173,7 +204,7 @@ app.whenReady().then(() => {
   createWindow()
   createTray()
   registerIpcHandlers()
-  checkForUpdates()
+  initAutoUpdater()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

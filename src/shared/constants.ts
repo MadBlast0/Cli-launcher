@@ -15,6 +15,10 @@ export const IPC_CHANNELS = {
   CLI_STATE_UPDATED: 'cli:state-updated',
   WINDOW_MINIMIZE: 'window:minimize',
   WINDOW_CLOSE: 'window:close',
+  CHECK_APP_UPDATE: 'app:check-update',
+  DOWNLOAD_APP_UPDATE: 'app:download-update',
+  INSTALL_APP_UPDATE: 'app:install-update',
+  APP_UPDATE_STATUS: 'app:update-status',
 } as const
 
 export const WINDOW_CONFIG = {

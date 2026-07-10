@@ -1,5 +1,6 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
+import { autoUpdater } from 'electron-updater'
 import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate } from './cli-engine'
 import { qSH } from './terminal-serializers'
 import { checkDependencies, installNode, installPython } from './dependency-manager'
@@ -373,6 +374,41 @@ export function registerIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.SAVE_SETTINGS, (_event, settings: Partial<AppSettings>) => {
     const current = readSettings()
     writeSettings({ ...current, ...settings })
+  })
+
+  // --- App auto-update ---
+
+  ipcMain.handle(IPC_CHANNELS.CHECK_APP_UPDATE, async () => {
+    if (!app.isPackaged) {
+      return { updateAvailable: false, error: 'Not available in development mode' }
+    }
+    try {
+      const result = await autoUpdater.checkForUpdates()
+      if (result?.updateInfo) {
+        return {
+          updateAvailable: true,
+          version: result.updateInfo.version,
+          releaseNotes: result.updateInfo.releaseNotes,
+        }
+      }
+      return { updateAvailable: false }
+    } catch {
+      return { updateAvailable: false, error: 'Failed to check for updates' }
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.DOWNLOAD_APP_UPDATE, async () => {
+    if (!app.isPackaged) return { error: 'Not available in development mode' }
+    try {
+      await autoUpdater.downloadUpdate()
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.INSTALL_APP_UPDATE, () => {
+    autoUpdater.quitAndInstall()
   })
 
   ipcMain.on(IPC_CHANNELS.WINDOW_CLOSE, () => {

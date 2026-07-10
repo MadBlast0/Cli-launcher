@@ -1,4 +1,4 @@
-import type { CliDefinition, CliState, CliActionResult, CliLaunchResult, DependencyCheck, AppSettings, LaunchCliRequest, CliAction } from '@shared/types'
+import type { CliDefinition, CliState, CliActionResult, CliLaunchResult, DependencyCheck, AppSettings, LaunchCliRequest, CliAction, AppUpdateInfo, AppUpdateStatus } from '@shared/types'
 
 declare global {
   interface Window {
@@ -19,6 +19,10 @@ declare global {
       closeWindow: () => void
       refreshCliStates: () => Promise<void>
       onCliStateUpdate: (callback: (cliId: string, state: CliState) => void) => () => void
+      checkForAppUpdate: () => Promise<AppUpdateInfo>
+      downloadAppUpdate: () => Promise<{ success: boolean; error?: string }>
+      installAppUpdate: () => void
+      onAppUpdateStatus: (callback: (status: AppUpdateStatus) => void) => () => void
     }
   }
 }

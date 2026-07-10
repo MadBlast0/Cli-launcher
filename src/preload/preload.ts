@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { CliState, AppSettings, LaunchCliRequest, CliAction } from '../shared/types'
+import type { CliState, AppSettings, LaunchCliRequest, CliAction, AppUpdateInfo, AppUpdateStatus } from '../shared/types'
 
 // Inlined channel names: the preload runs in a restricted Electron context
 // (sandbox `preloadRequire`) that cannot resolve relative runtime imports like
@@ -9,6 +9,10 @@ const CHANNELS = {
   WINDOW_CLOSE: 'window:close',
   CLI_REFRESH_ALL_STATES: 'cli:refresh-all-states',
   CLI_STATE_UPDATED: 'cli:state-updated',
+  CHECK_APP_UPDATE: 'app:check-update',
+  DOWNLOAD_APP_UPDATE: 'app:download-update',
+  INSTALL_APP_UPDATE: 'app:install-update',
+  APP_UPDATE_STATUS: 'app:update-status',
 } as const
 
 const api = {
@@ -31,6 +35,14 @@ const api = {
     const handler = (_event: any, cliId: string, state: CliState) => callback(cliId, state)
     ipcRenderer.on(CHANNELS.CLI_STATE_UPDATED, handler)
     return () => { ipcRenderer.removeListener(CHANNELS.CLI_STATE_UPDATED, handler) }
+  },
+  checkForAppUpdate: () => ipcRenderer.invoke(CHANNELS.CHECK_APP_UPDATE) as Promise<AppUpdateInfo>,
+  downloadAppUpdate: () => ipcRenderer.invoke(CHANNELS.DOWNLOAD_APP_UPDATE) as Promise<{ success: boolean; error?: string }>,
+  installAppUpdate: () => ipcRenderer.invoke(CHANNELS.INSTALL_APP_UPDATE),
+  onAppUpdateStatus: (callback: (status: AppUpdateStatus) => void) => {
+    const handler = (_event: any, status: AppUpdateStatus) => callback(status)
+    ipcRenderer.on(CHANNELS.APP_UPDATE_STATUS, handler)
+    return () => { ipcRenderer.removeListener(CHANNELS.APP_UPDATE_STATUS, handler) }
   },
 }
 
