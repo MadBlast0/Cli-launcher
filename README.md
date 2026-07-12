@@ -67,9 +67,20 @@ Cross-platform desktop launcher for AI coding CLIs. Install, update, uninstall, 
 
 - **32 AI coding CLIs** — manage all major terminal AI agents (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Aider, and more) in one place.
 - **Install / Update / Uninstall / Repair** — per-CLI actions with real-time progress feedback. Each CLI gets its own install script generated dynamically for your platform.
-- **Open terminal** — launches a terminal (cmd, PowerShell, or your default shell) pre-configured in your chosen working directory.
-- **Drag to reorder** — rearrange CLI cards to your preference; layout persists across sessions.
+- **Multi-terminal launch** — open 1–9 terminal instances per CLI, pre-configured in your chosen working directory. Supports cmd, PowerShell, Windows Terminal, iTerm, Warp, GNOME Terminal, Konsole, Alacritty, and more. WSL-aware for cross-platform workflows.
+- **YOLO Mode** — toggle to auto-append `--dangerously-skip-permissions` (or equivalent) to supported CLIs, bypassing approval prompts for fully autonomous operation.
+- **Favorites** — mark CLIs as favorites to pin them to the top of the grid for quick access.
+- **Keyboard shortcuts** — `Ctrl+F` to search, `Ctrl+D` for dependency manager, `Ctrl+1–9` to launch the Nth installed CLI.
+- **Right-click context menu** — open a CLI's homepage, copy its install command, or launch it directly.
+- **Catalog browser** — discover and install new CLIs from a searchable catalog grouped by package manager (npm, pip, standalone). Batch-install all uninstalled CLIs with one click.
 - **Update detection** — checks npm/pip for newer versions (cached 1 hour) and badges each CLI when an update is available.
+- **Drag to reorder** — rearrange CLI cards to your preference; layout commits only on drop and persists across sessions.
+- **Auto-update** — checks for new GitHub releases in the background. Download progress shown inline; restart with one click.
+- **Dependency manager** — detects installed Node.js and Python versions. If missing, downloads and silently installs the appropriate runtime for your platform.
+- **System tray** — minimizes to the system tray on close. Double-click the tray icon to restore the window.
+- **Toast notifications** — real-time success, error, and info toasts for every action.
+- **CLI status cache** — instant first paint with cached state, then background refresh per-CLI for up-to-date version and availability info.
+- **Security** — strict Content Security Policy in production builds, IPC input validation, path traversal protection, and shell-injection safeguards.
 - **Cross-platform** — Windows (`.ps1` scripts), macOS & Linux (`.sh` scripts). Packaged as native installers for each OS.
 
 ## Installation
@@ -123,18 +134,13 @@ npm run build:all      # all platforms
 
 ## CI/CD
 
-Every push to `main` builds the app on Windows, macOS, and Linux and uploads the artifacts. Pushing a tag matching `v*.*.*` (e.g. `v1.0.0`) additionally publishes a [GitHub Release](https://github.com/MadBlast0/Cli-launcher/releases) with all platform builds attached.
+Pushing a tag matching `v*.*.*` (e.g. `v0.0.2`) triggers a build on Windows, macOS, and Linux and publishes a [GitHub Release](https://github.com/MadBlast0/Cli-launcher/releases) with all platform builds attached.
 
 The macOS universal binaries (fat binaries containing both x64 and arm64 slices) are produced automatically using `electron-builder --universal`, so a single download works on both Intel and Apple Silicon Macs.
 
 ## Star History
 
-<a href="https://www.star-history.com/?repos=MadBlast0%2FCli-launcher&type=date&legend=top-left">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=MadBlast0/Cli-launcher&type=date&theme=dark" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MadBlast0/Cli-launcher&type=date" />
-  </picture>
-</a>
+[![Star History](https://img.shields.io/github/stars/MadBlast0/Cli-launcher?style=social&label=Star%20History)](https://www.star-history.com/?repos=MadBlast0%2FCli-launcher&type=timeline&legend=bottom-right)
 
 ## License
 
