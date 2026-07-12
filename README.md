@@ -140,7 +140,7 @@ The macOS universal binaries (fat binaries containing both x64 and arm64 slices)
 
 ## Star History
 
-[![Star History](https://img.shields.io/github/stars/MadBlast0/Cli-launcher?style=social&label=Star%20History)](https://www.star-history.com/?repos=MadBlast0%2FCli-launcher&type=timeline&legend=bottom-right)
+[![Star History Chart](https://img.shields.io/github/stars/MadBlast0/Cli-launcher?style=social&label=Star%20History)](https://www.star-history.com/?repos=MadBlast0%2FCli-launcher&type=timeline&legend=bottom-right)
 
 ## License
 
