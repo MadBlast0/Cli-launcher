@@ -8,7 +8,8 @@ const codex: CliDefinition = {
   dependencyType: 'node',
   description: 'OpenAI\'s terminal AI coding agent',
   homepage: 'https://github.com/openai/codex',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--dangerously-bypass-approvals-and-sandbox',
 }
 
 export default codex

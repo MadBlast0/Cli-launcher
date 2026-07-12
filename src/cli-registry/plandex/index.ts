@@ -7,7 +7,8 @@ const plandex: CliDefinition = {
   dependencyType: 'standalone',
   description: 'Terminal AI agent for large, multi-step coding tasks.',
   homepage: 'https://plandex.ai',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--auto-exec',
   wslExecutable: true,
 }
 

@@ -8,7 +8,8 @@ const kilo: CliDefinition = {
   dependencyType: 'node',
   description: 'AI coding agent by Kilo Code',
   homepage: 'https://github.com/kilocode/kilocode',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--auto',
 }
 
 export default kilo

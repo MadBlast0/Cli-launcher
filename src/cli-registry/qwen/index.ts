@@ -8,7 +8,8 @@ const qwen: CliDefinition = {
   dependencyType: 'node',
   description: 'Alibaba\'s Qwen-powered AI coding agent',
   homepage: 'https://github.com/QwenLM/Qwen-Code',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--yolo',
 }
 
 export default qwen

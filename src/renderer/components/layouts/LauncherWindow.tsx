@@ -74,25 +74,30 @@ export function LauncherWindow({ children, isDark, onToggleTheme }: LauncherWind
 
   let updateIcon: ReactNode
   let updateLabel: string
+  let buttonText: string
   let updateDisabled = false
 
   switch (update.type) {
     case 'idle':
       updateIcon = <ArrowUpFromLine size={15} />
       updateLabel = 'Check for updates'
+      buttonText = 'Update'
       break
     case 'checking':
       updateIcon = <Loader2 size={15} className="animate-spin" />
       updateLabel = 'Checking…'
+      buttonText = '⋯'
       updateDisabled = true
       break
     case 'available':
       updateIcon = <Download size={15} />
       updateLabel = `Update to v${update.version}`
+      buttonText = 'Update'
       break
     case 'not-available':
       updateIcon = <ArrowUpFromLine size={15} />
       updateLabel = 'Up to date'
+      buttonText = 'Updated'
       updateDisabled = true
       break
     case 'downloading':
@@ -102,15 +107,18 @@ export function LauncherWindow({ children, isDark, onToggleTheme }: LauncherWind
         </span>
       )
       updateLabel = `Downloading… ${Math.round(update.progress)}%`
+      buttonText = ''
       updateDisabled = true
       break
     case 'downloaded':
       updateIcon = <RotateCcw size={15} />
       updateLabel = 'Restart to update'
+      buttonText = 'Restart'
       break
     case 'error':
       updateIcon = <ArrowUpFromLine size={15} />
       updateLabel = update.message
+      buttonText = 'Update'
       break
   }
 
@@ -143,11 +151,12 @@ export function LauncherWindow({ children, isDark, onToggleTheme }: LauncherWind
           <button
             onClick={handleUpdateClick}
             disabled={updateDisabled}
-            className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50 whitespace-nowrap"
             aria-label={updateLabel}
             title={updateLabel}
           >
             {updateIcon}
+            {buttonText && <span>{buttonText}</span>}
           </button>
           <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
           <button

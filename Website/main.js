@@ -28,20 +28,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /**
  * Interactive replica of the actual app window shown in the hero.
- * Search, launch counters, update flow, and theme all work for real.
+ * Search, launch counters, update flow, catalog installs, the
+ * dependency panel, and theme all work for real.
  */
 function initAppDemo() {
   const demo = document.getElementById('app-demo');
   const rowsEl = document.getElementById('demo-rows');
   if (!demo || !rowsEl) return;
 
+  // The demo is authored at the app's native 1100x660 (5:3) window size and
+  // scaled to fit its container, so proportions match the real app exactly.
+  const scaleEl = document.getElementById('demo-scale');
+  if (scaleEl && typeof ResizeObserver !== 'undefined') {
+    const fit = () => {
+      scaleEl.style.transform = 'scale(' + (demo.clientWidth / 1100) + ')';
+    };
+    new ResizeObserver(fit).observe(demo);
+    fit();
+  }
+
   const clis = [
     { id: 'claude', name: 'Claude Code', version: '2.1.202 (Claude Code)', logo: 'media/cli/claude.svg' },
     { id: 'opencode', name: 'OpenCode', version: '1.17.15', logo: 'media/cli/opencode.svg' },
     { id: 'gemini', name: 'Gemini CLI', version: '0.21.3', logo: 'media/cli/gemini.svg', update: '0.22.0' },
     { id: 'copilot', name: 'GitHub Copilot CLI', version: '1.8.0', logo: 'media/cli/copilot.svg' },
-    { id: 'kilo', name: 'Kilo CLI', version: 'installed', logo: 'media/cli/kilo.png' },
-    { id: 'aider', name: 'Aider', version: '0.86.1', logo: 'media/cli/aider.png' },
+    { id: 'kilo', name: 'Kilo CLI', version: 'installed', logo: 'media/cli/kilo.svg' },
+    { id: 'aider', name: 'Aider', version: '0.86.1', logo: 'media/cli/aider.svg' },
+  ];
+
+  // Everything in the app's registry that isn't in the installed list above,
+  // grouped like the real catalog (npm / pip / standalone).
+  const catalog = [
+    { id: 'codex', name: 'Codex CLI', version: '0.48.0', pkg: '@openai/codex', group: 'npm (Node.js)', logo: 'media/cli/codex.svg' },
+    { id: 'qwen', name: 'Qwen Code', version: '0.12.1', pkg: '@qwen-code/qwen-code', group: 'npm (Node.js)', logo: 'media/cli/qwen.svg' },
+    { id: 'amp', name: 'Amp CLI', version: '0.9.4', pkg: '@ampcode/cli', group: 'npm (Node.js)', logo: 'media/cli/amp.svg' },
+    { id: 'cline', name: 'Cline', version: '2.3.0', pkg: 'cline', group: 'npm (Node.js)', logo: 'media/cli/cline.svg' },
+    { id: 'cody', name: 'Cody CLI', version: '5.5.14', pkg: '@sourcegraph/cody', group: 'npm (Node.js)', logo: 'media/cli/cody.svg' },
+    { id: 'codebuff', name: 'Codebuff', version: '1.2.8', pkg: 'codebuff', group: 'npm (Node.js)', logo: 'media/cli/codebuff.svg' },
+    { id: 'freebuff', name: 'Freebuff', version: '0.4.1', pkg: 'freebuff', group: 'npm (Node.js)', logo: 'media/cli/freebuff.svg' },
+    { id: 'commandcode', name: 'Command Code', version: '1.0.6', pkg: 'command-code', group: 'npm (Node.js)', logo: 'media/cli/commandcode.svg' },
+    { id: 'continue', name: 'Continue CLI', version: '1.5.2', pkg: '@continuedev/cli', group: 'npm (Node.js)', logo: 'media/cli/continue.svg' },
+    { id: 'crush', name: 'Crush', version: '0.7.0', pkg: '@charmland/crush', group: 'npm (Node.js)', logo: 'media/cli/crush.svg' },
+    { id: 'auggie', name: 'Auggie', version: '0.9.1', pkg: '@augmentcode/auggie', group: 'npm (Node.js)', logo: 'media/cli/auggie.svg' },
+    { id: 'grok', name: 'Grok CLI', version: '0.2.5', pkg: '@vibe-kit/grok-cli', group: 'npm (Node.js)', logo: 'media/cli/grok.svg' },
+    { id: 'pi', name: 'PI Coding Agent', version: '0.6.0', pkg: '@mariozechner/pi-coding-agent', group: 'npm (Node.js)', logo: 'media/cli/pi.svg' },
+    { id: 'sgpt', name: 'Shell-GPT', version: '1.4.5', pkg: 'shell-gpt', group: 'pip (Python)', logo: 'media/cli/sgpt.svg' },
+    { id: 'gptme', name: 'gptme', version: '0.28.0', pkg: 'gptme', group: 'pip (Python)', logo: 'media/cli/gptme.svg' },
+    { id: 'interpreter', name: 'Open Interpreter', version: '0.4.3', pkg: 'open-interpreter', group: 'pip (Python)', logo: 'media/cli/interpreter.svg' },
+    { id: 'openhands', name: 'OpenHands CLI', version: '0.19.0', pkg: 'openhands-ai', group: 'pip (Python)', logo: 'media/cli/openhands.svg' },
+    { id: 'ra-aid', name: 'RA.Aid', version: '0.15.2', pkg: 'ra-aid', group: 'pip (Python)', logo: 'media/cli/ra-aid.svg' },
+    { id: 'goose', name: 'Goose CLI', version: '1.4.0', pkg: 'block/goose', group: 'Standalone', logo: 'media/cli/goose.svg' },
+    { id: 'cursor', name: 'Cursor CLI', version: '0.3.2', pkg: 'cursor-agent', group: 'Standalone', logo: 'media/cli/cursor.svg' },
+    { id: 'amazonq', name: 'Amazon Q Developer CLI', version: '1.6.0', pkg: 'amazon-q', group: 'Standalone', logo: 'media/cli/amazonq.svg' },
+    { id: 'droid', name: 'Droid (Factory)', version: '0.8.2', pkg: 'factory.ai', group: 'Standalone', logo: 'media/cli/droid.svg' },
+    { id: 'plandex', name: 'Plandex', version: '2.1.0', pkg: 'plandex-ai', group: 'Standalone', logo: 'media/cli/plandex.svg' },
+    { id: 'mods', name: 'Mods', version: '1.7.0', pkg: 'charmbracelet/mods', group: 'Standalone', logo: 'media/cli/mods.svg' },
+    { id: 'aichat', name: 'aichat', version: '0.29.0', pkg: 'sigoden/aichat', group: 'Standalone', logo: 'media/cli/aichat.svg' },
+    { id: 'fabric', name: 'Fabric', version: '1.4.130', pkg: 'danielmiessler/fabric', group: 'Standalone', logo: 'media/cli/fabric.svg' },
   ];
 
   const ICONS = {
@@ -52,6 +95,8 @@ function initAppDemo() {
     plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg>',
     up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/><path d="M12 16V8"/></svg>',
     spinner: '<svg class="demo-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.56"/></svg>',
+    down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>',
+    check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
   };
 
   // --- In-window toast -------------------------------------------------
@@ -66,7 +111,7 @@ function initAppDemo() {
   }
 
   // --- Build rows -------------------------------------------------------
-  clis.forEach((cli) => {
+  function buildRow(cli) {
     const row = document.createElement('div');
     row.className = 'demo-row';
     row.dataset.name = cli.name.toLowerCase();
@@ -136,23 +181,158 @@ function initAppDemo() {
     }
 
     rowsEl.appendChild(row);
-  });
+  }
+  clis.forEach(buildRow);
 
   // --- Search filter ----------------------------------------------------
   const searchInput = document.getElementById('demo-search-input');
   const installedCount = document.getElementById('demo-installed-count');
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      const q = searchInput.value.trim().toLowerCase();
-      let visible = 0;
-      rowsEl.querySelectorAll('.demo-row').forEach((row) => {
-        const match = row.dataset.name.indexOf(q) !== -1;
-        row.classList.toggle('demo-hidden', !match);
-        if (match) visible++;
-      });
-      if (installedCount) installedCount.textContent = String(visible);
+  function applySearch() {
+    const q = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    let visible = 0;
+    rowsEl.querySelectorAll('.demo-row').forEach((row) => {
+      const match = row.dataset.name.indexOf(q) !== -1;
+      row.classList.toggle('demo-hidden', !match);
+      if (match) visible++;
     });
+    if (installedCount) installedCount.textContent = String(visible);
   }
+  if (searchInput) searchInput.addEventListener('input', applySearch);
+
+  // --- In-window modal shell ---------------------------------------------
+  const overlay = document.getElementById('demo-modal-overlay');
+  const modal = document.getElementById('demo-modal');
+  function closeModal() {
+    if (overlay) overlay.hidden = true;
+    if (modal) modal.innerHTML = '';
+  }
+  function openModal(title, bodyEl) {
+    if (!overlay || !modal) return;
+    modal.innerHTML =
+      '<div class="demo-modal-head">' +
+        '<span class="demo-modal-title">' + title + '</span>' +
+        '<button class="demo-modal-close" aria-label="Close">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
+        '</button>' +
+      '</div>';
+    modal.appendChild(bodyEl);
+    overlay.hidden = false;
+    modal.querySelector('.demo-modal-close').addEventListener('click', closeModal);
+  }
+  if (overlay) {
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  }
+
+  // --- Dependencies modal (replica of the app's DependencyModal) ---------
+  function openDepsModal() {
+    const body = document.createElement('div');
+    body.className = 'demo-modal-body';
+    const deps = [
+      { name: 'Node.js', ver: 'v22.14.0' },
+      { name: 'Python', ver: '3.12.6' },
+    ];
+    deps.forEach((d) => {
+      const row = document.createElement('div');
+      row.className = 'demo-dep-row';
+      row.innerHTML =
+        '<span class="demo-dep-left">' +
+          '<span class="demo-dep-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>' +
+          '<span><span class="demo-dep-name">' + d.name + '</span><br><span class="demo-dep-ver">' + d.ver + '</span></span>' +
+        '</span>' +
+        '<span class="demo-badge">OK</span>';
+      body.appendChild(row);
+    });
+    const close = document.createElement('button');
+    close.className = 'demo-modal-footer-btn';
+    close.textContent = 'Close';
+    close.addEventListener('click', closeModal);
+    body.appendChild(close);
+    openModal('Dependencies', body);
+  }
+
+  // --- Catalog modal (replica of the app's CliCatalog) --------------------
+  const installedFromCatalog = new Set();
+  function openCatalogModal() {
+    const body = document.createElement('div');
+    body.className = 'demo-modal-body';
+
+    const searchBox = document.createElement('div');
+    searchBox.className = 'demo-cat-search';
+    searchBox.innerHTML =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>' +
+      '<input type="text" placeholder="Search..." aria-label="Search available CLIs (demo)">';
+    body.appendChild(searchBox);
+
+    const listWrap = document.createElement('div');
+    body.appendChild(listWrap);
+
+    function renderList(q) {
+      listWrap.innerHTML = '';
+      const available = catalog.filter((c) => !installedFromCatalog.has(c.id));
+      const filtered = available.filter((c) => c.name.toLowerCase().indexOf(q) !== -1);
+      if (filtered.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'demo-cat-empty';
+        empty.textContent = q ? 'No CLIs match' : 'All CLIs are installed';
+        listWrap.appendChild(empty);
+        return;
+      }
+      const groups = {};
+      filtered.forEach((c) => { (groups[c.group] = groups[c.group] || []).push(c); });
+      Object.keys(groups).forEach((g) => {
+        const head = document.createElement('div');
+        head.className = 'demo-cat-group';
+        head.textContent = g + '  ·  ' + groups[g].length;
+        listWrap.appendChild(head);
+        groups[g].forEach((c) => {
+          const row = document.createElement('div');
+          row.className = 'demo-cat-row';
+          row.innerHTML =
+            '<span class="demo-cat-logo"><img src="' + c.logo + '" alt="" draggable="false"></span>' +
+            '<span class="demo-cat-info">' +
+              '<span class="demo-cat-name">' + c.name + '</span>' +
+              '<span class="demo-cat-pkg">' + c.pkg + '</span>' +
+            '</span>' +
+            '<button class="demo-install-btn" title="Install ' + c.name + '" aria-label="Install ' + c.name + '">' + ICONS.down + '</button>';
+          const btn = row.querySelector('.demo-install-btn');
+          btn.addEventListener('click', () => {
+            btn.innerHTML = ICONS.spinner;
+            btn.style.pointerEvents = 'none';
+            setTimeout(() => {
+              btn.innerHTML = ICONS.check;
+              installedFromCatalog.add(c.id);
+              row.classList.add('demo-leaving');
+              setTimeout(() => {
+                row.remove();
+                buildRow({ id: c.id, name: c.name, version: c.version, logo: c.logo });
+                applySearch();
+                toast(c.name + ' installed successfully');
+                if (listWrap.querySelectorAll('.demo-cat-row').length === 0) {
+                  renderList(searchBox.querySelector('input').value.trim().toLowerCase());
+                }
+              }, 260);
+            }, 1100);
+          });
+          listWrap.appendChild(row);
+        });
+      });
+    }
+    renderList('');
+    searchBox.querySelector('input').addEventListener('input', (e) => {
+      renderList(e.target.value.trim().toLowerCase());
+    });
+
+    openModal('Catalog', body);
+  }
+
+  const depsBtn = document.getElementById('demo-deps-btn');
+  const catalogBtn = document.getElementById('demo-catalog-btn');
+  if (depsBtn) depsBtn.addEventListener('click', openDepsModal);
+  if (catalogBtn) catalogBtn.addEventListener('click', openCatalogModal);
+
+  // Deep links (also handy for testing): #demo-catalog / #demo-deps
+  if (location.hash === '#demo-catalog') openCatalogModal();
+  if (location.hash === '#demo-deps') openDepsModal();
 
   // --- Theme toggle mirrors the site toggle ------------------------------
   const demoTheme = document.getElementById('demo-theme-toggle');

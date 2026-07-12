@@ -25,6 +25,7 @@ export default function App() {
   const [toasts, setToasts] = useState<Toast[]>([])
   const [favorites, setFavorites] = useState<string[]>([])
   const [cliOrder, setCliOrder] = useState<string[]>([])
+  const [yoloMode, setYoloMode] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
 
@@ -72,6 +73,7 @@ export default function App() {
       const settings = await window.electronAPI.getSettings()
       if (settings.favorites) setFavorites(settings.favorites)
       if (settings.cliOrder) setCliOrder(settings.cliOrder)
+      if (settings.yoloMode !== undefined) setYoloMode(settings.yoloMode)
       // Theme is owned by useTheme (localStorage) as the single source of
       // truth; it also persists into settings, so we don't re-apply it here.
     } catch { /* ignore */ }
@@ -178,6 +180,11 @@ export default function App() {
     saveSettings({ cliOrder: cliOrderRef.current })
   }, [saveSettings])
 
+  const handleYoloModeChange = useCallback((value: boolean) => {
+    setYoloMode(value)
+    saveSettings({ yoloMode: value })
+  }, [saveSettings])
+
   const handleToggleFavorite = (cliId: string) => {
     setFavorites((prev) => {
       const next = prev.includes(cliId)
@@ -192,12 +199,12 @@ export default function App() {
     const cli = clis.find((c) => c.id === cliId)
     if (!cli) return
     for (let i = 0; i < count; i++) {
-      const result = await window.electronAPI.launchCli({ cliId, permissionMode: 'normal' })
+      const result = await window.electronAPI.launchCli({ cliId, permissionMode: yoloMode ? 'dangerous' : 'normal' })
       if (!result.success) {
         addToast(result.error || 'Failed to launch', 'error')
       }
     }
-  }, [clis, addToast])
+  }, [clis, addToast, yoloMode])
 
   // CliCard performs the repair/update itself (with its own toast + busy
   // state); these callbacks let it notify the app afterwards so the shared
@@ -303,7 +310,6 @@ export default function App() {
           clis={filtered}
           states={states}
           counts={counts}
-          totalCount={clis.length}
           loading={statesLoading}
           onUpdateCount={handleUpdateCount}
           onLaunch={handleLaunch}
@@ -320,6 +326,8 @@ export default function App() {
           justInstalled={justInstalled}
           onToast={addToast}
           searchInputRef={searchInputRef}
+          yoloMode={yoloMode}
+          onYoloModeChange={handleYoloModeChange}
         />
       </div>
 

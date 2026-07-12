@@ -8,7 +8,8 @@ const grok: CliDefinition = {
   dependencyType: 'node',
   description: 'xAI Grok-powered terminal coding agent.',
   homepage: 'https://x.ai',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--always-approve',
 }
 
 export default grok

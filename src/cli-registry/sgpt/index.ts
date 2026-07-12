@@ -8,7 +8,8 @@ const sgpt: CliDefinition = {
   dependencyType: 'python',
   description: 'ChatGPT-powered shell command and code assistant.',
   homepage: 'https://github.com/TheR1D/shell_gpt',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--no-interaction',
 }
 
 export default sgpt

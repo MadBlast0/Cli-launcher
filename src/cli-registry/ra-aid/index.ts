@@ -8,7 +8,8 @@ const raAidDef: CliDefinition = {
   dependencyType: 'python',
   description: 'Autonomous research and coding agent.',
   homepage: 'https://github.com/ai-christianson/RA.Aid',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--cowboy-mode',
 }
 
 export default raAidDef

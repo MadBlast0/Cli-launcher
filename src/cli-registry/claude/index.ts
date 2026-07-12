@@ -8,7 +8,8 @@ const claude: CliDefinition = {
   dependencyType: 'node',
   description: 'Anthropic\'s AI coding agent powered by Claude',
   homepage: 'https://docs.anthropic.com/en/docs/claude-code',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--dangerously-skip-permissions',
 }
 
 export default claude

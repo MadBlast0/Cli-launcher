@@ -61,6 +61,7 @@ export interface AppSettings {
   cliOrder?: string[]
   favorites?: string[]
   terminalEmulator?: string
+  yoloMode?: boolean
 }
 
 export interface CliCount {

@@ -8,7 +8,8 @@ const copilot: CliDefinition = {
   dependencyType: 'node',
   description: 'GitHub Copilot in your terminal. Requires Node.js 22+',
   homepage: 'https://github.com/github/copilot-cli',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--yolo',
 }
 
 export default copilot

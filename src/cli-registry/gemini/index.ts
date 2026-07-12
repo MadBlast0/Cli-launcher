@@ -8,7 +8,8 @@ const gemini: CliDefinition = {
   dependencyType: 'node',
   description: 'Google\'s AI coding agent in the terminal',
   homepage: 'https://github.com/google-gemini/gemini-cli',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--yolo',
 }
 
 export default gemini

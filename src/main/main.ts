@@ -161,6 +161,9 @@ function initAutoUpdater() {
     autoUpdater.on('error', (err: any) => {
       sendUpdateStatus({ type: 'error', error: err?.message ?? String(err) })
     })
+
+    setTimeout(() => autoUpdater.checkForUpdates(), 3000)
+    setInterval(() => autoUpdater.checkForUpdates(), 6 * 60 * 60 * 1000)
   } catch { /* electron-updater not installed */ }
 }
 

@@ -8,7 +8,8 @@ const aider: CliDefinition = {
   dependencyType: 'python',
   description: 'AI pair programming in the terminal. Uses Python/pip',
   homepage: 'https://aider.chat',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--yes-always',
 }
 
 export default aider

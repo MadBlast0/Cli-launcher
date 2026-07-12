@@ -8,7 +8,8 @@ const cursor: CliDefinition = {
   dependencyType: 'standalone',
   description: 'Run Cursor\'s coding agent in the terminal',
   homepage: 'https://cursor.com/cli',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--force',
 }
 
 export default cursor

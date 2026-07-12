@@ -8,7 +8,8 @@ const interpreter: CliDefinition = {
   dependencyType: 'python',
   description: 'Natural-language code execution in your terminal.',
   homepage: 'https://openinterpreter.com',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--auto_run',
 }
 
 export default interpreter

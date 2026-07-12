@@ -8,7 +8,8 @@ const openhands: CliDefinition = {
   dependencyType: 'python',
   description: 'Open-source autonomous coding agent (formerly OpenDevin).',
   homepage: 'https://github.com/All-Hands-AI/OpenHands',
-  skipPermissions: false,
+  skipPermissions: true,
+  skipPermissionsFlag: '--always-approve',
 }
 
 export default openhands

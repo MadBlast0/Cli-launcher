@@ -1,6 +1,7 @@
-import { useState, useCallback, memo, type RefObject } from 'react'
+import { useState, useCallback, useMemo, memo, type RefObject } from 'react'
 import { SearchInput, Button, Tooltip, CliCardSkeleton } from '../ui'
 import { CliCard } from './CliCard'
+import { ModeDropdown } from './ModeDropdown'
 import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
 import { Database, AlertTriangle, Terminal, Plus } from 'lucide-react'
 
@@ -8,7 +9,6 @@ interface CliGridProps {
   clis: CliDefinition[]
   states: Record<string, CliState>
   counts: CliCount[]
-  totalCount: number
   loading?: boolean
   onUpdateCount: (cliId: string, delta: number) => void
   onLaunch: (cliId: string, count: number) => void
@@ -25,12 +25,15 @@ interface CliGridProps {
   justInstalled?: string | null
   onToast?: (message: string, type: 'success' | 'error' | 'info') => void
   searchInputRef?: RefObject<HTMLInputElement | null>
+  yoloMode: boolean
+  onYoloModeChange: (value: boolean) => void
 }
 
 export function CliGrid({
-  clis, states, counts, totalCount, loading = false, onUpdateCount, onLaunch,
+  clis, states, counts, loading = false, onUpdateCount, onLaunch,
   onRepair, onUpdate, onReorder, onReorderCommit, onOpenDeps, onOpenCatalog, onCliChanged,
   deps, search, onSearchChange, justInstalled, onToast, searchInputRef,
+  yoloMode, onYoloModeChange,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [reordered, setReordered] = useState(false)
@@ -38,6 +41,11 @@ export function CliGrid({
   const getCount = useCallback(
     (cliId: string) => counts.find((c) => c.cliId === cliId)?.count ?? 1,
     [counts]
+  )
+
+  const supportedYoloClis = useMemo(
+    () => clis.filter((c) => c.skipPermissions).map((c) => c.name),
+    [clis]
   )
 
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
@@ -70,9 +78,6 @@ export function CliGrid({
     ? [!deps.node.installed && 'Node.js', !deps.python.installed && 'Python'].filter(Boolean)
     : []
 
-  const installedCount = clis.length
-  const allClisCount = totalCount
-
   return (
     <div className="flex flex-col h-full min-h-0 px-4 pb-4" role="main" aria-label="CLI Launcher">
       {/* Search + Deps + Tools */}
@@ -96,15 +101,15 @@ export function CliGrid({
 
       {/* Section label */}
       <div className="flex items-center justify-between px-1 pt-3 pb-2 shrink-0">
+        <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+          Installed
+        </span>
         <div className="flex items-center gap-2">
-          <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-            Installed
-          </span>
-          <span className="text-[11px] font-medium text-muted-foreground tabular-nums">
-            {installedCount}{allClisCount > 0 ? ` / ${allClisCount}` : ''}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
+          <ModeDropdown
+            yoloMode={yoloMode}
+            onYoloModeChange={onYoloModeChange}
+            supportedClis={supportedYoloClis}
+          />
           <Button variant="secondary" size="sm" icon={<Plus size={14} />} onClick={onOpenCatalog} aria-label="Browse CLI catalog">
             Catalog
           </Button>
