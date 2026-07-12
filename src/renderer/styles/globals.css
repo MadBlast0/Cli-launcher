@@ -351,6 +351,26 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes flashSuccess {
+  0%   { box-shadow: inset 3px 0 0 0 var(--success); }
+  60%  { box-shadow: inset 3px 0 0 0 var(--success); }
+  100% { box-shadow: inset 3px 0 0 0 transparent; }
+}
+
+@keyframes staggerIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.anim-fade-down   { animation: fadeSlideDown 0.25s ease-out forwards; }
+.anim-flash-success { animation: flashSuccess 1.2s ease-out forwards; }
+.anim-stagger-in  { animation: staggerIn 0.35s ease-out both; }
+
 @keyframes macFade {
   from { opacity: 0; }
   to   { opacity: 1; }

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { CliState, AppSettings, LaunchCliRequest, CliAction, AppUpdateInfo, AppUpdateStatus } from '../shared/types'
+import type { CliState, AppSettings, LaunchCliRequest, CliAction, AppUpdateInfo, AppUpdateStatus, ActionProgressMessage, RefreshProgressMessage } from '../shared/types'
 
 // Inlined channel names: the preload runs in a restricted Electron context
 // (sandbox `preloadRequire`) that cannot resolve relative runtime imports like
@@ -43,6 +43,17 @@ const api = {
     const handler = (_event: any, status: AppUpdateStatus) => callback(status)
     ipcRenderer.on(CHANNELS.APP_UPDATE_STATUS, handler)
     return () => { ipcRenderer.removeListener(CHANNELS.APP_UPDATE_STATUS, handler) }
+  },
+  cancelAction: (cliId: string) => ipcRenderer.invoke('cli:cancel-action', cliId),
+  onActionProgress: (callback: (cliId: string, msg: ActionProgressMessage) => void) => {
+    const handler = (_event: any, cliId: string, msg: ActionProgressMessage) => callback(cliId, msg)
+    ipcRenderer.on('cli:action-progress', handler)
+    return () => { ipcRenderer.removeListener('cli:action-progress', handler) }
+  },
+  onRefreshProgress: (callback: (msg: RefreshProgressMessage) => void) => {
+    const handler = (_event: any, msg: RefreshProgressMessage) => callback(msg)
+    ipcRenderer.on('cli:refresh-progress', handler)
+    return () => { ipcRenderer.removeListener('cli:refresh-progress', handler) }
   },
 }
 

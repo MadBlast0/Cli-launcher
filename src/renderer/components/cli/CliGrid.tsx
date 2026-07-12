@@ -3,13 +3,16 @@ import { SearchInput, Button, Tooltip, CliCardSkeleton } from '../ui'
 import { CliCard } from './CliCard'
 import { ModeDropdown } from './ModeDropdown'
 import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
-import { Database, AlertTriangle, Terminal, Plus } from 'lucide-react'
+import { Database, AlertTriangle, Terminal, Plus, RefreshCw } from 'lucide-react'
 
 interface CliGridProps {
   clis: CliDefinition[]
   states: Record<string, CliState>
   counts: CliCount[]
   loading?: boolean
+  refreshProgress?: number
+  refreshCurrent?: string
+  totalClis?: number
   onUpdateCount: (cliId: string, delta: number) => void
   onLaunch: (cliId: string, count: number) => void
   onRepair: (cliId: string) => void
@@ -19,7 +22,9 @@ interface CliGridProps {
   onOpenDeps: () => void
   onOpenCatalog: () => void
   onCliChanged: () => void
+  onRefreshAll: () => void
   deps: DependencyCheck | null
+  depsLoading?: boolean
   search: string
   onSearchChange: (value: string) => void
   justInstalled?: string | null
@@ -31,9 +36,9 @@ interface CliGridProps {
 
 export function CliGrid({
   clis, states, counts, loading = false, onUpdateCount, onLaunch,
-  onRepair, onUpdate, onReorder, onReorderCommit, onOpenDeps, onOpenCatalog, onCliChanged,
-  deps, search, onSearchChange, justInstalled, onToast, searchInputRef,
-  yoloMode, onYoloModeChange,
+  onRepair, onUpdate, onReorder, onReorderCommit, onOpenDeps, onOpenCatalog, onCliChanged, onRefreshAll,
+  deps, depsLoading = false, search, onSearchChange, justInstalled, onToast, searchInputRef,
+  yoloMode, onYoloModeChange, refreshProgress = 0, refreshCurrent = '', totalClis = 0,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [reordered, setReordered] = useState(false)
@@ -85,6 +90,11 @@ export function CliGrid({
         <div className="flex-1">
           <SearchInput ref={searchInputRef} value={search} onChange={onSearchChange} placeholder="Search CLIs…" aria-label="Search CLIs" />
         </div>
+        {depsLoading && (
+          <Button variant="secondary" size="sm" loading aria-label="Checking dependencies">
+            Checking
+          </Button>
+        )}
         {missingDeps.length > 0 && (
           <Tooltip text="Install missing dependencies">
             <Button variant="destructive" size="sm" icon={<AlertTriangle size={14} />} onClick={onOpenDeps} aria-label="Missing dependencies">
@@ -92,11 +102,35 @@ export function CliGrid({
             </Button>
           </Tooltip>
         )}
-        <Tooltip text="Manage dependencies (Node.js, Python)">
-          <Button variant="secondary" size="sm" icon={<Database size={14} />} onClick={onOpenDeps} aria-label="Dependencies">
-            Deps
-          </Button>
-        </Tooltip>
+        {!depsLoading && (
+          <Tooltip text="Manage dependencies (Node.js, Python)">
+            <Button variant="secondary" size="sm" icon={<Database size={14} />} onClick={onOpenDeps} aria-label="Dependencies">
+              Deps
+            </Button>
+          </Tooltip>
+        )}
+      </div>
+
+      {/* Refresh progress bar — animates in/out smoothly */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-out shrink-0 ${
+          refreshProgress > 0 && refreshProgress < totalClis
+            ? 'max-h-7 opacity-100 pt-2'
+            : 'max-h-0 opacity-0 pt-0'
+        }`}
+      >
+        <div className="flex items-center gap-2 px-1 anim-fade-down">
+          <div className="flex-1 h-1 bg-border overflow-hidden rounded-none">
+            <div
+              className="h-full bg-primary rounded-none transition-all duration-300 ease-out"
+              style={{ width: `${Math.round((refreshProgress / totalClis) * 100)}%` }}
+            />
+          </div>
+          <span className="text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
+            {refreshCurrent ? `Checking ${refreshCurrent}… ` : ''}
+            {refreshProgress}/{totalClis}
+          </span>
+        </div>
       </div>
 
       {/* Section label */}
@@ -110,6 +144,10 @@ export function CliGrid({
             onYoloModeChange={onYoloModeChange}
             supportedClis={supportedYoloClis}
           />
+          <Tooltip text="Re-detect CLIs and dependencies">
+            <Button variant="ghost" size="sm" icon={<RefreshCw size={13} />} onClick={onRefreshAll} aria-label="Refresh detection">
+            </Button>
+          </Tooltip>
           <Button variant="secondary" size="sm" icon={<Plus size={14} />} onClick={onOpenCatalog} aria-label="Browse CLI catalog">
             Catalog
           </Button>
@@ -119,7 +157,7 @@ export function CliGrid({
       {/* CLI Rows */}
       <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto pr-0.5 -mr-0.5" role="list" aria-label="Installed CLI tools">
         {loading && clis.length === 0 && (
-          Array.from({ length: 6 }).map((_, i) => <CliCardSkeleton key={`sk-${i}`} />)
+          Array.from({ length: 8 }).map((_, i) => <CliCardSkeleton key={`sk-${i}`} delay={i * 40} />)
         )}
         {!loading && clis.length === 0 && (
           <div className="flex flex-col items-center justify-center flex-1 gap-3 text-muted-foreground">

@@ -1,5 +1,5 @@
 Write-Output "Installing command-code..."
-npm install -g command-code
+npm install -g command-code@latest
 if ($LASTEXITCODE -eq 0) {
   Write-Output "Command Code installed successfully"
 } else {

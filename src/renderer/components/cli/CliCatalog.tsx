@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Modal, Tooltip, Button } from '../ui'
 import { getCliLogo } from '../../logos'
-import type { CliDefinition, CliState } from '@shared/types'
+import type { CliDefinition, CliState, ActionProgressMessage } from '@shared/types'
 import type { ToastType } from '../ui/Toast'
-import { ArrowLeft, Download, Check, Search, Package, Globe, DownloadCloud } from 'lucide-react'
+import { ArrowLeft, Download, Check, Search, Package, Globe, DownloadCloud, X, RefreshCw } from 'lucide-react'
 
 interface CliCatalogProps {
   open: boolean
@@ -34,6 +34,20 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [leaving, setLeaving] = useState<string | null>(null)
+  const [progressMsgs, setProgressMsgs] = useState<Record<string, { percent?: number; message: string }>>({})
+
+  // Listen for progress updates for any CLI being installed
+  useEffect(() => {
+    if (!open) return
+    const cleanup = window.electronAPI.onActionProgress((cliId: string, msg: ActionProgressMessage) => {
+      if (msg.message === '__done__') {
+        setProgressMsgs((prev) => ({ ...prev, [cliId]: { message: 'Detecting…' } }))
+        return
+      }
+      setProgressMsgs((prev) => ({ ...prev, [cliId]: { percent: msg.percent, message: msg.message } }))
+    })
+    return cleanup
+  }, [open])
 
   const notInstalled = clis.filter(
     (cli) => states[cli.id]?.status !== 'installed' && states[cli.id]?.status !== 'update-available'
@@ -65,13 +79,23 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
     else onToast?.(message, type)
   }
 
+  const cancelInstall = async (cliId: string) => {
+    await window.electronAPI.cancelAction(cliId)
+  }
+
   const handleInstall = async (cliId: string) => {
     setBusy(cliId)
+    setProgressMsgs((prev) => { const next = { ...prev }; delete next[cliId]; return next })
     const cliName = clis.find((c) => c.id === cliId)?.name || cliId
     const toastId = onToast?.(`Installing ${cliName}…`, 'loading')
 
     try {
       const result = await window.electronAPI.executeAction(cliId, 'install')
+      if (!result.success && result.error === 'Cancelled') {
+        setToast(toastId, `${cliName} install cancelled`, 'info')
+        setBusy(null)
+        return
+      }
       const fresh = await window.electronAPI.getCliState(cliId)
       const installed = fresh?.status === 'installed' || fresh?.status === 'update-available'
 
@@ -131,10 +155,12 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
     const initial = cli.name.charAt(0).toUpperCase()
     const isBusy = busy === cli.id
     const isLeaving = leaving === cli.id
+    const prog = progressMsgs[cli.id]
+    const hasProgress = isBusy && prog
     return (
       <div
         key={cli.id}
-        className={`mac-card flex flex-col gap-0 px-3 py-2 ${isLeaving ? 'anim-slide-out' : ''}`}
+        className={`mac-card flex flex-col gap-0 px-3 py-2 relative ${isLeaving ? 'anim-slide-out' : ''}`}
       >
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 flex items-center justify-center shrink-0">
@@ -172,27 +198,51 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
                 <Globe size={12} />
               </a>
             )}
-            <Tooltip text={isBusy ? 'Installing…' : 'Install'}>
-              <button
-                className="mac-btn mac-btn-primary p-1.5 rounded-[3px]"
-                onClick={() => handleInstall(cli.id)}
-                disabled={isBusy || isLeaving}
-                aria-label={`Install ${cli.name}`}
-              >
-                {isBusy ? (
-                  <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : isLeaving ? (
-                  <Check size={12} />
-                ) : (
-                  <Download size={12} />
-                )}
-              </button>
-            </Tooltip>
+            {isBusy ? (
+              <Tooltip text={`Cancel — ${prog?.message || 'installing…'}`}>
+                <button
+                  className="mac-btn mac-btn-soft p-1.5 rounded-[3px] text-destructive"
+                  onClick={() => cancelInstall(cli.id)}
+                  aria-label={`Cancel install ${cli.name}`}
+                >
+                  <X size={12} />
+                </button>
+              </Tooltip>
+            ) : (
+              <Tooltip text={isLeaving ? 'Installed!' : 'Install'}>
+                <button
+                  className={`mac-btn p-1.5 rounded-[3px] ${isLeaving ? 'mac-btn-primary' : 'mac-btn-primary'}`}
+                  onClick={() => handleInstall(cli.id)}
+                  disabled={isLeaving}
+                  aria-label={`Install ${cli.name}`}
+                >
+                  {isLeaving ? <Check size={12} /> : <Download size={12} />}
+                </button>
+              </Tooltip>
+            )}
           </div>
         </div>
+
+        {/* Progress info + bar */}
         {isBusy && (
-          <div className="h-1 bg-border rounded-none overflow-hidden mt-1.5">
-            <div className="h-full bg-primary anim-pulse-bar rounded-none" />
+          <div className="mt-1.5">
+            {prog && (prog.message || prog.percent !== undefined) && (
+              <div className="flex items-center justify-center pb-1">
+                <span className="text-[9px] font-mono text-muted-foreground truncate text-center">
+                  {prog.percent !== undefined ? `${prog.percent}%` : ''}
+                  {prog.percent !== undefined && prog.message ? ' — ' : ''}
+                  {prog.message || ''}
+                </span>
+              </div>
+            )}
+            <div className="h-0.5 bg-border rounded-none overflow-hidden">
+              <div
+                className={`h-full rounded-none transition-all duration-300 ease-out ${
+                  prog?.percent === undefined ? 'bg-primary anim-pulse-bar' : 'bg-primary'
+                }`}
+                style={prog?.percent !== undefined ? { width: `${prog.percent}%` } : { width: '100%' }}
+              />
+            </div>
           </div>
         )}
       </div>

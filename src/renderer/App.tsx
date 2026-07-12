@@ -7,7 +7,7 @@ import { DependencyModal } from './components/installer/DependencyModal'
 import { Loader } from './components/ui/Loader'
 import { ToastContainer } from './components/ui/Toast'
 import { useTheme } from './hooks/useTheme'
-import type { CliDefinition, DependencyCheck, CliCount, CliState, AppSettings } from '@shared/types'
+import type { CliDefinition, DependencyCheck, CliCount, CliState, AppSettings, RefreshProgressMessage } from '@shared/types'
 import type { Toast, ToastType } from './components/ui/Toast'
 
 export default function App() {
@@ -17,6 +17,9 @@ export default function App() {
   const [clis, setClis] = useState<CliDefinition[]>([])
   const [states, setStates] = useState<Record<string, CliState>>({})
   const [deps, setDeps] = useState<DependencyCheck | null>(null)
+  const [depsLoading, setDepsLoading] = useState(true)
+  const [refreshProgress, setRefreshProgress] = useState(0)
+  const [refreshCurrent, setRefreshCurrent] = useState('')
   const [showDeps, setShowDeps] = useState(false)
   const [showCatalog, setShowCatalog] = useState(false)
   const [search, setSearch] = useState('')
@@ -27,7 +30,7 @@ export default function App() {
   const [cliOrder, setCliOrder] = useState<string[]>([])
   const [yoloMode, setYoloMode] = useState(false)
   const searchInputRef = useRef<HTMLInputElement>(null)
-
+  const refreshInFlightRef = useRef(false)
 
   const addToast = useCallback((message: string, type: ToastType = 'info'): string => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
@@ -58,15 +61,31 @@ export default function App() {
   )
 
   // Kick off a fresh detection pass; individual results stream back via the
-  // cli:state-updated event. Clears the loading flag when the pass completes.
+  // cli:state-updated event. Uses a ref guard so rapid calls (e.g. Cmd+R
+  // spam) are silently deduplicated rather than stacking.
   const refreshStates = useCallback(
-    () =>
+    () => {
+      if (refreshInFlightRef.current) return
+      refreshInFlightRef.current = true
+      setRefreshProgress(0)
+      setRefreshCurrent('')
       window.electronAPI
         .refreshCliStates()
         .catch(() => {})
-        .finally(() => setStatesLoading(false)),
+        .finally(() => {
+          refreshInFlightRef.current = false
+          setStatesLoading(false)
+        })
+    },
     []
   )
+
+  // Refresh both CLI states + dependency detection
+  const refreshAll = useCallback(() => {
+    refreshStates()
+    setDepsLoading(true)
+    window.electronAPI.checkDependencies().then(setDeps).catch(() => {}).finally(() => setDepsLoading(false))
+  }, [refreshStates])
 
   const loadSettings = useCallback(async () => {
     try {
@@ -98,7 +117,8 @@ export default function App() {
       .then(setClis)
       .catch(() => addToast('Failed to load CLI list', 'error'))
       .finally(() => setLoaded(true))
-    window.electronAPI.checkDependencies().then(setDeps).catch(() => {})
+    setDepsLoading(true)
+    window.electronAPI.checkDependencies().then(setDeps).catch(() => {}).finally(() => setDepsLoading(false))
     loadStates()      // instant cache paint
     refreshStates()   // background fresh detection
     loadSettings()
@@ -106,23 +126,35 @@ export default function App() {
 
   // Coalesce the burst of per-CLI state updates that arrive during a refresh
   // into a single render per animation frame (avoids ~36 back-to-back renders
-  // of the whole grid on startup).
+  // of the whole grid on startup). Also tracks refresh progress for the bar.
   useEffect(() => {
     const pending: Record<string, CliState> = {}
+    let receivedCount = 0
     let frame: number | null = null
     const flush = () => {
       frame = null
+      receivedCount += Object.keys(pending).length
       setStates((prev) => ({ ...prev, ...pending }))
       for (const k of Object.keys(pending)) delete pending[k]
     }
     const cleanup = window.electronAPI.onCliStateUpdate((cliId, state) => {
       pending[cliId] = state
+      setRefreshProgress(receivedCount + Object.keys(pending).length)
       if (frame === null) frame = requestAnimationFrame(flush)
     })
     return () => {
       if (frame !== null) cancelAnimationFrame(frame)
       cleanup()
     }
+  }, [])
+
+  // Listen for refresh progress with current CLI name.
+  useEffect(() => {
+    const cleanup = window.electronAPI.onRefreshProgress((msg: RefreshProgressMessage) => {
+      setRefreshProgress(msg.completed)
+      setRefreshCurrent(msg.current)
+    })
+    return cleanup
   }, [])
 
   const isInstalled = (cliId: string) =>
@@ -233,6 +265,13 @@ export default function App() {
         } else if (e.key === 'd') {
           e.preventDefault()
           setShowDeps(true)
+        } else if (e.key === 'r') {
+          e.preventDefault()
+          if (refreshInFlightRef.current) {
+            addToast('Refresh already in progress', 'info')
+          } else {
+            refreshAll()
+          }
         } else if (e.key >= '1' && e.key <= '9') {
           const idx = parseInt(e.key, 10) - 1
           const installed = clis.filter(
@@ -247,7 +286,7 @@ export default function App() {
     }
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [clis, states, handleLaunch, getCount])
+  }, [clis, states, handleLaunch, getCount, refreshAll, addToast])
 
   // Order the list favorites-first, then by the saved manual order (memoized so
   // it only recomputes when the list, saved order, or favorites change).
@@ -311,6 +350,9 @@ export default function App() {
           states={states}
           counts={counts}
           loading={statesLoading}
+          refreshProgress={refreshProgress}
+          refreshCurrent={refreshCurrent}
+          totalClis={clis.length}
           onUpdateCount={handleUpdateCount}
           onLaunch={handleLaunch}
           onRepair={handleRepair}
@@ -320,7 +362,9 @@ export default function App() {
           onOpenDeps={() => setShowDeps(true)}
           onOpenCatalog={() => setShowCatalog(true)}
           onCliChanged={refreshStates}
+          onRefreshAll={refreshAll}
           deps={deps}
+          depsLoading={depsLoading}
           search={search}
           onSearchChange={setSearch}
           justInstalled={justInstalled}

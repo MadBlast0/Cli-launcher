@@ -84,3 +84,15 @@ export interface AppUpdateStatus {
   progress?: number
   error?: string
 }
+
+export interface ActionProgressMessage {
+  type: 'progress'
+  percent?: number
+  message: string
+}
+
+export interface RefreshProgressMessage {
+  current: string
+  completed: number
+  total: number
+}

@@ -1,4 +1,5 @@
 import { execFile, spawn, execSync, ChildProcess } from 'child_process'
+import type { ActionProgressMessage } from '../shared/types'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
@@ -42,21 +43,99 @@ function getScriptPath(cliId: string, action: CliAction): string {
   return scriptPath
 }
 
-function runScript(scriptPath: string): Promise<CliActionResult> {
+const runningProcesses = new Map<string, ChildProcess>()
+
+export function cancelAction(cliId: string): boolean {
+  const child = runningProcesses.get(cliId)
+  if (!child) return false
+  child.kill(isWindows ? 'SIGTERM' : 'SIGTERM')
+  runningProcesses.delete(cliId)
+  return true
+}
+
+function parseProgressLine(line: string): ActionProgressMessage {
+  const lower = line.toLowerCase().trim()
+
+  // pip download progress: "1.2/1.2 MB 2.1 MB/s eta 0:00:00"
+  const pipMatch = lower.match(/(\d+\.?\d*)\/(\d+\.?\d*)\s*(kb|mb|gb)/)
+  if (pipMatch) {
+    const current = parseFloat(pipMatch[1])
+    const total = parseFloat(pipMatch[2])
+    const percent = total > 0 ? Math.min(100, Math.round((current / total) * 100)) : undefined
+    return { type: 'progress', percent, message: line.trim().substring(0, 100) }
+  }
+
+  // npm fetch lines: "npm http fetch GET 200 https://.../package-name"
+  if (lower.includes('fetch') || lower.includes('http get') || lower.includes('http post')) {
+    const match = line.match(/\/package\/[^/]+\/([^\s@]+)/) || line.match(/\/([^/\s]+?)(?:@[\d.]+)?\s/)
+    const pkg = match ? match[1].trim() : ''
+    return { type: 'progress', message: pkg ? `fetching ${pkg}…` : 'fetching…' }
+  }
+
+  if (lower.startsWith('collecting ')) {
+    return { type: 'progress', message: line.trim().substring(0, 100) }
+  }
+  if (lower.startsWith('installing collected')) {
+    return { type: 'progress', message: 'installing…' }
+  }
+  if (lower.startsWith('successfully installed')) {
+    const pkgs = line.replace(/^Successfully installed /i, '').trim()
+    return { type: 'progress', percent: 100, message: `installed ${pkgs}` }
+  }
+
+  if (line.trim()) {
+    return { type: 'progress', message: line.trim().substring(0, 100) }
+  }
+  return { type: 'progress', message: 'working…' }
+}
+
+function runScript(scriptPath: string, cliId?: string, onProgress?: (msg: ActionProgressMessage) => void): Promise<CliActionResult> {
   return new Promise((resolve) => {
     const cmd = isWindows ? 'powershell' : 'bash'
     const args = isWindows
       ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath]
       : [scriptPath]
 
-    const child = execFile(cmd, args, { maxBuffer: 10 * 1024 * 1024, timeout: 300000 }, (error, stdout, stderr) => {
-      if (error) {
-        resolve({ success: false, output: stdout, error: stderr || error.message })
+    const child = spawn(cmd, args, { timeout: 300000 })
+    if (cliId) runningProcesses.set(cliId, child)
+    let stdout = ''
+    let killed = false
+
+    const emit = (line: string) => {
+      if (onProgress && !killed) onProgress(parseProgressLine(line))
+    }
+
+    child.stdout?.on('data', (chunk: Buffer) => {
+      const text = chunk.toString()
+      stdout += text
+      const lines = text.split('\n').filter(Boolean)
+      for (const line of lines) emit(line)
+    })
+
+    let stderr = ''
+    child.stderr?.on('data', (chunk: Buffer) => {
+      stderr += chunk.toString()
+      // npm writes progress to stderr
+      const lines = chunk.toString().split('\n').filter(Boolean)
+      for (const line of lines) emit(line)
+    })
+
+    child.on('close', (code, signal) => {
+      if (cliId) runningProcesses.delete(cliId)
+      killed = true
+      if (signal) {
+        resolve({ success: false, output: stdout, error: 'Cancelled' })
+      } else if (code !== 0) {
+        resolve({ success: false, output: stdout, error: stderr || `Exit code ${code}` })
       } else {
         resolve({ success: true, output: stdout })
       }
     })
-    child.stdin?.end()
+
+    child.on('error', (err) => {
+      if (cliId) runningProcesses.delete(cliId)
+      resolve({ success: false, output: stdout, error: err.message })
+    })
   })
 }
 
@@ -497,10 +576,16 @@ export async function checkStandaloneUpdate(
   return { updateAvailable: false }
 }
 
-export async function executeCliAction(cliId: string, action: CliAction): Promise<CliActionResult> {
+export async function executeCliAction(
+  cliId: string,
+  action: CliAction,
+  onProgress?: (msg: ActionProgressMessage) => void
+): Promise<CliActionResult> {
+  // Cancel any previous action for this cli so we never have two scripts running
+  cancelAction(cliId)
   try {
     const scriptPath = getScriptPath(cliId, action)
-    return await runScript(scriptPath)
+    return await runScript(scriptPath, cliId, onProgress)
   } catch (err) {
     return {
       success: false,

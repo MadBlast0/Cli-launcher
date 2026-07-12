@@ -1,7 +1,7 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
 import { autoUpdater } from 'electron-updater'
-import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate } from './cli-engine'
+import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate, cancelAction } from './cli-engine'
 import { qSH } from './terminal-serializers'
 import { checkDependencies, installNode, installPython } from './dependency-manager'
 import { getCliRegistry } from '../cli-registry'
@@ -227,12 +227,18 @@ async function runPool<T>(items: T[], limit: number, worker: (item: T) => Promis
 
 async function refreshAllStates(registry: CliDefinition[], sender: Electron.WebContents) {
   const freshStates: Record<string, CliState> = {}
+  let completed = 0
+  const total = registry.length
 
   await runPool(registry, 8, async (cli) => {
     const state = await checkCliStatus(cli)
     freshStates[cli.id] = state
     cliStatusCache.set(cli.id, state)
-    try { sender.send(IPC_CHANNELS.CLI_STATE_UPDATED, cli.id, state) } catch { /* window closed */ }
+    completed++
+    try {
+      sender.send(IPC_CHANNELS.CLI_STATE_UPDATED, cli.id, state)
+      sender.send(IPC_CHANNELS.CLI_REFRESH_PROGRESS, { current: cli.name, completed, total })
+    } catch { /* window closed */ }
   })
 
   writeStateCache(freshStates)
@@ -257,9 +263,23 @@ export function registerIpcHandlers() {
     return readStateCache()
   })
 
+  let refreshInProgress = false
+
   ipcMain.handle(IPC_CHANNELS.CLI_REFRESH_ALL_STATES, async (event) => {
-    const registry = getCliRegistry()
-    await refreshAllStates(registry, event.sender)
+    if (refreshInProgress) return
+    refreshInProgress = true
+    try {
+      const registry = getCliRegistry()
+      const total = registry.length
+      try { event.sender.send(IPC_CHANNELS.CLI_REFRESH_PROGRESS, { current: '', completed: 0, total }) } catch { /* window closed */ }
+      await refreshAllStates(registry, event.sender)
+    } finally {
+      refreshInProgress = false
+    }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.CLI_CANCEL_ACTION, async (_event, cliId: string) => {
+    return cancelAction(cliId)
   })
 
   // --- Dedicated launch IPC with full runtime validation ---
@@ -312,15 +332,24 @@ export function registerIpcHandlers() {
   // into the script path and executed (path traversal → arbitrary script run).
   const VALID_ACTIONS = new Set<CliAction>(['install', 'update', 'uninstall', 'repair'])
 
-  ipcMain.handle(IPC_CHANNELS.EXECUTE_ACTION, async (_event, cliId: string, action: CliAction) => {
+  ipcMain.handle(IPC_CHANNELS.EXECUTE_ACTION, async (event, cliId: string, action: CliAction) => {
     const cli = getCliRegistry().find((c) => c.id === cliId)
     if (!cli) return { success: false, output: '', error: 'Unknown CLI' }
     if (!VALID_ACTIONS.has(action)) {
       return { success: false, output: '', error: `Invalid action: ${String(action)}` }
     }
 
-    const result = await executeCliAction(cliId, action)
+    const result = await executeCliAction(cliId, action, (msg) => {
+      try { event.sender.send(IPC_CHANNELS.CLI_ACTION_PROGRESS, cliId, msg) } catch { /* window closed */ }
+    })
     if (result.success) {
+      // Invalidate package-manager caches so the next check fetches fresh
+      // data (otherwise a newly installed/uninstalled CLI is invisible for
+      // the full TTL — the root cause of the 30-40s post-install delay).
+      npmGlobalCache = { data: null, ts: 0 }
+      pipGlobalCache = { data: null, ts: 0 }
+      // Send a done signal so the renderer knows the action stream finished
+      try { event.sender.send(IPC_CHANNELS.CLI_ACTION_PROGRESS, cliId, { type: 'progress', percent: 100, message: '__done__' }) } catch { /* window closed */ }
       const newState = await checkCliStatus(cli)
       cliStatusCache.set(cliId, newState)
     }

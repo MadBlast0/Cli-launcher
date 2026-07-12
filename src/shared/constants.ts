@@ -19,6 +19,9 @@ export const IPC_CHANNELS = {
   DOWNLOAD_APP_UPDATE: 'app:download-update',
   INSTALL_APP_UPDATE: 'app:install-update',
   APP_UPDATE_STATUS: 'app:update-status',
+  CLI_ACTION_PROGRESS: 'cli:action-progress',
+  CLI_CANCEL_ACTION: 'cli:cancel-action',
+  CLI_REFRESH_PROGRESS: 'cli:refresh-progress',
 } as const
 
 export const WINDOW_CONFIG = {

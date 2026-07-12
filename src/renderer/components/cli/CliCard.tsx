@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, memo } from 'react'
 import { Tooltip } from '../ui'
 import { getCliLogo } from '../../logos'
-import type { CliDefinition, CliState } from '@shared/types'
-import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUpCircle, ExternalLink, Globe, Copy } from 'lucide-react'
+import type { CliDefinition, CliState, ActionProgressMessage } from '@shared/types'
+import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUpCircle, ExternalLink, Globe, Copy, X } from 'lucide-react'
 
 interface CliCardProps {
   cli: CliDefinition
@@ -42,6 +42,10 @@ function CliCardInner({
   const [latest, setLatest] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
+  const [elapsed, setElapsed] = useState(0)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [progressPercent, setProgressPercent] = useState<number | undefined>(undefined)
+  const [progressMessage, setProgressMessage] = useState<string>('')
   const cardRef = useRef<HTMLDivElement>(null)
 
   const installed = state?.status === 'installed' || state?.status === 'update-available'
@@ -73,6 +77,35 @@ function CliCardInner({
     }
   }, [contextMenu])
 
+  // Elapsed-seconds timer while any action is in progress.
+  useEffect(() => {
+    if (busy === null) {
+      setElapsed(0)
+      setProgressPercent(undefined)
+      setProgressMessage('')
+      return
+    }
+    const start = Date.now()
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000)
+    return () => clearInterval(timer)
+  }, [busy])
+
+  // Listen for structured install progress streamed from the main process.
+  useEffect(() => {
+    if (busy !== 'install') return
+    const cleanup = window.electronAPI.onActionProgress((cliId: string, msg: ActionProgressMessage) => {
+      if (cliId !== cli.id) return
+      if (msg.message === '__done__') {
+        setProgressPercent(undefined)
+        setProgressMessage('Detecting…')
+        return
+      }
+      setProgressPercent(msg.percent)
+      setProgressMessage(msg.message)
+    })
+    return cleanup
+  }, [busy, cli.id])
+
   const runAction = async (action: Exclude<Busy, null>) => {
     if (busy) return
     setBusy(action)
@@ -84,8 +117,12 @@ function CliCardInner({
         const fresh = await window.electronAPI.getCliState(cli.id)
         const ok = fresh?.status === 'installed' || fresh?.status === 'update-available'
         if (action === 'install') {
-          if (result.success && ok) {
+          if (!result.success && result.error === 'Cancelled') {
+            onToast?.(`${cli.name} install cancelled`, 'info')
+          } else if (result.success && ok) {
             onToast?.(`${cli.name} installed successfully`, 'success')
+            setShowSuccess(true)
+            setTimeout(() => setShowSuccess(false), 1200)
           } else {
             setError(result.error || 'Install failed')
             onToast?.(`${cli.name} install failed: ${result.error || 'CLI not found after install'}`, 'error')
@@ -118,6 +155,10 @@ function CliCardInner({
     } finally {
       setBusy(null)
     }
+  }
+
+  const cancelInstall = async () => {
+    await window.electronAPI.cancelAction(cli.id)
   }
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -154,7 +195,8 @@ function CliCardInner({
   return (
     <div
       ref={cardRef}
-      className={`mac-card flex items-center gap-2 pl-2 pr-2 py-2 ${isNew ? 'anim-slide-in' : ''} relative`}
+      className={`mac-card flex items-center gap-2 pl-2 pr-2 py-2 relative ${isNew ? 'anim-slide-in' : 'anim-stagger-in'} ${showSuccess ? 'anim-flash-success' : ''}`}
+      style={{ animationDelay: `${index * 30}ms` }}
       draggable
       onDragStart={onDragStart}
       onDragOver={onDragOver}
@@ -231,18 +273,41 @@ function CliCardInner({
         </Tooltip>
       )}
 
-      <Tooltip text={installed ? 'Uninstall' : 'Install'}>
-        <button
-          className="mac-btn mac-btn-soft p-1.5 rounded-none text-secondary-foreground disabled:opacity-50"
-          disabled={anyBusy}
-          onClick={() => runAction(installed ? 'uninstall' : 'install')}
-          aria-label={installed ? `Uninstall ${cli.name}` : `Install ${cli.name}`}
-        >
-          {busy === 'install' || busy === 'uninstall'
-            ? <RefreshCw size={13} className="animate-spin" />
-            : installed ? <Trash2 size={13} /> : <Download size={13} />}
-        </button>
-      </Tooltip>
+      {installed ? (
+        <Tooltip text={busy === 'uninstall' ? 'Uninstalling…' : 'Uninstall'}>
+          <button
+            className="mac-btn mac-btn-soft p-1.5 rounded-none text-secondary-foreground disabled:opacity-50"
+            disabled={anyBusy}
+            onClick={() => runAction('uninstall')}
+            aria-label={`Uninstall ${cli.name}`}
+          >
+            {busy === 'uninstall'
+              ? <RefreshCw size={13} className="animate-spin" />
+              : <Trash2 size={13} />}
+          </button>
+        </Tooltip>
+      ) : busy === 'install' ? (
+        <Tooltip text={`Cancel install${elapsed > 0 ? ` (${elapsed}s)` : ''} — ${progressMessage || 'installing…'}`}>
+          <button
+            className="mac-btn mac-btn-soft p-1.5 rounded-none text-destructive hover:text-destructive"
+            onClick={cancelInstall}
+            aria-label={`Cancel install ${cli.name}`}
+          >
+            <X size={13} />
+          </button>
+        </Tooltip>
+      ) : (
+        <Tooltip text="Install">
+          <button
+            className="mac-btn mac-btn-soft p-1.5 rounded-none text-secondary-foreground disabled:opacity-50"
+            disabled={anyBusy}
+            onClick={() => runAction('install')}
+            aria-label={`Install ${cli.name}`}
+          >
+            <Download size={13} />
+          </button>
+        </Tooltip>
+      )}
 
       <div className="flex items-center gap-0.5 mac-input rounded-none px-0.5 py-0.5 shrink-0" role="group" aria-label={`Launch count for ${cli.name}`}>
         <button
@@ -276,6 +341,33 @@ function CliCardInner({
           Open
         </button>
       </Tooltip>
+
+      {/* Progress info text during install */}
+      {busy === 'install' && (progressMessage || elapsed > 0) && (
+        <div className="absolute bottom-2.5 left-0 right-0 px-3 flex justify-center pointer-events-none">
+          <span className="text-[9px] font-mono text-muted-foreground truncate text-center">
+            {progressPercent !== undefined ? `${progressPercent}%` : ''}
+            {progressPercent !== undefined && progressMessage ? ' — ' : ''}
+            {progressMessage || (elapsed > 0 ? `${elapsed}s` : '')}
+          </span>
+        </div>
+      )}
+
+      {/* Progress bar — indeterminate pulse when no percent, determinate when we have it */}
+      <div
+        className={`absolute bottom-0 left-0 right-0 overflow-hidden transition-all duration-300 ease-out ${
+          anyBusy ? 'max-h-0.5 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="h-0.5 bg-border">
+          <div
+            className={`h-full rounded-none transition-all duration-300 ease-out ${
+              progressPercent === undefined ? 'bg-primary anim-pulse-bar' : 'bg-primary'
+            }`}
+            style={progressPercent !== undefined ? { width: `${progressPercent}%` } : { width: '100%' }}
+          />
+        </div>
+      </div>
 
       {/* Context menu */}
       {contextMenu && (
