@@ -139,7 +139,6 @@ export default function App() {
     }
     const cleanup = window.electronAPI.onCliStateUpdate((cliId, state) => {
       pending[cliId] = state
-      setRefreshProgress(receivedCount + Object.keys(pending).length)
       if (frame === null) frame = requestAnimationFrame(flush)
     })
     return () => {

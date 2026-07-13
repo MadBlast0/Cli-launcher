@@ -1,9 +1,10 @@
 import { ipcMain, dialog, app, BrowserWindow } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
 import { autoUpdater } from 'electron-updater'
-import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate, cancelAction } from './cli-engine'
+import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate, cancelAction, invalidateUpdateCaches } from './cli-engine'
 import { qSH } from './terminal-serializers'
 import { checkDependencies, installNode, installPython } from './dependency-manager'
+import { readSettings, writeSettings } from './settings'
 import { getCliRegistry } from '../cli-registry'
 import { CliAction, CliState, CliDefinition, AppSettings, LaunchCliRequest, LaunchErrorCode } from '../shared/types'
 import { exec } from 'child_process'
@@ -12,28 +13,9 @@ import path from 'path'
 
 const cliStatusCache = new Map<string, CliState>()
 const STATE_CACHE_FILE = 'cli-state-cache.json'
-const SETTINGS_FILE = 'settings.json'
 
 function getStateCachePath() {
   return path.join(app.getPath('userData'), STATE_CACHE_FILE)
-}
-
-function getSettingsPath() {
-  return path.join(app.getPath('userData'), SETTINGS_FILE)
-}
-
-function readSettings(): AppSettings {
-  try {
-    const p = getSettingsPath()
-    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf-8'))
-  } catch { /* ignore */ }
-  return { theme: 'dark' }
-}
-
-function writeSettings(settings: AppSettings) {
-  try {
-    fs.writeFileSync(getSettingsPath(), JSON.stringify(settings, null, 2), 'utf-8')
-  } catch { /* ignore */ }
 }
 
 function readStateCache(): Record<string, CliState> {
@@ -77,9 +59,13 @@ function saveFolder(folder: string) {
  */
 function getVersion(cmd: string): Promise<string> {
   return new Promise((resolve) => {
-    exec(cmd, { timeout: 8000 }, (err, stdout) => {
+    exec(cmd, { timeout: 8000 }, (err, stdout, stderr) => {
       if (err) { resolve(''); return }
-      resolve(stdout.trim().split('\n')[0] || '')
+      // Some CLIs print their version to stderr, or use a non-zero exit that
+      // `exec` still surfaces output for; accept either stream so an installed
+      // CLI isn't wrongly reported as missing.
+      const out = (stdout || stderr || '').trim().split('\n')[0] || ''
+      resolve(out)
     })
   })
 }
@@ -348,6 +334,9 @@ export function registerIpcHandlers() {
       // the full TTL — the root cause of the 30-40s post-install delay).
       npmGlobalCache = { data: null, ts: 0 }
       pipGlobalCache = { data: null, ts: 0 }
+      // Also drop the update-detection caches so the "update available" badge
+      // reflects reality after an install/update/uninstall.
+      invalidateUpdateCaches()
       // Send a done signal so the renderer knows the action stream finished
       try { event.sender.send(IPC_CHANNELS.CLI_ACTION_PROGRESS, cliId, { type: 'progress', percent: 100, message: '__done__' }) } catch { /* window closed */ }
       const newState = await checkCliStatus(cli)
@@ -359,8 +348,10 @@ export function registerIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.CHECK_CLI_UPDATE, async (_event, cliId: string) => {
     const cli = getCliRegistry().find((c) => c.id === cliId)
     if (!cli) return { updateAvailable: false }
+    if (cli.skipUpdateCheck) return { updateAvailable: false }
     if (cli.dependencyType === 'standalone') {
-      return await checkStandaloneUpdate(cli)
+      const state = await checkCliStatus(cli)
+      return await checkStandaloneUpdate(cli, state.version)
     }
     return await checkCliUpdate(cli)
   })

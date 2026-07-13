@@ -108,6 +108,28 @@ function unixHasCommand(cmd: string): Promise<boolean> {
   })
 }
 
+type LinuxPackageManager = 'apt' | 'dnf' | 'pacman'
+
+/** Detects the system package manager on Linux so dependency install isn't
+ *  hard-wired to Debian/apt. Returns null when none of the supported managers
+ *  are present. */
+async function detectLinuxPackageManager(): Promise<LinuxPackageManager | null> {
+  if (isWin || isMac) return null
+  const candidates: { pm: LinuxPackageManager; bin: string }[] = [
+    { pm: 'apt', bin: 'apt-get' },
+    { pm: 'dnf', bin: 'dnf' },
+    { pm: 'pacman', bin: 'pacman' },
+  ]
+  for (const c of candidates) {
+    if (await unixHasCommand(c.bin)) return c.pm
+  }
+  return null
+}
+
+const UNSUPPORTED_LINUX_MSG =
+  'Unsupported Linux distribution: could not find apt, dnf, or pacman. ' +
+  'Please install Node.js/Python manually.'
+
 /**
  * Runs a shell command with elevated privileges via a GRAPHICAL prompt, because
  * the app has no controlling TTY — a plain `sudo` would hang or fail. macOS uses
@@ -175,11 +197,22 @@ export async function installNode(): Promise<string> {
     push('Installing Node.js (admin authorization required)...')
     await runElevated(`installer -pkg "${output}" -target /`, 300000)
   } else {
-    push(`Installing Node.js v${nodeVersion} via NodeSource (admin authorization required)...`)
-    await runElevated(
-      `curl -fsSL https://deb.nodesource.com/setup_${major}.x | bash - && apt-get install -y nodejs`,
-      300000
-    )
+    const pm = await detectLinuxPackageManager()
+    if (pm === 'apt') {
+      push(`Installing Node.js v${nodeVersion} via NodeSource (admin authorization required)...`)
+      await runElevated(
+        `curl -fsSL https://deb.nodesource.com/setup_${major}.x | bash - && apt-get install -y nodejs`,
+        300000
+      )
+    } else if (pm === 'dnf') {
+      push(`Installing Node.js v${nodeVersion} via dnf (admin authorization required)...`)
+      await runElevated('dnf install -y nodejs npm', 300000)
+    } else if (pm === 'pacman') {
+      push(`Installing Node.js v${nodeVersion} via pacman (admin authorization required)...`)
+      await runElevated('pacman -S --noconfirm nodejs npm', 300000)
+    } else {
+      throw new Error(UNSUPPORTED_LINUX_MSG)
+    }
   }
 
   push(`Node.js v${nodeVersion} installed successfully`)
@@ -211,8 +244,19 @@ export async function installPython(): Promise<string> {
     push('Installing Python (admin authorization required)...')
     await runElevated(`installer -pkg "${output}" -target /`, 300000)
   } else {
-    push('Installing Python via apt (admin authorization required)...')
-    await runElevated('apt-get update && apt-get install -y python3 python3-pip', 300000)
+    const pm = await detectLinuxPackageManager()
+    if (pm === 'apt') {
+      push('Installing Python via apt (admin authorization required)...')
+      await runElevated('apt-get update && apt-get install -y python3 python3-pip', 300000)
+    } else if (pm === 'dnf') {
+      push('Installing Python via dnf (admin authorization required)...')
+      await runElevated('dnf install -y python3 python3-pip', 300000)
+    } else if (pm === 'pacman') {
+      push('Installing Python via pacman (admin authorization required)...')
+      await runElevated('pacman -S --noconfirm python python-pip', 300000)
+    } else {
+      throw new Error(UNSUPPORTED_LINUX_MSG)
+    }
   }
 
   push(`Python ${pythonVersion} installed successfully`)

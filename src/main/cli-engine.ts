@@ -1,4 +1,4 @@
-import { execFile, spawn, execSync, ChildProcess } from 'child_process'
+import { execFile, spawn, execSync, exec, ChildProcess } from 'child_process'
 import type { ActionProgressMessage } from '../shared/types'
 import path from 'path'
 import fs from 'fs'
@@ -6,9 +6,47 @@ import os from 'os'
 import { app } from 'electron'
 import { CliAction, CliActionResult, CliDefinition, CliLaunchResult, LaunchErrorCode } from '../shared/types'
 import { qPS, qSH, qCMD, buildPSCommand, buildWSLCommand } from './terminal-serializers'
+import { getConfiguredTerminal as settingsGetConfiguredTerminal } from './settings'
 
 const isWindows = os.platform() === 'win32'
 const isMac = os.platform() === 'darwin'
+
+// Bounded, generous timeout for scripted actions. Long `npm install -g` /
+// runtime downloads can legitimately exceed 5 minutes, so we avoid the old
+// 300s kill that mislabeled timeouts as "Cancelled". 30 minutes is a ceiling
+// against true hangs, not a normal-case limit.
+const ACTION_TIMEOUT = 30 * 60 * 1000
+
+// Tracks user-requested cancellations so a killed process can be distinguished
+// from a (rare) timeout kill in `runScript`'s close handler.
+const cancelledActions = new Set<string>()
+
+// Resolves the pip invocation to use. Many Linux/macOS systems only ship
+// `pip3` (or `python3 -m pip`), so a bare `pip` call silently fails and every
+// Python CLI is reported as not-installed. We probe and memoize the first
+// available variant.
+let pipRunner: { exe: string; prefix: string[] } | null = null
+async function resolvePip(): Promise<{ exe: string; prefix: string[] }> {
+  if (pipRunner) return pipRunner
+  const candidates: { exe: string; prefix: string[] }[] = [
+    { exe: 'pip3', prefix: [] },
+    { exe: 'pip', prefix: [] },
+    { exe: 'python3', prefix: ['-m', 'pip'] },
+    { exe: 'python', prefix: ['-m', 'pip'] },
+  ]
+  for (const c of candidates) {
+    const ok = await new Promise<boolean>((resolve) => {
+      execFile(c.exe, [...c.prefix, '--version'], { timeout: 5000 }, (err) => resolve(!err))
+    })
+    if (ok) {
+      pipRunner = c
+      return c
+    }
+  }
+  // Fall back to `pip3`; the caller's exec will error and we degrade gracefully.
+  pipRunner = { exe: 'pip3', prefix: [] }
+  return pipRunner
+}
 
 // Platform default terminals (always available on each OS)
 const MAC_DEFAULT = 'terminal'
@@ -33,6 +71,11 @@ function getAppRoot(): string {
 }
 
 function getScriptPath(cliId: string, action: CliAction): string {
+  // Defense-in-depth: even though callers resolve `cliId` against the registry,
+  // never let an unexpected id escape `src/cli-registry` via path traversal.
+  if (!/^[a-z0-9-]+$/.test(cliId)) {
+    throw new Error(`Invalid CLI id: ${cliId}`)
+  }
   const baseDir = path.join(getAppRoot(), 'src/cli-registry', cliId)
   const ext = isWindows ? '.ps1' : '.sh'
   const scriptPath = path.join(baseDir, `${action}${ext}`)
@@ -45,15 +88,27 @@ function getScriptPath(cliId: string, action: CliAction): string {
 
 const runningProcesses = new Map<string, ChildProcess>()
 
+/** Kills a child and, on POSIX, its whole process group (spawned detached). */
+function killProcessTree(child: ChildProcess) {
+  try {
+    if (!isWindows && child.pid) {
+      process.kill(-child.pid, 'SIGTERM')
+    } else {
+      child.kill('SIGTERM')
+    }
+  } catch { /* already exited */ }
+}
+
 export function cancelAction(cliId: string): boolean {
   const child = runningProcesses.get(cliId)
   if (!child) return false
-  child.kill(isWindows ? 'SIGTERM' : 'SIGTERM')
+  cancelledActions.add(cliId)
+  killProcessTree(child)
   runningProcesses.delete(cliId)
   return true
 }
 
-function parseProgressLine(line: string): ActionProgressMessage {
+export function parseProgressLine(line: string): ActionProgressMessage {
   const lower = line.toLowerCase().trim()
 
   // pip download progress: "1.2/1.2 MB 2.1 MB/s eta 0:00:00"
@@ -96,35 +151,56 @@ function runScript(scriptPath: string, cliId?: string, onProgress?: (msg: Action
       ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath]
       : [scriptPath]
 
-    const child = spawn(cmd, args, { timeout: 300000 })
+    // `detached` makes the child its own process-group leader (POSIX) so a
+    // cancel can kill the whole tree (npm → node installer). On Windows we keep
+    // it attached: `detached: true` there allocates a fresh console window and
+    // would flash a visible terminal during every install/update.
+    const child = spawn(cmd, args, { timeout: ACTION_TIMEOUT, detached: !isWindows })
     if (cliId) runningProcesses.set(cliId, child)
     let stdout = ''
     let killed = false
+    // Buffers that arrive mid-line across `data` chunks must be reassembled;
+    // otherwise a progress line split on a chunk boundary is dropped/garbled.
+    let stdoutRemainder = ''
+    let stderrRemainder = ''
 
     const emit = (line: string) => {
-      if (onProgress && !killed) onProgress(parseProgressLine(line))
+      if (onProgress && !killed && line) onProgress(parseProgressLine(line))
     }
 
     child.stdout?.on('data', (chunk: Buffer) => {
-      const text = chunk.toString()
-      stdout += text
-      const lines = text.split('\n').filter(Boolean)
-      for (const line of lines) emit(line)
+      const text = stdoutRemainder + chunk.toString()
+      stdoutRemainder = ''
+      stdout += chunk.toString()
+      const parts = text.split('\n')
+      // The final element is an incomplete line (no trailing newline yet).
+      for (let i = 0; i < parts.length - 1; i++) emit(parts[i])
+      if (text.endsWith('\n')) emit(parts[parts.length - 1])
+      else stdoutRemainder = parts[parts.length - 1]
     })
 
     let stderr = ''
     child.stderr?.on('data', (chunk: Buffer) => {
+      const text = stderrRemainder + chunk.toString()
+      stderrRemainder = ''
       stderr += chunk.toString()
       // npm writes progress to stderr
-      const lines = chunk.toString().split('\n').filter(Boolean)
-      for (const line of lines) emit(line)
+      const parts = text.split('\n')
+      for (let i = 0; i < parts.length - 1; i++) emit(parts[i])
+      if (text.endsWith('\n')) emit(parts[parts.length - 1])
+      else stderrRemainder = parts[parts.length - 1]
     })
 
     child.on('close', (code, signal) => {
-      if (cliId) runningProcesses.delete(cliId)
+      if (cliId) {
+        runningProcesses.delete(cliId)
+        cancelledActions.delete(cliId)
+      }
       killed = true
       if (signal) {
-        resolve({ success: false, output: stdout, error: 'Cancelled' })
+        // Distinguish a user cancel from a (rare) timeout kill.
+        const wasCancelled = cliId ? cancelledActions.has(cliId) : false
+        resolve({ success: false, output: stdout, error: wasCancelled ? 'Cancelled' : 'Process terminated' })
       } else if (code !== 0) {
         resolve({ success: false, output: stdout, error: stderr || `Exit code ${code}` })
       } else {
@@ -133,7 +209,10 @@ function runScript(scriptPath: string, cliId?: string, onProgress?: (msg: Action
     })
 
     child.on('error', (err) => {
-      if (cliId) runningProcesses.delete(cliId)
+      if (cliId) {
+        runningProcesses.delete(cliId)
+        cancelledActions.delete(cliId)
+      }
       resolve({ success: false, output: stdout, error: err.message })
     })
   })
@@ -147,14 +226,7 @@ async function detectTerminalEmulator(): Promise<string> {
 
 /** Reads the user's preferred terminal emulator from saved settings, if any. */
 function getConfiguredTerminal(): string | null {
-  try {
-    const p = path.join(app.getPath('userData'), 'settings.json')
-    const settings = JSON.parse(fs.readFileSync(p, 'utf-8'))
-    if (settings && typeof settings.terminalEmulator === 'string' && settings.terminalEmulator) {
-      return settings.terminalEmulator
-    }
-  } catch { /* ignore */ }
-  return null
+  return settingsGetConfiguredTerminal()
 }
 
 /** Best-effort check for an executable on the system PATH (Windows). */
@@ -339,11 +411,12 @@ const MAC_LAUNCHERS: Record<string, LauncherFn> = {
     return spawnSafe('osascript', ['-e', MAC_ITERM_SCRIPT, '--', folder || '', exe, ...args], { detached: true, stdio: 'ignore' })
   },
   warp: (exe, args, folder) => {
-    // Warp's `open -a` passes the command as an argument; serialize tokens
-    // into one compatible string with POSIX quoting.
-    const tokens = [exe, ...args].map(qSH).join(' ')
-    const inner = folder ? `cd ${qSH(folder)} && ${tokens}` : tokens
-    return spawnSafe('open', ['-a', 'Warp', '--args', inner], { detached: true, stdio: 'ignore' })
+    // Warp does not execute an arbitrary command passed via `open -a Warp
+    // --args`, so routing through it would open Warp without running the CLI.
+    // Fall back to the standard Terminal launcher, which reliably runs the
+    // command. (Selecting "Warp" still launches the CLI; it just isn't inside
+    // a Warp window until Warp gains command-line launch support.)
+    return MAC_LAUNCHERS['_fallback'](exe, args, folder)
   },
   alacritty: (exe, args, folder) => {
     // Alacritty on macOS runs bash -c; use POSIX quoting.
@@ -520,25 +593,27 @@ function getPipOutdated(): Promise<Record<string, { current: string; latest: str
     return Promise.resolve(pipOutdatedCache.data!)
   }
   return new Promise((resolve) => {
-    execFile(
-      'pip',
-      ['list', '--outdated', '--format=json'],
-      { timeout: 25000, maxBuffer: 10 * 1024 * 1024 },
-      (_error: unknown, stdout: string) => {
-        try {
-          const list = JSON.parse(stdout || '[]')
-          const map: Record<string, { current: string; latest: string }> = {}
-          for (const pkg of list) {
-            map[pkg.name] = { current: pkg.version, latest: pkg.latest_version }
+    resolvePip().then((pip) => {
+      execFile(
+        pip.exe,
+        [...pip.prefix, 'list', '--outdated', '--format=json'],
+        { timeout: 25000, maxBuffer: 10 * 1024 * 1024 },
+        (_error: unknown, stdout: string) => {
+          try {
+            const list = JSON.parse(stdout || '[]')
+            const map: Record<string, { current: string; latest: string }> = {}
+            for (const pkg of list) {
+              map[pkg.name] = { current: pkg.version, latest: pkg.latest_version }
+            }
+            pipOutdatedCache.data = map
+            pipOutdatedCache.ts = Date.now()
+            resolve(map)
+          } catch {
+            resolve({})
           }
-          pipOutdatedCache.data = map
-          pipOutdatedCache.ts = Date.now()
-          resolve(map)
-        } catch {
-          resolve({})
         }
-      }
-    )
+      )
+    }).catch(() => resolve({}))
   })
 }
 
@@ -566,14 +641,74 @@ export async function checkCliUpdate(
   return { updateAvailable: false }
 }
 
+/** Extracts `owner/repo` from a GitHub homepage URL, if present. */
+export function getRepoFromHomepage(homepage?: string): string | null {
+  if (!homepage) return null
+  const m = homepage.match(/github\.com[/:]([^/]+)\/([^/?#]+)/i)
+  if (!m) return null
+  const repo = m[2].replace(/\.git$/i, '')
+  return `${m[1]}/${repo}`
+}
+
+const STANDALONE_CACHE_TTL = 60 * 60 * 1000
+const standaloneUpdateCache: Record<string, { ts: number; result: { updateAvailable: boolean; latestVersion?: string } }> = {}
+
+/** Normalizes a release tag/version for comparison (drops a leading `v`). */
+function normalizeVersion(v: string): string {
+  return v.replace(/^v/i, '').trim()
+}
+
 export async function checkStandaloneUpdate(
-  cli: CliDefinition
+  cli: CliDefinition,
+  installedVersion?: string
 ): Promise<{ updateAvailable: boolean; latestVersion?: string }> {
-  // Standalone CLIs (cargo crates, prebuilt binaries, e.g. aichat, amazonq,
-  // cursor, droid, plandex) are not npm packages, so an `npm view` lookup would
-  // return a bogus or empty version and falsely report an update. Non-npm
-  // versions can't be reliably checked, so we never report one.
-  return { updateAvailable: false }
+  // Standalone CLIs (prebuilt binaries, cargo crates, e.g. aichat, goose,
+  // mods, fabric) aren't npm/pip packages, so we can't use `npm view`. When the
+  // registry entry links to a GitHub repo we check its latest release instead.
+  const repo = getRepoFromHomepage(cli.homepage)
+  if (!repo || !installedVersion) return { updateAvailable: false }
+
+  const cached = standaloneUpdateCache[repo]
+  if (cached && Date.now() - cached.ts < STANDALONE_CACHE_TTL) {
+    return cached.result
+  }
+
+  const result = await new Promise<{ updateAvailable: boolean; latestVersion?: string }>((resolve) => {
+    const url = `https://api.github.com/repos/${repo}/releases/latest`
+    const cmd = isWindows
+      ? `powershell -NoProfile -Command "(Invoke-WebRequest -Uri '${url}' -UseBasicParsing).Content"`
+      : `curl -fsSL '${url}'`
+    exec(cmd, { timeout: 15000, maxBuffer: 2 * 1024 * 1024 }, (err, stdout) => {
+      if (err || !stdout) {
+        resolve({ updateAvailable: false })
+        return
+      }
+      try {
+        const data = JSON.parse(stdout)
+        const latest = normalizeVersion(String(data.tag_name || ''))
+        if (!latest) {
+          resolve({ updateAvailable: false })
+          return
+        }
+        resolve({ updateAvailable: latest !== normalizeVersion(installedVersion), latestVersion: latest })
+      } catch {
+        resolve({ updateAvailable: false })
+      }
+    })
+  })
+
+  standaloneUpdateCache[repo] = { ts: Date.now(), result }
+  return result
+}
+
+/** Clears the npm/pip/standalone update caches so a fresh check runs after an
+ *  install/update/uninstall. Presence caches are cleared by the caller. */
+export function invalidateUpdateCaches() {
+  npmOutdatedCache.data = null
+  npmOutdatedCache.ts = 0
+  pipOutdatedCache.data = null
+  pipOutdatedCache.ts = 0
+  for (const key of Object.keys(standaloneUpdateCache)) delete standaloneUpdateCache[key]
 }
 
 export async function executeCliAction(

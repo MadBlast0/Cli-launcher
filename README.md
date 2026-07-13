@@ -93,8 +93,8 @@ Download the latest release for your platform from the [Releases page](https://g
 | Windows | `.exe` installer (NSIS) | x64 |
 | Windows | Portable `.exe` | x64 |
 | macOS | `.dmg` (universal) | x64 + arm64 |
-| macOS | `.dmg` (Intel) | x64 |
-| macOS | `.dmg` (Apple Silicon) | arm64 |
+| macOS | `.dmg` (x64) | x64 |
+| macOS | `.dmg` (arm64) | arm64 |
 | macOS | `.zip` (universal) | x64 + arm64 |
 | Linux | `.AppImage` | x64, arm64 |
 | Linux | `.deb` | x64, arm64 |
@@ -127,8 +127,8 @@ Build artifacts are output to the `release/` directory.
 ```bash
 npm run build          # current platform
 npm run build:win      # Windows (MSI, NSIS, portable, ZIP)
-npm run build:mac      # macOS (DMG, ZIP — x64 + arm64)
-npm run build:linux    # Linux (AppImage, deb, rpm, snap, pacman)
+npm run build:mac      # macOS (DMG, ZIP — universal, x64, arm64)
+npm run build:linux    # Linux (AppImage, deb, rpm, tar.gz)
 npm run build:all      # all platforms
 ```
 
