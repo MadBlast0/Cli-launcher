@@ -14,6 +14,10 @@ interface CliCatalogProps {
   onInstalled?: (cliId: string) => void
   onToast?: (message: string, type: ToastType) => string | void
   updateToast?: (id: string, message: string, type: ToastType) => void
+  outdatedOnly?: boolean
+  hiddenClis?: string[]
+  onUnhide?: (cliId: string) => void
+  aliasMap?: Record<string, string>
 }
 
 type ManagerGroup = 'npm' | 'pip' | 'standalone'
@@ -30,7 +34,7 @@ const groupIcons: Record<ManagerGroup, string> = {
   standalone: '◈',
 }
 
-export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled, onToast, updateToast }: CliCatalogProps) {
+export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled, onToast, updateToast, outdatedOnly = false, hiddenClis = [], onUnhide, aliasMap }: CliCatalogProps) {
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
   const [leaving, setLeaving] = useState<string | null>(null)
@@ -49,9 +53,11 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
     return cleanup
   }, [open])
 
-  const notInstalled = clis.filter(
-    (cli) => states[cli.id]?.status !== 'installed' && states[cli.id]?.status !== 'update-available'
-  )
+  const statusOf = (cli: CliDefinition) => states[cli.id]?.status
+  const isInstalled = (cli: CliDefinition) => statusOf(cli) === 'installed' || statusOf(cli) === 'update-available'
+  const displayName = (cli: CliDefinition) => (aliasMap && aliasMap[cli.id]) || cli.name
+
+  const notInstalled = clis.filter((cli) => !isInstalled(cli) && !hiddenClis.includes(cli.id))
 
   const filtered = notInstalled.filter(
     (cli) =>
@@ -59,10 +65,20 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
       cli.id.toLowerCase().includes(search.toLowerCase())
   )
 
+  // When opened as an "updates" view, show the installed CLIs that have an
+  // update available (so the user can act on them), rather than the not-yet
+  // installed ones.
+  const visible = outdatedOnly
+    ? clis.filter((cli) => statusOf(cli) === 'update-available')
+    : filtered
+
+  // Hidden CLIs are listed separately at the bottom so they remain manageable.
+  const hidden = clis.filter((cli) => hiddenClis.includes(cli.id))
+
   // Group by dependency type
   const grouped = useMemo(() => {
     const groups: Record<ManagerGroup, CliDefinition[]> = { npm: [], pip: [], standalone: [] }
-    for (const cli of filtered) {
+    for (const cli of visible) {
       const type: ManagerGroup =
         cli.dependencyType === 'node'
           ? 'npm'
@@ -72,7 +88,7 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
       groups[type].push(cli)
     }
     return groups
-  }, [filtered])
+  }, [visible])
 
   const setToast = (toastId: string | void, message: string, type: ToastType) => {
     if (toastId && updateToast) updateToast(toastId, message, type)
@@ -173,7 +189,7 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-semibold tracking-tight text-card-foreground truncate">
-                {cli.name}
+                {displayName(cli)}
               </span>
               {cli.packageName && (
                 <span className="text-[10px] font-mono text-muted-foreground truncate flex items-center gap-1">
@@ -273,13 +289,13 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
               aria-label="Search available CLIs"
             />
           </div>
-          {filtered.length > 0 && (
+          {!outdatedOnly && visible.length > 0 && (
             <Tooltip text="Install all CLIs that are not yet installed">
               <Button
                 variant="primary"
                 size="sm"
                 icon={<DownloadCloud size={14} />}
-                onClick={() => installAll(filtered)}
+                onClick={() => installAll(visible)}
                 aria-label="Install all missing CLIs"
               >
                 Install All
@@ -313,6 +329,36 @@ export function CliCatalog({ open, onClose, clis, states, onChanged, onInstalled
               </div>
             )
           })}
+
+          {hidden.length > 0 && !outdatedOnly && (
+            <div>
+              <div className="flex items-center gap-2 px-1 pb-1.5 pt-2">
+                <span className="text-[10px] font-semibold tracking-wide text-muted-foreground uppercase">
+                  Hidden
+                </span>
+                <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
+                  {hidden.length}
+                </span>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                {hidden.map((cli) => (
+                  <div key={cli.id} className="mac-card flex items-center gap-3 px-3 py-2 opacity-70">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[13px] font-semibold tracking-tight text-card-foreground truncate block">
+                        {displayName(cli)}
+                      </span>
+                      <p className="text-[10.5px] text-muted-foreground truncate">{cli.description}</p>
+                    </div>
+                    {onUnhide && (
+                      <Button variant="secondary" size="sm" onClick={() => onUnhide(cli.id)} aria-label={`Unhide ${displayName(cli)}`}>
+                        Unhide
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Modal>

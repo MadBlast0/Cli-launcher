@@ -6,7 +6,7 @@ vi.mock('electron', () => ({
   app: { getPath: () => '/tmp', isPackaged: false },
 }))
 
-import { parseProgressLine, getRepoFromHomepage } from './cli-engine'
+import { parseProgressLine, getRepoFromHomepage, needsElevationForCli } from './cli-engine'
 
 describe('parseProgressLine', () => {
   it('parses pip download progress into a percentage', () => {
@@ -45,5 +45,36 @@ describe('getRepoFromHomepage', () => {
     expect(getRepoFromHomepage('https://cursor.com/cli')).toBeNull()
     expect(getRepoFromHomepage('https://factory.ai')).toBeNull()
     expect(getRepoFromHomepage(undefined)).toBeNull()
+  })
+})
+
+describe('needsElevationForCli', () => {
+  const nodeCli = { id: 'n', name: 'n', executable: 'n', dependencyType: 'node' as const, description: '', skipPermissions: false }
+  const pyCli = { id: 'p', name: 'p', executable: 'p', dependencyType: 'python' as const, description: '', skipPermissions: false }
+  const standaloneCli = { id: 's', name: 's', executable: 's', dependencyType: 'standalone' as const, description: '', skipPermissions: false }
+
+  it('never elevates on Windows', async () => {
+    // These tests run on the CI OS only; os.platform isn't easily stubbed.
+    if (process.platform === 'win32') {
+      expect(await needsElevationForCli(nodeCli)).toBe(false)
+    }
+  })
+
+  it('always elevates node/pip on macOS', async () => {
+    if (process.platform === 'darwin') {
+      expect(await needsElevationForCli(nodeCli)).toBe(true)
+      expect(await needsElevationForCli(pyCli)).toBe(true)
+    }
+  })
+
+  it('never elevates standalone CLIs', async () => {
+    expect(await needsElevationForCli(standaloneCli)).toBe(false)
+  })
+
+  it('respects the elevateInstalls=false setting', async () => {
+    const { writeSettings } = await import('./settings')
+    writeSettings({ theme: 'dark', elevateInstalls: false })
+    expect(await needsElevationForCli(nodeCli)).toBe(false)
+    writeSettings({ theme: 'dark', elevateInstalls: true })
   })
 })

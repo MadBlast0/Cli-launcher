@@ -17,6 +17,11 @@ interface CliCardProps {
   onDragOver: (e: React.DragEvent) => void
   onDrop: (e: React.DragEvent) => void
   index: number
+  selected?: boolean
+  onSelect?: (index: number) => void
+  onConfigure?: (cliId: string) => void
+  onHide?: (cliId: string) => void
+  aliasMap?: Record<string, string>
   justInstalled?: string | null
   onToast?: (message: string, type: 'success' | 'error' | 'info') => void
 }
@@ -35,10 +40,12 @@ function installCommandFor(cli: CliDefinition): string {
 
 function CliCardInner({
   cli, state, count, onCountChange, onLaunch, onChanged, onRepaired, onUpdated,
-  onDragStart, onDragOver, onDrop, index, justInstalled, onToast,
+  onDragStart, onDragOver, onDrop, index, selected = false, onSelect, onConfigure, onHide, aliasMap, justInstalled, onToast,
 }: CliCardProps) {
   const isNew = justInstalled === cli.id
+  const displayName = (aliasMap && aliasMap[cli.id]) || cli.name
   const [busy, setBusy] = useState<Busy>(null)
+  const [lastAction, setLastAction] = useState<Busy>(null)
   const [latest, setLatest] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null)
@@ -47,6 +54,13 @@ function CliCardInner({
   const [progressPercent, setProgressPercent] = useState<number | undefined>(undefined)
   const [progressMessage, setProgressMessage] = useState<string>('')
   const cardRef = useRef<HTMLDivElement>(null)
+
+  // Keep the keyboard-selected card scrolled into view.
+  useEffect(() => {
+    if (selected && cardRef.current) {
+      cardRef.current.scrollIntoView({ block: 'nearest' })
+    }
+  }, [selected])
 
   const installed = state?.status === 'installed' || state?.status === 'update-available'
   const updateAvailable = !!latest
@@ -108,6 +122,7 @@ function CliCardInner({
 
   const runAction = async (action: Exclude<Busy, null>) => {
     if (busy) return
+    setLastAction(action)
     setBusy(action)
     setError(null)
     setContextMenu(null)
@@ -195,16 +210,17 @@ function CliCardInner({
   return (
     <div
       ref={cardRef}
-      className={`mac-card flex items-center gap-2 pl-2 pr-2 py-2 relative ${isNew ? 'anim-slide-in' : 'anim-stagger-in'} ${showSuccess ? 'anim-flash-success' : ''}`}
+      className={`mac-card flex items-center gap-2 pl-2 pr-2 py-2 relative ${isNew ? 'anim-slide-in' : 'anim-stagger-in'} ${showSuccess ? 'anim-flash-success' : ''} ${selected ? 'ring-2 ring-primary ring-inset' : ''}`}
       style={{ animationDelay: `${index * 30}ms` }}
       draggable
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={onDrop}
       data-index={index}
+      onMouseDown={() => onSelect?.(index)}
       onContextMenu={handleContextMenu}
       role="listitem"
-      aria-label={`${cli.name}${installed ? `, version ${state?.version || 'installed'}` : ', not installed'}`}
+      aria-label={`${displayName}${installed ? `, version ${state?.version || 'installed'}` : ', not installed'}`}
     >
       <div className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground shrink-0 transition-colors" aria-hidden="true">
         <GripVertical size={14} />
@@ -220,7 +236,7 @@ function CliCardInner({
 
       <div className="flex flex-col min-w-0 flex-1 leading-tight">
         <span className="text-[13px] font-semibold tracking-tight text-card-foreground truncate">
-          {cli.name}
+          {displayName}
         </span>
         <div className="flex items-center gap-1.5 mt-0.5">
           {error && (
@@ -342,6 +358,39 @@ function CliCardInner({
         </button>
       </Tooltip>
 
+      {/* Failure diagnostics: retry / copy error / open log (#10, #19) */}
+      {error && !anyBusy && (
+        <div className="absolute bottom-1.5 left-0 right-0 px-3 flex items-center justify-center gap-2 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-1">
+            <button
+              className="mac-btn mac-btn-soft px-2 py-1 text-[10px] font-semibold rounded-none text-foreground hover:bg-accent"
+              onClick={() => { if (lastAction) runAction(lastAction) }}
+              aria-label={`Retry ${cli.name}`}
+            >
+              Retry
+            </button>
+            <button
+              className="mac-btn mac-btn-soft px-2 py-1 text-[10px] font-semibold rounded-none text-foreground hover:bg-accent"
+              onClick={async () => { try { await navigator.clipboard.writeText(error) } catch { /* ignore */ } }}
+              aria-label="Copy error"
+            >
+              Copy
+            </button>
+            <button
+              className="mac-btn mac-btn-soft px-2 py-1 text-[10px] font-semibold rounded-none text-foreground hover:bg-accent"
+              onClick={async () => {
+                const p = await window.electronAPI.getActionLog(cli.id)
+                if (p) window.electronAPI.openPath(p)
+                else onToast?.('No log available', 'info')
+              }}
+              aria-label="Open log"
+            >
+              Log
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Progress info text during install */}
       {busy === 'install' && (progressMessage || elapsed > 0) && (
         <div className="absolute bottom-2.5 left-0 right-0 px-3 flex justify-center pointer-events-none">
@@ -386,15 +435,52 @@ function CliCardInner({
               <Globe size={13} /> Homepage
             </button>
           )}
-          {cli.packageName && (
+           {cli.packageName && (
+             <button
+               className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
+               onClick={copyInstallCommand}
+               role="menuitem"
+             >
+               <Copy size={13} /> Copy install command
+             </button>
+           )}
+          <button
+            className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
+            onClick={() => { onConfigure?.(cli.id); setContextMenu(null) }}
+            role="menuitem"
+          >
+            <Wrench size={13} /> Configure
+          </button>
+          {onHide && (
             <button
               className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
-              onClick={copyInstallCommand}
+              onClick={() => { onHide(cli.id); setContextMenu(null) }}
               role="menuitem"
             >
-              <Copy size={13} /> Copy install command
+              <X size={13} /> Hide
             </button>
           )}
+          {error && lastAction && (
+            <button
+              className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
+              onClick={() => { setContextMenu(null); runAction(lastAction) }}
+              role="menuitem"
+            >
+              <RefreshCw size={13} /> Retry
+            </button>
+          )}
+          <button
+            className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
+            onClick={async () => {
+              setContextMenu(null)
+              const p = await window.electronAPI.getActionLog(cli.id)
+              if (p) window.electronAPI.openPath(p)
+              else onToast?.('No log available', 'info')
+            }}
+            role="menuitem"
+          >
+            <Copy size={13} /> View run log
+          </button>
           <button
             className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
             onClick={() => { onLaunch(); setContextMenu(null) }}

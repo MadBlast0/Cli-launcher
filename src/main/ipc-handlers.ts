@@ -1,4 +1,4 @@
-import { ipcMain, dialog, app, BrowserWindow } from 'electron'
+import { ipcMain, dialog, app, BrowserWindow, globalShortcut, shell } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
 import { autoUpdater } from 'electron-updater'
 import { executeCliAction, openCli, checkCliUpdate, isWindows, checkStandaloneUpdate, cancelAction, invalidateUpdateCaches } from './cli-engine'
@@ -6,13 +6,29 @@ import { qSH } from './terminal-serializers'
 import { checkDependencies, installNode, installPython } from './dependency-manager'
 import { readSettings, writeSettings } from './settings'
 import { getCliRegistry } from '../cli-registry'
-import { CliAction, CliState, CliDefinition, AppSettings, LaunchCliRequest, LaunchErrorCode } from '../shared/types'
+import { CliAction, CliState, CliDefinition, AppSettings, LaunchErrorCode, LaunchCliRequest, CliConfig } from '../shared/types'
 import { exec } from 'child_process'
 import fs from 'fs'
 import path from 'path'
+import { rebuildTrayMenu } from './main'
 
 const cliStatusCache = new Map<string, CliState>()
 const STATE_CACHE_FILE = 'cli-state-cache.json'
+
+// Persisted run logs: every install/update/repair/uninstall writes its combined
+// output to a file under <userData>/logs so a failure can be inspected / shared.
+const ACTION_LOG_DIR = path.join(app.getPath('userData'), 'logs')
+const lastActionLog = new Map<string, string>()
+
+function persistActionLog(cliId: string, action: string, result: { output: string; error?: string }): void {
+  try {
+    fs.mkdirSync(ACTION_LOG_DIR, { recursive: true })
+    const logPath = path.join(ACTION_LOG_DIR, `${cliId}-${action}-${Date.now()}.log`)
+    const body = `=== ${action} ${cliId} ===\n${result.output}\n${result.error ? `ERROR: ${result.error}\n` : ''}`
+    fs.writeFileSync(logPath, body, 'utf-8')
+    lastActionLog.set(cliId, logPath)
+  } catch { /* ignore */ }
+}
 
 function getStateCachePath() {
   return path.join(app.getPath('userData'), STATE_CACHE_FILE)
@@ -327,7 +343,8 @@ export function registerIpcHandlers() {
 
     const result = await executeCliAction(cliId, action, (msg) => {
       try { event.sender.send(IPC_CHANNELS.CLI_ACTION_PROGRESS, cliId, msg) } catch { /* window closed */ }
-    })
+    }, cli)
+    persistActionLog(cliId, action, result)
     if (result.success) {
       // Invalidate package-manager caches so the next check fetches fresh
       // data (otherwise a newly installed/uninstalled CLI is invisible for
@@ -393,7 +410,10 @@ export function registerIpcHandlers() {
   // terminalEmulator, favorites).
   ipcMain.handle(IPC_CHANNELS.SAVE_SETTINGS, (_event, settings: Partial<AppSettings>) => {
     const current = readSettings()
-    writeSettings({ ...current, ...settings })
+    const merged = { ...current, ...settings }
+    writeSettings(merged)
+    applyWindowSettings(merged)
+    rebuildTrayMenu()
   })
 
   // --- App auto-update ---
@@ -408,7 +428,7 @@ export function registerIpcHandlers() {
         return {
           updateAvailable: true,
           version: result.updateInfo.version,
-          releaseNotes: result.updateInfo.releaseNotes,
+          releaseNotes: normalizeReleaseNotes(result.updateInfo.releaseNotes),
         }
       }
       return { updateAvailable: false }
@@ -440,4 +460,130 @@ export function registerIpcHandlers() {
     const win = BrowserWindow.getAllWindows()[0]
     if (win) win.minimize()
   })
+
+  // --- Bulk update / repair (#7) ---
+  // Runs the action across the relevant CLIs, streaming per-CLI progress via the
+  // normal `cli:action-progress` channel and an aggregate via `cli:bulk-progress`.
+  ipcMain.handle(IPC_CHANNELS.CLI_BULK_ACTION, async (event, action: 'update' | 'repair') => {
+    const registry = getCliRegistry()
+    const targets: CliDefinition[] = []
+    for (const cli of registry) {
+      const state = cliStatusCache.get(cli.id) || (await checkCliStatus(cli))
+      if (action === 'update' && state.status === 'update-available') targets.push(cli)
+      else if (action === 'repair' && (state.status === 'installed' || state.status === 'update-available')) targets.push(cli)
+    }
+    const total = targets.length
+    let done = 0
+    try { event.sender.send(IPC_CHANNELS.CLI_BULK_PROGRESS, { action, done, total }) } catch { /* ignore */ }
+    for (const cli of targets) {
+      const result = await executeCliAction(cli.id, action, (msg) => {
+        try { event.sender.send(IPC_CHANNELS.CLI_ACTION_PROGRESS, cli.id, msg) } catch { /* window closed */ }
+      }, cli)
+      persistActionLog(cli.id, action, result)
+      // Drop caches so the updated state reflects reality.
+      npmGlobalCache = { data: null, ts: 0 }
+      pipGlobalCache = { data: null, ts: 0 }
+      invalidateUpdateCaches()
+      const newState = await checkCliStatus(cli)
+      cliStatusCache.set(cli.id, newState)
+      try { event.sender.send(IPC_CHANNELS.CLI_BULK_PROGRESS, { action, done: ++done, total, cliId: cli.id, success: result.success }) } catch { /* window closed */ }
+    }
+    return { success: true, total }
+  })
+
+  ipcMain.handle(IPC_CHANNELS.GET_ACTION_LOG, (_event, cliId: string) => {
+    return lastActionLog.get(cliId) || null
+  })
+
+  ipcMain.handle(IPC_CHANNELS.OPEN_PATH, async (_event, p: string) => {
+    try {
+      await shell.openPath(p)
+      return { success: true }
+    } catch (err) {
+      return { success: false, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+}
+
+// ---------------------------------------------------------------------------
+// Global hotkey + window-level settings (always-on-top)
+//
+// Kept at module scope (outside `registerIpcHandlers`) so the exported
+// `applyInitialWindowSettings`/`unregisterHotkey` can be called by main.ts.
+// ---------------------------------------------------------------------------
+
+let registeredHotkey = ''
+
+function defaultHotkey(): string {
+  return process.platform === 'darwin' ? 'Command+Space' : 'Control+Space'
+}
+
+function toggleWindow() {
+  const win = BrowserWindow.getAllWindows()[0]
+  if (!win) return
+  if (win.isVisible() && !win.isMinimized()) {
+    win.hide()
+  } else {
+    win.show()
+    win.focus()
+  }
+}
+
+/** Normalizes electron-updater's release notes (string | object[] | undefined)
+ *  into a plain string so the renderer can display them without executing any
+ *  remote HTML/Markdown. */
+function normalizeReleaseNotes(notes: unknown): string {
+  if (!notes) return ''
+  if (typeof notes === 'string') return notes
+  if (Array.isArray(notes)) {
+    return notes
+      .map((n) => (typeof n === 'string' ? n : (n && (n as any).note) || (n as any).message || ''))
+      .filter(Boolean)
+      .join('\n')
+  }
+  return ''
+}
+
+/** Registers (or re-registers) the global shortcut from settings. Returns the
+ *  accelerator actually in effect, or '' if none (e.g. invalid input). */
+function applyHotkey(settings: AppSettings): string {
+  const accel = settings.globalHotkey || defaultHotkey()
+  if (registeredHotkey && registeredHotkey === accel) return registeredHotkey
+  if (registeredHotkey) globalShortcut.unregister(registeredHotkey)
+  let effective = ''
+  try {
+    if (globalShortcut.register(accel, toggleWindow)) {
+      effective = accel
+    } else if (registeredHotkey) {
+      // Invalid accelerator: restore the previous, still-valid one.
+      globalShortcut.register(registeredHotkey, toggleWindow)
+      effective = registeredHotkey
+    }
+  } catch {
+    if (registeredHotkey) globalShortcut.register(registeredHotkey, toggleWindow)
+    effective = registeredHotkey
+  }
+  registeredHotkey = effective
+  return effective
+}
+
+/** Applies global-hotkey + always-on-top settings to the main window. */
+function applyWindowSettings(settings: AppSettings): void {
+  applyHotkey(settings)
+  const win = BrowserWindow.getAllWindows()[0]
+  if (win && !win.isDestroyed()) win.setAlwaysOnTop(!!settings.alwaysOnTop)
+}
+
+/** Called once at startup (after the window exists) so the hotkey and
+ *  always-on-top state are restored from saved settings. */
+export function applyInitialWindowSettings(): void {
+  applyWindowSettings(readSettings())
+}
+
+/** Releases the global shortcut; call on app quit. */
+export function unregisterHotkey(): void {
+  if (registeredHotkey) {
+    globalShortcut.unregister(registeredHotkey)
+    registeredHotkey = ''
+  }
 }

@@ -1,6 +1,9 @@
 import { app, BrowserWindow, screen, nativeImage, Tray, Menu, shell, session } from 'electron'
 import path from 'path'
-import { registerIpcHandlers } from './ipc-handlers'
+import { registerIpcHandlers, applyInitialWindowSettings, unregisterHotkey } from './ipc-handlers'
+import { readSettings } from './settings'
+import { getCliRegistry } from '../cli-registry'
+import { openCli } from './cli-engine'
 import { WINDOW_CONFIG, APP_NAME, IPC_CHANNELS } from '../shared/constants'
 import type { AppUpdateStatus } from '../shared/types'
 
@@ -23,25 +26,53 @@ function getIconPath(): string {
   return path.join(base, iconFile)
 }
 
+function buildTrayMenu(): Menu {
+  const settings = readSettings()
+  const favorites = settings.favorites || []
+  const registry = getCliRegistry()
+  const template: Electron.MenuItemConstructorOptions[] = [
+    {
+      label: 'Show CLI Launcher',
+      click: () => { mainWindow?.show(); mainWindow?.focus() },
+    },
+  ]
+
+  if (favorites.length > 0) {
+    template.push({ type: 'separator' })
+    template.push({ label: 'Launch favorites', enabled: false })
+    for (const id of favorites) {
+      const cli = registry.find((c) => c.id === id)
+      if (!cli) continue
+      template.push({
+        label: cli.name,
+        click: () => {
+          openCli(cli, null, settings.yoloMode ? 'dangerous' : 'normal')
+        },
+      })
+    }
+  }
+
+  template.push({ type: 'separator' })
+  template.push({
+    label: 'Quit',
+    click: () => { isQuitting = true; app.quit() },
+  })
+  return Menu.buildFromTemplate(template)
+}
+
 function createTray() {
   const iconPath = getIconPath()
   try {
     tray = new Tray(nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 }))
-    const contextMenu = Menu.buildFromTemplate([
-      {
-        label: 'Show CLI Launcher',
-        click: () => { mainWindow?.show(); mainWindow?.focus() },
-      },
-      { type: 'separator' },
-      {
-        label: 'Quit',
-        click: () => { isQuitting = true; app.quit() },
-      },
-    ])
     tray.setToolTip(APP_NAME)
-    tray.setContextMenu(contextMenu)
+    tray.setContextMenu(buildTrayMenu())
     tray.on('double-click', () => { mainWindow?.show(); mainWindow?.focus() })
   } catch { /* tray not supported */ }
+}
+
+/** Rebuilds the tray menu after favorites change (called from settings save). */
+export function rebuildTrayMenu(): void {
+  if (tray) tray.setContextMenu(buildTrayMenu())
 }
 
 function createWindow() {
@@ -207,6 +238,9 @@ app.whenReady().then(() => {
   createWindow()
   createTray()
   registerIpcHandlers()
+  // Restore global hotkey + always-on-top from saved settings (the window must
+  // already exist so always-on-top can be applied to it).
+  applyInitialWindowSettings()
   initAutoUpdater()
 
   app.on('activate', () => {
@@ -214,6 +248,20 @@ app.whenReady().then(() => {
     else mainWindow?.show()
   })
 })
+
+// --- Single-instance lock (#4) ---
+// Only one window should ever exist. A second launch focuses the existing one.
+if (!app.requestSingleInstanceLock()) {
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.show()
+      mainWindow.focus()
+    }
+  })
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -227,4 +275,5 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', () => {
   isQuitting = true
+  unregisterHotkey()
 })

@@ -3,7 +3,7 @@ import { SearchInput, Button, Tooltip, CliCardSkeleton } from '../ui'
 import { CliCard } from './CliCard'
 import { ModeDropdown } from './ModeDropdown'
 import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
-import { Database, AlertTriangle, Terminal, Plus, RefreshCw } from 'lucide-react'
+import { Database, AlertTriangle, Terminal, Plus, RefreshCw, ArrowUpFromLine, Wrench } from 'lucide-react'
 
 interface CliGridProps {
   clis: CliDefinition[]
@@ -32,6 +32,13 @@ interface CliGridProps {
   searchInputRef?: RefObject<HTMLInputElement | null>
   yoloMode: boolean
   onYoloModeChange: (value: boolean) => void
+  selectedIndex?: number
+  onSelect?: (index: number) => void
+  onConfigure?: (cliId: string) => void
+  onUpdateAll?: () => void
+  onRepairAll?: () => void
+  onHide?: (cliId: string) => void
+  aliasMap?: Record<string, string>
 }
 
 export function CliGrid({
@@ -39,6 +46,7 @@ export function CliGrid({
   onRepair, onUpdate, onReorder, onReorderCommit, onOpenDeps, onOpenCatalog, onCliChanged, onRefreshAll,
   deps, depsLoading = false, search, onSearchChange, justInstalled, onToast, searchInputRef,
   yoloMode, onYoloModeChange, refreshProgress = 0, refreshCurrent = '', totalClis = 0,
+  selectedIndex = -1, onSelect, onConfigure, onUpdateAll, onRepairAll, onHide, aliasMap,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [reordered, setReordered] = useState(false)
@@ -82,6 +90,11 @@ export function CliGrid({
   const missingDeps = deps
     ? [!deps.node.installed && 'Node.js', !deps.python.installed && 'Python'].filter(Boolean)
     : []
+
+  const outdatedCount = clis.filter((c) => states[c.id]?.status === 'update-available').length
+  const installedCount = clis.filter(
+    (c) => states[c.id]?.status === 'installed' || states[c.id]?.status === 'update-available'
+  ).length
 
   return (
     <div className="flex flex-col h-full min-h-0 px-4 pb-4" role="main" aria-label="CLI Launcher">
@@ -151,6 +164,16 @@ export function CliGrid({
           <Button variant="secondary" size="sm" icon={<Plus size={14} />} onClick={onOpenCatalog} aria-label="Browse CLI catalog">
             Catalog
           </Button>
+          {onRepairAll && installedCount > 0 && (
+            <Button variant="ghost" size="sm" icon={<Wrench size={13} />} onClick={onRepairAll} aria-label="Repair all installed CLIs">
+              Repair all
+            </Button>
+          )}
+          {onUpdateAll && outdatedCount > 0 && (
+            <Button variant="secondary" size="sm" icon={<ArrowUpFromLine size={13} />} onClick={onUpdateAll} aria-label={`Update all ${outdatedCount} outdated CLIs`}>
+              Update all{outdatedCount > 0 ? ` (${outdatedCount})` : ''}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -187,6 +210,11 @@ export function CliGrid({
             handleDragStart={handleDragStart}
             handleDragOver={handleDragOver}
             handleDrop={handleDrop}
+            selected={index === selectedIndex}
+            onSelect={onSelect}
+            onConfigure={onConfigure}
+            onHide={onHide}
+            aliasMap={aliasMap}
             justInstalled={justInstalled}
             onToast={onToast}
           />
@@ -212,13 +240,18 @@ interface CliGridRowProps {
   handleDragStart: (e: React.DragEvent, index: number) => void
   handleDragOver: (e: React.DragEvent, index: number) => void
   handleDrop: (e: React.DragEvent) => void
+  selected?: boolean
+  onSelect?: (index: number) => void
+  onConfigure?: (cliId: string) => void
+  onHide?: (cliId: string) => void
+  aliasMap?: Record<string, string>
   justInstalled?: string | null
   onToast?: (message: string, type: 'success' | 'error' | 'info') => void
 }
 
 const CliGridRow = memo(function CliGridRow({
   cli, state, index, count, onUpdateCount, onLaunch, onCliChanged, onRepair,
-  onUpdate, handleDragStart, handleDragOver, handleDrop, justInstalled, onToast,
+  onUpdate, handleDragStart, handleDragOver, handleDrop, selected = false, onSelect, onConfigure, onHide, aliasMap, justInstalled, onToast,
 }: CliGridRowProps) {
   const handleCountChange = useCallback(
     (delta: number) => onUpdateCount(cli.id, delta),
@@ -238,6 +271,7 @@ const CliGridRow = memo(function CliGridRow({
     (e: React.DragEvent) => handleDragOver(e, index),
     [handleDragOver, index]
   )
+  const onSelectRow = useCallback(() => onSelect?.(index), [onSelect, index])
 
   return (
     <CliCard
@@ -253,6 +287,11 @@ const CliGridRow = memo(function CliGridRow({
       onDragStart={onDragStart}
       onDragOver={onDragOver}
       onDrop={handleDrop}
+      selected={selected}
+      onSelect={onSelectRow}
+      onConfigure={onConfigure}
+      onHide={onHide}
+      aliasMap={aliasMap}
       justInstalled={justInstalled}
       onToast={onToast}
     />

@@ -4,9 +4,9 @@ import path from 'path'
 import fs from 'fs'
 import os from 'os'
 import { app } from 'electron'
-import { CliAction, CliActionResult, CliDefinition, CliLaunchResult, LaunchErrorCode } from '../shared/types'
+import { CliAction, CliActionResult, CliDefinition, CliLaunchResult, LaunchErrorCode, CliConfig } from '../shared/types'
 import { qPS, qSH, qCMD, buildPSCommand, buildWSLCommand } from './terminal-serializers'
-import { getConfiguredTerminal as settingsGetConfiguredTerminal } from './settings'
+import { getConfiguredTerminal as settingsGetConfiguredTerminal, readSettings, getCliConfig } from './settings'
 
 const isWindows = os.platform() === 'win32'
 const isMac = os.platform() === 'darwin'
@@ -144,19 +144,20 @@ export function parseProgressLine(line: string): ActionProgressMessage {
   return { type: 'progress', message: 'working…' }
 }
 
-function runScript(scriptPath: string, cliId?: string, onProgress?: (msg: ActionProgressMessage) => void): Promise<CliActionResult> {
+/** Spawns a command, streams its stdout/stderr as progress, and resolves with a
+ *  `CliActionResult`. Shared by the normal and elevated (Linux pkexec) paths. */
+function spawnAndStream(
+  command: string,
+  args: string[],
+  opts: { cliId?: string; onProgress?: (msg: ActionProgressMessage) => void; detached: boolean },
+): Promise<CliActionResult> {
   return new Promise((resolve) => {
-    const cmd = isWindows ? 'powershell' : 'bash'
-    const args = isWindows
-      ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath]
-      : [scriptPath]
-
     // `detached` makes the child its own process-group leader (POSIX) so a
     // cancel can kill the whole tree (npm → node installer). On Windows we keep
     // it attached: `detached: true` there allocates a fresh console window and
     // would flash a visible terminal during every install/update.
-    const child = spawn(cmd, args, { timeout: ACTION_TIMEOUT, detached: !isWindows })
-    if (cliId) runningProcesses.set(cliId, child)
+    const child = spawn(command, args, { timeout: ACTION_TIMEOUT, detached: opts.detached })
+    if (opts.cliId) runningProcesses.set(opts.cliId, child)
     let stdout = ''
     let killed = false
     // Buffers that arrive mid-line across `data` chunks must be reassembled;
@@ -165,7 +166,7 @@ function runScript(scriptPath: string, cliId?: string, onProgress?: (msg: Action
     let stderrRemainder = ''
 
     const emit = (line: string) => {
-      if (onProgress && !killed && line) onProgress(parseProgressLine(line))
+      if (opts.onProgress && !killed && line) opts.onProgress(parseProgressLine(line))
     }
 
     child.stdout?.on('data', (chunk: Buffer) => {
@@ -192,14 +193,14 @@ function runScript(scriptPath: string, cliId?: string, onProgress?: (msg: Action
     })
 
     child.on('close', (code, signal) => {
-      if (cliId) {
-        runningProcesses.delete(cliId)
-        cancelledActions.delete(cliId)
+      if (opts.cliId) {
+        runningProcesses.delete(opts.cliId)
+        cancelledActions.delete(opts.cliId)
       }
       killed = true
       if (signal) {
         // Distinguish a user cancel from a (rare) timeout kill.
-        const wasCancelled = cliId ? cancelledActions.has(cliId) : false
+        const wasCancelled = opts.cliId ? cancelledActions.has(opts.cliId) : false
         resolve({ success: false, output: stdout, error: wasCancelled ? 'Cancelled' : 'Process terminated' })
       } else if (code !== 0) {
         resolve({ success: false, output: stdout, error: stderr || `Exit code ${code}` })
@@ -209,13 +210,149 @@ function runScript(scriptPath: string, cliId?: string, onProgress?: (msg: Action
     })
 
     child.on('error', (err) => {
-      if (cliId) {
-        runningProcesses.delete(cliId)
-        cancelledActions.delete(cliId)
+      if (opts.cliId) {
+        runningProcesses.delete(opts.cliId)
+        cancelledActions.delete(opts.cliId)
       }
       resolve({ success: false, output: stdout, error: err.message })
     })
   })
+}
+
+function runScript(scriptPath: string, cliId?: string, onProgress?: (msg: ActionProgressMessage) => void): Promise<CliActionResult> {
+  const cmd = isWindows ? 'powershell' : 'bash'
+  const args = isWindows
+    ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath]
+    : [scriptPath]
+  return spawnAndStream(cmd, args, { cliId, onProgress, detached: !isWindows })
+}
+
+// ---------------------------------------------------------------------------
+// Global-prefix writability checks (drive whether we need to elevate)
+// ---------------------------------------------------------------------------
+
+/** Resolves npm's configured global prefix (`npm config get prefix`). */
+async function getNpmGlobalPrefix(): Promise<string> {
+  return new Promise((resolve) => {
+    execFile('npm', ['config', 'get', 'prefix'], { timeout: 8000 }, (err, stdout) => {
+      resolve(err ? '' : (stdout || '').trim())
+    })
+  })
+}
+
+/** Resolves the directory pip installs into (from `pip --version`'s "from …"
+ *  path). Returns '' when it can't be determined. */
+async function getPipInstallRoot(): Promise<string> {
+  return new Promise((resolve) => {
+    resolvePip().then((pip) => {
+      execFile(pip.exe, [...pip.prefix, '--version'], { timeout: 8000 }, (err, stdout) => {
+        if (err) return resolve('')
+        const m = stdout.match(/from\s+(.+?site-packages)/i)
+        resolve(m ? m[1] : '')
+      })
+    }).catch(() => resolve(''))
+  })
+}
+
+/** Best-effort check that a directory is writable by the current user. Creates
+ *  the path if needed and writes/removes a probe file. */
+async function isDirWritable(dir: string): Promise<boolean> {
+  if (!dir) return false
+  try {
+    await fs.promises.mkdir(dir, { recursive: true })
+    const probe = path.join(dir, `.cli-launcher-write-test-${process.pid}-${Date.now()}.tmp`)
+    await fs.promises.writeFile(probe, 'ok')
+    await fs.promises.unlink(probe)
+    return true
+  } catch {
+    return false
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Elevated execution (macOS osascript / Linux pkexec)
+// ---------------------------------------------------------------------------
+
+function runScriptElevatedMac(
+  scriptPath: string,
+  cliId?: string,
+  onProgress?: (msg: ActionProgressMessage) => void,
+): Promise<CliActionResult> {
+  // `do shell script … with administrator privileges` cannot stream output; we
+  // emit a single status line and then parse the captured output on completion.
+  return new Promise((resolve) => {
+    const inner = `bash ${qSH(scriptPath)}`
+    const escaped = inner.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    const cmd = `osascript -e 'do shell script "${escaped}" with administrator privileges'`
+    onProgress?.({ type: 'progress', message: 'Requesting administrator privileges…' })
+    exec(cmd, { timeout: ACTION_TIMEOUT, maxBuffer: 64 * 1024 * 1024 }, (err, stdout, stderr) => {
+      const out = (stdout || stderr || '').trim()
+      out.split('\n').filter(Boolean).forEach((l) => onProgress?.(parseProgressLine(l)))
+      if (err) {
+        resolve({ success: false, output: out, error: stderr || err.message || 'Administrator authorization failed' })
+      } else {
+        resolve({ success: true, output: out })
+      }
+    })
+  })
+}
+
+function runScriptElevatedLinux(
+  scriptPath: string,
+  cliId?: string,
+  onProgress?: (msg: ActionProgressMessage) => void,
+): Promise<CliActionResult> {
+  return new Promise((resolve) => {
+    if (!commandExists('pkexec')) {
+      resolve({
+        success: false,
+        output: '',
+        error:
+          "Automatic install needs 'pkexec' (PolicyKit) for a graphical admin prompt. " +
+          'Please install it, or install Node.js/Python manually.',
+      })
+      return
+    }
+    const inner = `bash ${qSH(scriptPath)}`
+    // pkexec forwards the child's stdout, so streaming still works. `detached`
+    // makes pkexec its own process-group leader so a cancel only hits it (and
+    // its bash child), never the launcher's own process group.
+    spawnAndStream('pkexec', ['bash', '-c', inner], { cliId, onProgress, detached: true }).then(resolve)
+  })
+}
+
+function runScriptElevated(
+  scriptPath: string,
+  cliId?: string,
+  onProgress?: (msg: ActionProgressMessage) => void,
+): Promise<CliActionResult> {
+  if (isMac) return runScriptElevatedMac(scriptPath, cliId, onProgress)
+  if (isWindows) return runScript(scriptPath, cliId, onProgress)
+  return runScriptElevatedLinux(scriptPath, cliId, onProgress)
+}
+
+/** Decides whether `cli`'s install/update/repair must run elevated on this
+ *  machine. Respects the `elevateInstalls` setting and only elevates when the
+ *  global prefix/site-packages is not writable by the current user. */
+export async function needsElevationForCli(cli: CliDefinition): Promise<boolean> {
+  try {
+    const settings = readSettings()
+    if (settings.elevateInstalls === false) return false
+  } catch { /* fall through */ }
+  if (isWindows) return false
+  if (isMac) return true
+  // Linux: elevate only when the target location is not user-writable.
+  if (cli.dependencyType === 'node') {
+    const prefix = await getNpmGlobalPrefix()
+    if (!prefix) return false
+    return !(await isDirWritable(path.join(prefix, 'lib', 'node_modules')))
+  }
+  if (cli.dependencyType === 'python') {
+    const root = await getPipInstallRoot()
+    if (!root) return false
+    return !(await isDirWritable(root))
+  }
+  return false
 }
 
 async function detectTerminalEmulator(): Promise<string> {
@@ -260,12 +397,27 @@ const nativeExecutablePresentAsync = (exe: string): Promise<boolean> => pathLook
 // ---------------------------------------------------------------------------
 
 /** Wrapper around spawn that logs async errors (ENOENT etc.) instead of losing them. */
+let launchEnvOverride: NodeJS.ProcessEnv | undefined
 function spawnSafe(exe: string, args: string[], opts: import('child_process').SpawnOptions = {}): ChildProcess {
-  const child: ChildProcess = spawn(exe, args, opts as any)
+  const child: ChildProcess = spawn(exe, args, {
+    ...opts,
+    // Per-CLI env (API keys / model / baseUrl) injected only for the launch
+    // that set `launchEnvOverride`, never as a persistent global change.
+    env: launchEnvOverride ? { ...process.env, ...launchEnvOverride, ...opts.env } : opts.env,
+  } as any)
   child.on('error', (err: Error) => {
     console.error(`[cli-engine] spawn failed: ${exe} ${args.join(' ')} — ${err.message}`)
   })
   return child
+}
+
+/** Builds the env map to inject for a CLI from its saved per-CLI config. */
+function buildCliLaunchEnv(config: CliConfig | undefined): NodeJS.ProcessEnv | undefined {
+  if (!config) return undefined
+  const env: Record<string, string> = { ...(config.env || {}) }
+  if (config.model) env['CLI_LAUNCHER_MODEL'] = config.model
+  if (config.baseUrl) env['CLI_LAUNCHER_BASE_URL'] = config.baseUrl
+  return Object.keys(env).length > 0 ? env : undefined
 }
 
 type LauncherFn = (
@@ -537,7 +689,12 @@ export async function openCli(cli: CliDefinition, folder: string | null, permiss
       launcher = await getLinuxLauncher(configured)
     }
 
+    // Inject the per-CLI environment (API keys / model / baseUrl) for just this
+    // launch. `spawnSafe` applies `launchEnvOverride` to the spawned process and
+    // we reset it immediately after so it never leaks into other launches.
+    launchEnvOverride = buildCliLaunchEnv(getCliConfig(cli.id))
     const child = launcher(cli.executable, dangerousArgs, folder)
+    launchEnvOverride = undefined
 
     // A failed spawn (e.g. ENOENT) surfaces asynchronously via an 'error'
     // event rather than a synchronous throw, so wait a tick to catch it before
@@ -714,13 +871,25 @@ export function invalidateUpdateCaches() {
 export async function executeCliAction(
   cliId: string,
   action: CliAction,
-  onProgress?: (msg: ActionProgressMessage) => void
+  onProgress?: (msg: ActionProgressMessage) => void,
+  cli?: CliDefinition,
 ): Promise<CliActionResult> {
   // Cancel any previous action for this cli so we never have two scripts running
   cancelAction(cliId)
   try {
     const scriptPath = getScriptPath(cliId, action)
-    return await runScript(scriptPath, cliId, onProgress)
+
+    // Global npm/pip installs on macOS/Linux target system locations that a
+    // default user cannot write, so they fail with EACCES unless elevated.
+    const elevated =
+      !!cli &&
+      (cli.dependencyType === 'node' || cli.dependencyType === 'python') &&
+      (action === 'install' || action === 'update' || action === 'repair') &&
+      (await needsElevationForCli(cli))
+
+    return elevated
+      ? await runScriptElevated(scriptPath, cliId, onProgress)
+      : await runScript(scriptPath, cliId, onProgress)
   } catch (err) {
     return {
       success: false,

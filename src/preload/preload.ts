@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC_CHANNELS } from '../shared/constants'
-import type { CliState, AppSettings, LaunchCliRequest, CliAction, AppUpdateInfo, AppUpdateStatus, ActionProgressMessage, RefreshProgressMessage } from '../shared/types'
+import type { CliState, AppSettings, LaunchCliRequest, CliAction, AppUpdateInfo, AppUpdateStatus, ActionProgressMessage, RefreshProgressMessage, BulkProgressMessage } from '../shared/types'
 
 const api = {
   getClis: () => ipcRenderer.invoke('cli:get-all'),
@@ -32,6 +32,14 @@ const api = {
     return () => { ipcRenderer.removeListener(IPC_CHANNELS.APP_UPDATE_STATUS, handler) }
   },
   cancelAction: (cliId: string) => ipcRenderer.invoke('cli:cancel-action', cliId),
+  bulkAction: (action: 'update' | 'repair') => ipcRenderer.invoke('cli:bulk-action', action),
+  onBulkProgress: (callback: (msg: BulkProgressMessage) => void) => {
+    const handler = (_event: any, msg: BulkProgressMessage) => callback(msg)
+    ipcRenderer.on('cli:bulk-progress', handler)
+    return () => { ipcRenderer.removeListener('cli:bulk-progress', handler) }
+  },
+  getActionLog: (cliId: string) => ipcRenderer.invoke('cli:get-action-log', cliId),
+  openPath: (p: string) => ipcRenderer.invoke('app:open-path', p),
   onActionProgress: (callback: (cliId: string, msg: ActionProgressMessage) => void) => {
     const handler = (_event: any, cliId: string, msg: ActionProgressMessage) => callback(cliId, msg)
     ipcRenderer.on('cli:action-progress', handler)

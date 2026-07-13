@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { LauncherWindow } from './components/layouts/LauncherWindow'
 import { CliGrid } from './components/cli/CliGrid'
 import { CliCatalog } from './components/cli/CliCatalog'
+import { CliConfigModal } from './components/cli/CliConfigModal'
+import { BulkProgressModal } from './components/cli/BulkProgressModal'
+import { SettingsModal } from './components/SettingsModal'
 import { FolderPicker } from './components/cli/FolderPicker'
 import { DependencyModal } from './components/installer/DependencyModal'
 import { Loader } from './components/ui/Loader'
@@ -9,6 +12,28 @@ import { ToastContainer } from './components/ui/Toast'
 import { useTheme } from './hooks/useTheme'
 import type { CliDefinition, DependencyCheck, CliCount, CliState, AppSettings, RefreshProgressMessage } from '@shared/types'
 import type { Toast, ToastType } from './components/ui/Toast'
+
+/** Subsequence fuzzy matcher. Returns a score > 0 when `query` is a (possibly
+ *  non-contiguous) subsequence of `text`; higher is a better match (substring
+ *  matches rank above scattered ones, earlier matches rank above later). */
+function fuzzyScore(query: string, text: string): number {
+  const q = query.toLowerCase()
+  const t = text.toLowerCase()
+  if (!q) return 1
+  const idx = t.indexOf(q)
+  if (idx !== -1) return 1000 - idx
+  let ti = 0
+  let score = 0
+  let streak = 0
+  for (const ch of q) {
+    const found = t.indexOf(ch, ti)
+    if (found === -1) return 0
+    streak = found === ti ? streak + 1 : 0
+    score += 1 + streak
+    ti = found + 1
+  }
+  return score
+}
 
 export default function App() {
   const { theme, toggleTheme } = useTheme()
@@ -22,6 +47,10 @@ export default function App() {
   const [refreshCurrent, setRefreshCurrent] = useState('')
   const [showDeps, setShowDeps] = useState(false)
   const [showCatalog, setShowCatalog] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [configCliId, setConfigCliId] = useState<string | null>(null)
+  const [bulkAction, setBulkAction] = useState<'update' | 'repair' | null>(null)
+  const [catalogOutdatedOnly, setCatalogOutdatedOnly] = useState(false)
   const [search, setSearch] = useState('')
   const [counts, setCounts] = useState<CliCount[]>([])
   const [justInstalled, setJustInstalled] = useState<string | null>(null)
@@ -29,6 +58,10 @@ export default function App() {
   const [favorites, setFavorites] = useState<string[]>([])
   const [cliOrder, setCliOrder] = useState<string[]>([])
   const [yoloMode, setYoloMode] = useState(false)
+  const [alwaysOnTop, setAlwaysOnTop] = useState(false)
+  const [selectedIndex, setSelectedIndex] = useState(-1)
+  const [hiddenClis, setHiddenClis] = useState<string[]>([])
+  const [cliAlias, setCliAlias] = useState<Record<string, string>>({})
   const searchInputRef = useRef<HTMLInputElement>(null)
   const refreshInFlightRef = useRef(false)
 
@@ -93,6 +126,9 @@ export default function App() {
       if (settings.favorites) setFavorites(settings.favorites)
       if (settings.cliOrder) setCliOrder(settings.cliOrder)
       if (settings.yoloMode !== undefined) setYoloMode(settings.yoloMode)
+      if (settings.alwaysOnTop !== undefined) setAlwaysOnTop(settings.alwaysOnTop)
+      if (settings.hiddenClis) setHiddenClis(settings.hiddenClis)
+      if (settings.cliAlias) setCliAlias(settings.cliAlias)
       // Theme is owned by useTheme (localStorage) as the single source of
       // truth; it also persists into settings, so we don't re-apply it here.
     } catch { /* ignore */ }
@@ -216,6 +252,14 @@ export default function App() {
     saveSettings({ yoloMode: value })
   }, [saveSettings])
 
+  const handleToggleAlwaysOnTop = useCallback(() => {
+    setAlwaysOnTop((prev) => {
+      const next = !prev
+      saveSettings({ alwaysOnTop: next })
+      return next
+    })
+  }, [saveSettings])
+
   const handleToggleFavorite = (cliId: string) => {
     setFavorites((prev) => {
       const next = prev.includes(cliId)
@@ -225,6 +269,23 @@ export default function App() {
       return next
     })
   }
+
+  const handleHide = useCallback((cliId: string) => {
+    setHiddenClis((prev) => {
+      if (prev.includes(cliId)) return prev
+      const next = [...prev, cliId]
+      saveSettings({ hiddenClis: next })
+      return next
+    })
+  }, [saveSettings])
+
+  const handleUnhide = useCallback((cliId: string) => {
+    setHiddenClis((prev) => {
+      const next = prev.filter((id) => id !== cliId)
+      saveSettings({ hiddenClis: next })
+      return next
+    })
+  }, [saveSettings])
 
   const handleLaunch = useCallback(async (cliId: string, count: number) => {
     const cli = clis.find((c) => c.id === cliId)
@@ -248,44 +309,17 @@ export default function App() {
     window.electronAPI.getCliState(cliId).catch(() => {})
   }, [])
 
-  // Keyboard shortcuts. Declared after handleLaunch/getCount so it can list
-  // them as dependencies (avoids a stale-closure hazard) and honour the
-  // per-CLI launch count instead of always opening a single terminal.
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null
-      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
-        return
-      }
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === 'f') {
-          e.preventDefault()
-          searchInputRef.current?.focus()
-        } else if (e.key === 'd') {
-          e.preventDefault()
-          setShowDeps(true)
-        } else if (e.key === 'r') {
-          e.preventDefault()
-          if (refreshInFlightRef.current) {
-            addToast('Refresh already in progress', 'info')
-          } else {
-            refreshAll()
-          }
-        } else if (e.key >= '1' && e.key <= '9') {
-          const idx = parseInt(e.key, 10) - 1
-          const installed = clis.filter(
-            (cli) => states[cli.id]?.status === 'installed' || states[cli.id]?.status === 'update-available'
-          )
-          if (installed[idx]) {
-            e.preventDefault()
-            handleLaunch(installed[idx].id, getCount(installed[idx].id))
-          }
-        }
-      }
+  const handleBulkAction = useCallback(async (action: 'update' | 'repair') => {
+    setBulkAction(action)
+    try {
+      await window.electronAPI.bulkAction(action)
+      refreshStates()
+    } catch {
+      addToast(`Failed to ${action} CLIs`, 'error')
+    } finally {
+      // The modal stays open until progress completes; this just fires the job.
     }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [clis, states, handleLaunch, getCount, refreshAll, addToast])
+  }, [refreshStates, addToast])
 
   // Order the list favorites-first, then by the saved manual order (memoized so
   // it only recomputes when the list, saved order, or favorites change).
@@ -310,14 +344,107 @@ export default function App() {
   }, [clis, cliOrder, favorites])
   useEffect(() => { orderedClisRef.current = orderedClis }, [orderedClis])
 
-  // Main page shows only CLIs already installed, then applies the search.
+  // Main page shows only CLIs already installed (and not hidden), then applies
+  // a fuzzy search across name / id / description / alias (best match first).
   const filtered = useMemo(() => {
-    const q = search.toLowerCase()
-    return orderedClis
-      .filter((cli) => isInstalled(cli.id))
-      .filter((cli) => cli.name.toLowerCase().includes(q) || cli.id.toLowerCase().includes(q))
-  }, [orderedClis, states, search])
+    const q = search.trim().toLowerCase()
+    const installed = orderedClis.filter(
+      (cli) => isInstalled(cli.id) && !hiddenClis.includes(cli.id)
+    )
+    if (!q) return installed
+    return installed
+      .map((cli) => ({
+        cli,
+        score: Math.max(
+          fuzzyScore(q, cli.name),
+          fuzzyScore(q, cli.id),
+          fuzzyScore(q, cli.description),
+          fuzzyScore(q, cliAlias[cli.id] || '')
+        ),
+      }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.cli)
+  }, [orderedClis, states, search, hiddenClis, cliAlias])
+
+  const outdatedCount = useMemo(
+    () => clis.filter((c) => states[c.id]?.status === 'update-available').length,
+    [clis, states]
+  )
   useEffect(() => { filteredRef.current = filtered }, [filtered])
+
+  // Reset the keyboard selection to the first result whenever the filter
+  // changes (new search term, install/uninstall), so Enter always targets the
+  // top match.
+  useEffect(() => {
+    setSelectedIndex(filtered.length > 0 ? 0 : -1)
+  }, [filtered])
+
+  // Keyboard shortcuts. Declared after `filtered` is defined (it reads it) and
+  // after handleLaunch/getCount so it can list them as dependencies (avoids a
+  // stale-closure hazard) and honour the per-CLI launch count instead of always
+  // opening a single terminal.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      const inInput = !!target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)
+
+      // Enter launches the selected (or first) match — works even while typing
+      // in the search box so the launcher can be driven entirely from the
+      // keyboard.
+      if (e.key === 'Enter') {
+        const idx = selectedIndex >= 0 && selectedIndex < filtered.length ? selectedIndex : 0
+        const cli = filtered[idx]
+        if (cli) {
+          e.preventDefault()
+          handleLaunch(cli.id, getCount(cli.id))
+        }
+        return
+      }
+
+      if (inInput) return
+
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === 'f') {
+          e.preventDefault()
+          searchInputRef.current?.focus()
+        } else if (e.key === 'd') {
+          e.preventDefault()
+          setShowDeps(true)
+        } else if (e.key === 'r') {
+          e.preventDefault()
+          if (refreshInFlightRef.current) {
+            addToast('Refresh already in progress', 'info')
+          } else {
+            refreshAll()
+          }
+        } else if (e.key >= '1' && e.key <= '9') {
+          const idx = parseInt(e.key, 10) - 1
+          const installed = clis.filter(
+            (cli) => states[cli.id]?.status === 'installed' || states[cli.id]?.status === 'update-available'
+          )
+          if (installed[idx]) {
+            e.preventDefault()
+            handleLaunch(installed[idx].id, getCount(installed[idx].id))
+          }
+        }
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelectedIndex((i) => Math.max(i - 1, 0))
+      } else if (e.key === 'Escape') {
+        if (search) {
+          setSearch('')
+        } else {
+          setSelectedIndex(-1)
+        }
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [clis, states, filtered, selectedIndex, handleLaunch, getCount, refreshAll, addToast, search, setSearch])
 
   if (!window.electronAPI) {
     return (
@@ -338,7 +465,15 @@ export default function App() {
   if (!loaded) return <Loader />
 
   return (
-    <LauncherWindow isDark={theme === 'dark'} onToggleTheme={toggleTheme}>
+      <LauncherWindow
+        isDark={theme === 'dark'}
+        onToggleTheme={toggleTheme}
+        alwaysOnTop={alwaysOnTop}
+        onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
+        onOpenSettings={() => setShowSettings(true)}
+        outdatedCount={outdatedCount}
+        onShowOutdated={() => { setCatalogOutdatedOnly(true); setShowCatalog(true) }}
+      >
       <div className="px-4 pt-3 pb-2 shrink-0 flex items-center gap-2">
         <FolderPicker />
       </div>
@@ -361,11 +496,18 @@ export default function App() {
           onOpenDeps={() => setShowDeps(true)}
           onOpenCatalog={() => setShowCatalog(true)}
           onCliChanged={refreshStates}
+          onConfigure={setConfigCliId}
+          onUpdateAll={() => handleBulkAction('update')}
+          onRepairAll={() => handleBulkAction('repair')}
+          onHide={handleHide}
+          aliasMap={cliAlias}
           onRefreshAll={refreshAll}
           deps={deps}
           depsLoading={depsLoading}
           search={search}
           onSearchChange={setSearch}
+          selectedIndex={selectedIndex}
+          onSelect={setSelectedIndex}
           justInstalled={justInstalled}
           onToast={addToast}
           searchInputRef={searchInputRef}
@@ -376,12 +518,16 @@ export default function App() {
 
       <CliCatalog
         open={showCatalog}
-        onClose={() => setShowCatalog(false)}
+        onClose={() => { setShowCatalog(false); setCatalogOutdatedOnly(false) }}
         clis={orderedClis}
         states={states}
         onChanged={refreshStates}
         onToast={addToast}
         updateToast={updateToast}
+        outdatedOnly={catalogOutdatedOnly}
+        hiddenClis={hiddenClis}
+        onUnhide={handleUnhide}
+        aliasMap={cliAlias}
         onInstalled={(id) => {
           setJustInstalled(id)
           setTimeout(() => setJustInstalled(null), 5000)
@@ -396,6 +542,33 @@ export default function App() {
         />
       )}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
+
+      <SettingsModal
+        open={showSettings}
+        onClose={() => setShowSettings(false)}
+        onSave={saveSettings}
+        onToggleTheme={toggleTheme}
+        isDark={theme === 'dark'}
+        getCurrentFolder={() => window.electronAPI.getSavedFolder()}
+        selectFolder={() => window.electronAPI.selectFolder()}
+      />
+
+      {configCliId && (
+        <CliConfigModal
+          cliId={configCliId}
+          cliName={clis.find((c) => c.id === configCliId)?.name ?? configCliId}
+          onClose={() => setConfigCliId(null)}
+          onSave={(cliConfig) => saveSettings({ cliConfig })}
+        />
+      )}
+
+      <BulkProgressModal
+        open={bulkAction !== null}
+        action={bulkAction}
+        onClose={() => setBulkAction(null)}
+        onProgress={window.electronAPI.onBulkProgress}
+        cliName={(id) => clis.find((c) => c.id === id)?.name ?? id}
+      />
     </LauncherWindow>
   )
 }

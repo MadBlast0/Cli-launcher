@@ -22,6 +22,10 @@ export const IPC_CHANNELS = {
   CLI_ACTION_PROGRESS: 'cli:action-progress',
   CLI_CANCEL_ACTION: 'cli:cancel-action',
   CLI_REFRESH_PROGRESS: 'cli:refresh-progress',
+  CLI_BULK_ACTION: 'cli:bulk-action',
+  CLI_BULK_PROGRESS: 'cli:bulk-progress',
+  GET_ACTION_LOG: 'cli:get-action-log',
+  OPEN_PATH: 'app:open-path',
 } as const
 
 export const WINDOW_CONFIG = {

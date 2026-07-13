@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
-import { X, Minus, ArrowUpFromLine, Loader2, Download, RotateCcw } from 'lucide-react'
+import { X, Minus, ArrowUpFromLine, Loader2, Download, RotateCcw, Pin, Settings, FileText } from 'lucide-react'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import type { AppUpdateStatus } from '../../../shared/types'
 import appLogo from '../../assets/app-logo.png'
@@ -8,19 +8,25 @@ interface LauncherWindowProps {
   children: ReactNode
   isDark: boolean
   onToggleTheme: () => void
+  alwaysOnTop?: boolean
+  onToggleAlwaysOnTop?: () => void
+  onOpenSettings?: () => void
+  outdatedCount?: number
+  onShowOutdated?: () => void
 }
 
 type UpdateState =
   | { type: 'idle' }
   | { type: 'checking' }
-  | { type: 'available'; version: string }
+  | { type: 'available'; version: string; notes?: string }
   | { type: 'not-available' }
   | { type: 'downloading'; progress: number }
   | { type: 'downloaded'; version: string }
   | { type: 'error'; message: string }
 
-export function LauncherWindow({ children, isDark, onToggleTheme }: LauncherWindowProps) {
+export function LauncherWindow({ children, isDark, onToggleTheme, alwaysOnTop = false, onToggleAlwaysOnTop, onOpenSettings, outdatedCount = 0, onShowOutdated }: LauncherWindowProps) {
   const [update, setUpdate] = useState<UpdateState>({ type: 'idle' })
+  const [showNotes, setShowNotes] = useState(false)
 
   useEffect(() => {
     if (!window.electronAPI?.onAppUpdateStatus) return
@@ -59,6 +65,8 @@ export function LauncherWindow({ children, isDark, onToggleTheme }: LauncherWind
         if (!info.updateAvailable) {
           setUpdate({ type: 'not-available' })
           setTimeout(() => setUpdate({ type: 'idle' }), 2000)
+        } else {
+          setUpdate({ type: 'available', version: info.version ?? '', notes: info.releaseNotes })
         }
         break
       case 'available':
@@ -123,7 +131,34 @@ export function LauncherWindow({ children, isDark, onToggleTheme }: LauncherWind
   }
 
   return (
-    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden border border-border">
+    <div className="h-screen w-screen flex flex-col bg-background overflow-hidden border border-border relative">
+      {/* Release notes popover (#16) — shown when an update is available and
+          the user expands it. Notes are rendered as plain text only (no
+          dangerouslySetInnerHTML) so remote content can't execute scripts. */}
+      {update.type === 'available' && showNotes && update.notes && (
+        <div className="absolute left-0 right-0 top-11 z-20 bg-popover text-popover-foreground border-b border-border shadow-xl max-h-64 overflow-y-auto p-3">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[12px] font-bold">What's new in v{update.version}</span>
+            <button
+              onClick={() => setShowNotes(false)}
+              className="text-muted-foreground hover:text-foreground"
+              aria-label="Close release notes"
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <pre className="text-[11px] leading-relaxed whitespace-pre-wrap break-words font-sans">{update.notes}</pre>
+          <a
+            href="https://github.com/MadBlast0/Cli-launcher/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-2 text-[11px] font-semibold text-primary hover:underline"
+          >
+            View on GitHub
+          </a>
+        </div>
+      )}
+
       {/* Title bar — flush with the app background, no divider */}
       <div
         className="flex items-center justify-between px-3.5 h-11 shrink-0 bg-background"
@@ -148,17 +183,63 @@ export function LauncherWindow({ children, isDark, onToggleTheme }: LauncherWind
           className="flex items-center gap-2"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
+        <button
+          onClick={handleUpdateClick}
+          disabled={updateDisabled}
+          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50 whitespace-nowrap"
+          aria-label={updateLabel}
+          title={updateLabel}
+        >
+          {updateIcon}
+          {buttonText && <span>{buttonText}</span>}
+        </button>
+        {update.type === 'available' && update.notes && (
           <button
-            onClick={handleUpdateClick}
-            disabled={updateDisabled}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50 whitespace-nowrap"
-            aria-label={updateLabel}
-            title={updateLabel}
+            onClick={() => setShowNotes((s) => !s)}
+            className={`flex items-center justify-center w-6 h-6 rounded-md transition-colors ${showNotes ? 'text-primary bg-accent' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+            aria-label="Show release notes"
+            title="What's new"
           >
-            {updateIcon}
-            {buttonText && <span>{buttonText}</span>}
+            <FileText size={14} />
           </button>
+        )}
           <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
+          {onShowOutdated && outdatedCount > 0 && (
+            <button
+              onClick={onShowOutdated}
+              className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-semibold bg-primary/15 text-primary hover:bg-primary/25 transition-colors whitespace-nowrap"
+              aria-label={`${outdatedCount} updates available`}
+              title={`${outdatedCount} update${outdatedCount > 1 ? 's' : ''} available`}
+            >
+              <ArrowUpFromLine size={13} />
+              {outdatedCount} update{outdatedCount > 1 ? 's' : ''}
+            </button>
+          )}
+          {onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              aria-label="Settings"
+              title="Settings"
+            >
+              <Settings size={15} />
+            </button>
+          )}
+          {onToggleAlwaysOnTop && (
+            <button
+              onClick={onToggleAlwaysOnTop}
+              className={
+                'flex items-center justify-center w-6 h-6 rounded-md transition-colors ' +
+                (alwaysOnTop
+                  ? 'text-primary bg-accent'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent')
+              }
+              aria-label={alwaysOnTop ? 'Disable always-on-top' : 'Enable always-on-top'}
+              title={alwaysOnTop ? 'Always on top: on' : 'Always on top: off'}
+            >
+              <Pin size={15} />
+            </button>
+          )}
           <button
             onClick={() => window.electronAPI.minimizeWindow()}
             className="flex items-center justify-center w-6 h-6 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
