@@ -340,7 +340,9 @@ export async function needsElevationForCli(cli: CliDefinition): Promise<boolean>
     if (settings.elevateInstalls === false) return false
   } catch { /* fall through */ }
   if (isWindows) return false
-  if (isMac) return true
+  // macOS needs admin for global npm/pip installs, but standalone binaries go
+  // to a user-writable location (e.g. ~/.local/bin), so never elevate those.
+  if (isMac) return cli.dependencyType === 'node' || cli.dependencyType === 'python'
   // Linux: elevate only when the target location is not user-writable.
   if (cli.dependencyType === 'node') {
     const prefix = await getNpmGlobalPrefix()
