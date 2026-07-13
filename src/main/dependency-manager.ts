@@ -37,6 +37,22 @@ function fetchText(url: string): Promise<string> {
   })
 }
 
+// Lightweight HEAD-style reachability probe for an installer URL. Used to
+// avoid downloading a detected "latest" version whose binary isn't actually
+// published at the expected path (which 404s). Returns false on any error.
+async function isUrlReachable(url: string): Promise<boolean> {
+  const cmd = isWin
+    ? `powershell -NoProfile -Command "(Invoke-WebRequest -Uri '${url}' -Method Head -UseBasicParsing).StatusCode"`
+    : `curl -fsSIL -o /dev/null -w '%{http_code}' '${url}'`
+  try {
+    const out = await execCmd(cmd)
+    const code = (out.match(/\d{3}/) || [''])[0]
+    return code === '200' || code === '301' || code === '302' || code === '308'
+  } catch {
+    return false
+  }
+}
+
 async function getLatestNodeVersion(): Promise<string> {
   try {
     const html = await fetchText('https://nodejs.org/dist/index.json')
@@ -174,7 +190,23 @@ function download(url: string, output: string): Promise<void> {
 export async function installNode(): Promise<string> {
   const lines: string[] = []
   const push = (s: string) => lines.push(s)
-  const nodeVersion = await getLatestNodeVersion()
+  const nodeVersion0 = await getLatestNodeVersion()
+  let nodeVersion = nodeVersion0
+
+  // The detected "latest" may not have a published installer yet at the
+  // expected path; fall back to a known-good version if the URL 404s.
+  if (isWin || isMac) {
+    const nodeUrl = (v: string) =>
+      isWin
+        ? `https://nodejs.org/dist/v${v}/node-v${v}-x64.msi`
+        : `https://nodejs.org/dist/v${v}/node-v${v}.pkg`
+    if (!(await isUrlReachable(nodeUrl(nodeVersion)))) {
+      const fallback = '22.14.0'
+      if (await isUrlReachable(nodeUrl(fallback))) {
+        nodeVersion = fallback
+      }
+    }
+  }
   const major = nodeVersion.split('.')[0]
 
   if (isWin) {
@@ -222,7 +254,22 @@ export async function installNode(): Promise<string> {
 export async function installPython(): Promise<string> {
   const lines: string[] = []
   const push = (s: string) => lines.push(s)
-  const pythonVersion = await getLatestPythonVersion()
+  let pythonVersion = await getLatestPythonVersion()
+
+  // The detected "latest" may not have a published installer yet at the
+  // expected path (e.g. 404); fall back to a known-good version.
+  if (isWin || isMac) {
+    const pythonUrl = (v: string) =>
+      isWin
+        ? `https://www.python.org/ftp/python/${v}/python-${v}-amd64.exe`
+        : `https://www.python.org/ftp/python/${v}/python-${v}-macos11.pkg`
+    if (!(await isUrlReachable(pythonUrl(pythonVersion)))) {
+      const fallback = '3.12.8'
+      if (await isUrlReachable(pythonUrl(fallback))) {
+        pythonVersion = fallback
+      }
+    }
+  }
 
   if (isWin) {
     const url = `https://www.python.org/ftp/python/${pythonVersion}/python-${pythonVersion}-amd64.exe`
