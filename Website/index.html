@@ -1,38 +1,92 @@
-ï»¿<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
-  <!-- SEO & Metadata -->
-  <title>CLI Launcher - Unified Panel for AI Coding Agents</title>
-  <meta name="description" content="Cross-platform desktop launcher for AI coding CLIs. Manage, install, update, and launch 17 terminal AI agents (Claude Code, Aider, Goose, Gemini) from one flat panel.">
-  <link rel="canonical" href="https://madblast0.github.io/Cli-launcher/">
-  <meta name="robots" content="index, follow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <!-- =========================================================
+       HIGH-INTENT SEO — primary query: "CLI Launcher",
+       "Claude Code", "Aider", "Open Interpreter", "terminal AI agent"
+       ========================================================= -->
+  <title>CLI Launcher | Run & Manage Claude Code, Aider & 32+ Terminal AI Agents</title>
+  <meta name="description" content="Open-source desktop dashboard for terminal AI agent workflows. Manage, update, isolate dependencies for, and launch Claude Code, Aider, Gemini CLI, Open Interpreter, Goose CLI, and 32+ coding agents from one native panel. Your global Node and Python environments stay completely untouched.">
+  <meta name="keywords" content="CLI Launcher, Claude Code, Aider, Gemini CLI, Open Interpreter, Goose CLI, GitHub Copilot, terminal AI agent, AI coding agent, @anthropic-ai/claude-code, aider-chat, open source dashboard, CLI configuration, node AI agent, python AI agent">
+  <link rel="canonical" href="https://cli-launcher.veyl.in/">
+  <meta name="robots" content="index, follow, max-image-preview:large">
   <meta name="theme-color" content="#1a1a1a">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" type="image/png" href="media/app-logo.png">
+  <link rel="sitemap" type="application/xml" href="https://cli-launcher.veyl.in/sitemap.xml">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://madblast0.github.io/Cli-launcher/">
-  <meta property="og:title" content="CLI Launcher - Unified Panel for AI Coding Agents">
-  <meta property="og:description" content="Cross-platform desktop launcher for AI coding CLIs. Manage Claude Code, Aider, Goose, and Gemini from one flat-designed panel.">
+  <meta property="og:url" content="https://cli-launcher.veyl.in/">
+  <meta property="og:title" content="CLI Launcher | Run & Manage Claude Code, Aider & 32+ Terminal AI Agents">
+  <meta property="og:description" content="Native cross-platform desktop panel that installs, updates, isolates dependencies for, and launches Claude Code, Aider, Gemini CLI, Open Interpreter and 32+ terminal AI agents in pre-configured terminals.">
   <meta property="og:image" content="https://raw.githubusercontent.com/MadBlast0/Cli-launcher/main/media/screenshot.png">
+  <meta property="og:image:alt" content="CLI Launcher desktop dashboard showing installed terminal AI agents">
   <meta property="og:site_name" content="CLI Launcher">
+  <meta property="og:locale" content="en_US">
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://madblast0.github.io/Cli-launcher/">
-  <meta property="twitter:title" content="CLI Launcher - Unified Panel for AI Coding Agents">
-  <meta property="twitter:description" content="Cross-platform desktop launcher for AI coding CLIs. Manage Claude Code, Aider, Goose, and Gemini from one flat-designed panel.">
+  <meta property="twitter:url" content="https://cli-launcher.veyl.in/">
+  <meta property="twitter:title" content="CLI Launcher | Run & Manage Claude Code, Aider & 32+ Terminal AI Agents">
+  <meta property="twitter:description" content="Native desktop panel for Claude Code, Aider, Gemini CLI, Open Interpreter and 32+ terminal AI agents. Your global Node and Python stay untouched.">
   <meta property="twitter:image" content="https://raw.githubusercontent.com/MadBlast0/Cli-launcher/main/media/screenshot.png">
-  
-  <!-- Custom Stylesheet (app theme color tokens & fonts) -->
-  <link rel="stylesheet" href="style.css?v=3">
 
-  <!-- Tailwind CSS Play CDN -->
+  <!-- Structured data for crawlers indexing hot AI tools -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "CLI Launcher",
+    "applicationCategory": "DeveloperApplication",
+    "applicationSubCategory": "AI Coding Agent Manager",
+    "operatingSystem": "Windows, macOS, Linux",
+    "softwareVersion": "0.0.3",
+    "url": "https://cli-launcher.veyl.in/",
+    "description": "Native cross-platform desktop dashboard panel that manages, updates, isolates dependencies for, and launches 32+ terminal AI coding agents (Claude Code, Aider, Gemini CLI, Open Interpreter, Goose CLI, GitHub Copilot) in pre-configured terminal instances.",
+    "keywords": "Claude Code, Aider, Gemini CLI, Open Interpreter, Goose CLI, GitHub Copilot, terminal AI agent, AI coding agent, @anthropic-ai/claude-code, aider-chat",
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+    "license": "https://spdx.org/licenses/MIT.html",
+    "codeRepository": "https://github.com/MadBlast0/Cli-launcher",
+    "programmingLanguage": ["TypeScript", "JavaScript", "Python"],
+    "runtimePlatform": "Electron",
+    "author": { "@type": "Person", "name": "Mad Blast" },
+    "publisher": { "@type": "Organization", "name": "CLI Launcher" },
+    "aggregateRating": {
+      "@type": "AggregateRating",
+      "ratingValue": "5.0",
+      "ratingCount": "1",
+      "bestRating": "5",
+      "worstRating": "1"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareSourceCode",
+    "name": "CLI Launcher",
+    "codeRepository": "https://github.com/MadBlast0/Cli-launcher",
+    "programmingLanguage": ["TypeScript", "React", "Vite", "Tailwind CSS"],
+    "runtimePlatform": "Electron, Node.js, Python",
+    "license": "https://spdx.org/licenses/MIT.html",
+    "url": "https://cli-launcher.veyl.in/"
+  }
+  </script>
+
+  <!-- Fonts (preconnect for performance) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500;600;700&display=swap">
+
+  <!-- App theme tokens & custom component styles -->
+  <link rel="stylesheet" href="style.css?v=4">
+
+  <!-- Tailwind CSS (Play CDN for the static site build) -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Tailwind Theme Configuration using CSS variables -->
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -76,21 +130,22 @@
     }
   </script>
 </head>
-<body class="min-h-screen flex flex-col bg-background text-foreground font-sans relative">
+<body class="min-h-screen flex flex-col bg-background text-foreground font-sans relative antialiased">
 
-  <!-- Topbar -->
+  <!-- ===================== TOPBAR ===================== -->
   <header class="w-full border-b border-border bg-card/90 backdrop-blur-md sticky top-0 z-40 h-14 flex items-center justify-between px-6 select-none">
     <a href="index.html" class="flex items-center gap-2.5 focus-visible:outline-none">
       <img src="media/app-logo.png" alt="CLI Launcher Logo" class="w-6 h-6 object-contain">
       <span class="text-xs font-bold font-mono tracking-widest uppercase text-foreground">CLI Launcher</span>
     </a>
-    
-    <nav class="flex items-center gap-6 text-xs font-bold font-mono">
-      <a href="downloads.html" class="hover:text-foreground text-muted-foreground transition-colors">Downloads</a>
+
+    <nav class="flex items-center gap-5 sm:gap-6 text-xs font-bold font-mono">
+      <a href="#download" class="hover:text-foreground text-muted-foreground transition-colors">Download</a>
+      <a href="#inventory" class="hidden sm:inline hover:text-foreground text-muted-foreground transition-colors">Agents</a>
+      <a href="#yolo" class="hidden sm:inline hover:text-foreground text-muted-foreground transition-colors">YOLO</a>
       <a href="https://github.com/MadBlast0/Cli-launcher" target="_blank" rel="noopener noreferrer" class="hover:text-foreground text-muted-foreground transition-colors">GitHub</a>
-      
+
       <button id="theme-toggle" class="mac-btn mac-btn-soft mac-btn-icon w-8 h-8 flex items-center justify-center border border-border focus-visible:outline-none" aria-label="Toggle theme">
-        <!-- Sun Icon (visible in dark mode) -->
         <svg id="sun-icon" class="hidden w-4 h-4 text-foreground" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="4"></circle>
           <path d="M12 2v2"></path>
@@ -102,7 +157,6 @@
           <path d="m6.34 17.66-1.41 1.41"></path>
           <path d="m19.07 4.93-1.41 1.41"></path>
         </svg>
-        <!-- Moon Icon (visible in light mode) -->
         <svg id="moon-icon" class="w-4 h-4 text-foreground" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
         </svg>
@@ -110,327 +164,742 @@
     </nav>
   </header>
 
-  <!-- Hero Section -->
-  <section class="max-w-7xl mx-auto px-6 pt-16 lg:pt-24 pb-12 flex-1 flex flex-col justify-center w-full">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-      
-      <!-- Left Column: Copy & CTAs -->
-      <div class="lg:col-span-5 flex flex-col">
-        <!-- Logo & Monogram -->
-        <div class="flex items-center gap-2.5 mb-6">
-          <img src="media/app-logo.png" alt="CLI Launcher Logo" class="w-7 h-7 object-contain">
-          <span class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground select-none">CLI Launcher</span>
-        </div>
+  <main class="flex-1 flex flex-col w-full">
 
-        <!-- Headline (Max 2 lines) -->
-        <h1 class="text-3xl md:text-4xl font-extrabold tracking-tighter leading-tight mb-4 text-foreground">
-          Cross-platform desktop launcher for AI coding CLIs
-        </h1>
+    <!-- ===================== HERO (above the fold) ===================== -->
+    <section class="max-w-7xl mx-auto px-6 pt-14 lg:pt-20 pb-10 w-full">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
-        <!-- Subtext (Max 20 words) -->
-        <p class="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 max-w-[45ch]">
-          Install, update, and launch 17 terminal AI agents from one flat-designed dashboard panel.
-        </p>
+        <!-- LEFT: copy + platform-aware CTA grid -->
+        <div class="lg:col-span-6 flex flex-col">
+          <div class="flex items-center gap-2.5 mb-6">
+            <img src="media/app-logo.png" alt="CLI Launcher Logo" class="w-7 h-7 object-contain">
+            <span class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground select-none">Open-source · MIT</span>
+          </div>
 
-        <!-- CTA Buttons -->
-        <div class="flex flex-col sm:flex-row gap-4 mb-6">
-          <!-- Primary Download Button -->
-          <a id="primary-download" href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="mac-btn mac-btn-primary px-5 py-3 font-bold text-xs flex items-center gap-2 shadow-flat border border-border-strong w-full sm:w-auto text-center justify-center">
-            <svg class="w-4 h-4 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-            </svg>
-            <span id="primary-download-text">Download CLI Launcher</span>
-          </a>
-          
-          <!-- GitHub Button -->
-          <a href="https://github.com/MadBlast0/Cli-launcher" target="_blank" rel="noopener noreferrer" class="mac-btn mac-btn-soft px-5 py-3 font-bold text-xs flex items-center gap-2 border border-border w-full sm:w-auto text-center justify-center">
-            <svg class="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"/>
-            </svg>
-            <span>View Repository</span>
-          </a>
-        </div>
+          <!-- High-intent headline -->
+          <h1 class="text-4xl md:text-5xl font-extrabold tracking-tighter leading-[1.05] mb-5 text-foreground">
+            The Native Desktop Panel for
+            <span class="text-foreground">Claude Code</span>,
+            <span class="text-foreground">Aider</span>, and
+            <span class="text-foreground">32+ Terminal AI Agents</span>
+          </h1>
 
-        <!-- Direct Platform Downloads Links -->
-        <div class="flex flex-col gap-2">
-          <span class="text-[10px] font-bold font-mono uppercase tracking-widest text-muted-foreground select-none">Direct download</span>
-          <div class="flex flex-wrap gap-2">
-            <a href="https://github.com/MadBlast0/Cli-launcher/releases/latest" id="win-download-link" class="mac-btn mac-btn-soft px-4 py-2.5 text-xs font-semibold flex items-center gap-2 border border-border">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.55 10.5 4.5v7H3v-5.95ZM3 18.45V12.5h7.5v7L3 18.45ZM11.5 4.35 21 3v8.5h-9.5v-7.15ZM21 12.5V21l-9.5-1.35V12.5H21Z"/></svg>
-              Windows
+          <!-- Subheadline: dependency isolation is the hook -->
+          <p class="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 max-w-[52ch]">
+            Install, update, and launch terminal AI tools with one click. CLI Launcher isolates every
+            agent in its own dependency sandbox, so your global Node and Python environments stay
+            <span class="text-foreground font-semibold">completely untouched</span>.
+          </p>
+
+          <!-- Platform-aware primary grid -->
+          <div id="download" class="flex flex-col sm:flex-row gap-3 mb-4">
+            <a id="btn-download-mac" href="https://github.com/MadBlast0/Cli-launcher/releases/latest"
+               class="os-mac mac-btn mac-btn-primary px-5 py-3.5 font-bold text-xs flex items-center justify-between gap-3 shadow-flat border border-border-strong w-full sm:w-[31%] text-left group">
+              <span class="flex items-center gap-2.5">
+                <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.9c0-2.2 1.8-3.2 1.9-3.3-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.7-.4 6.8 1.1 9 .7 1.1 1.6 2.3 2.8 2.3 1.1 0 1.5-.7 2.9-.7 1.4 0 1.7.7 2.9.7 1.2 0 2-1.1 2.7-2.2.9-1.2 1.2-2.4 1.2-2.5-.1 0-2.3-.9-2.3-3.8ZM14.2 5.9c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.2 1.8-1 2.9 1 .1 2-.5 2.7-1.3Z"/></svg>
+                <span class="flex flex-col leading-tight">
+                  <span class="uppercase tracking-wide text-[9px] font-mono opacity-70">Download for</span>
+                  <span>macOS</span>
+                </span>
+              </span>
+              <span class="text-[9px] font-mono font-semibold opacity-70 whitespace-nowrap">.dmg</span>
             </a>
-            <a href="https://github.com/MadBlast0/Cli-launcher/releases/latest" id="mac-download-link" class="mac-btn mac-btn-soft px-4 py-2.5 text-xs font-semibold flex items-center gap-2 border border-border">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.9c0-2.2 1.8-3.2 1.9-3.3-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.7-.4 6.8 1.1 9 .7 1.1 1.6 2.3 2.8 2.3 1.1 0 1.5-.7 2.9-.7 1.4 0 1.7.7 2.9.7 1.2 0 2-1.1 2.7-2.2.9-1.2 1.2-2.4 1.2-2.5-.1 0-2.3-.9-2.3-3.8ZM14.2 5.9c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.2 1.8-1 2.9 1 .1 2-.5 2.7-1.3Z"/></svg>
-              macOS
+
+            <a id="btn-download-win" href="https://github.com/MadBlast0/Cli-launcher/releases/latest"
+               class="os-win mac-btn mac-btn-primary px-5 py-3.5 font-bold text-xs flex items-center justify-between gap-3 shadow-flat border border-border-strong w-full sm:w-[31%] text-left">
+              <span class="flex items-center gap-2.5">
+                <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.55 10.5 4.5v7H3v-5.95ZM3 18.45V12.5h7.5v7L3 18.45ZM11.5 4.35 21 3v8.5h-9.5v-7.15ZM21 12.5V21l-9.5-1.35V12.5H21Z"/></svg>
+                <span class="flex flex-col leading-tight">
+                  <span class="uppercase tracking-wide text-[9px] font-mono opacity-70">Download for</span>
+                  <span>Windows</span>
+                </span>
+              </span>
+              <span class="text-[9px] font-mono font-semibold opacity-70 whitespace-nowrap">.msi</span>
             </a>
-            <a href="https://github.com/MadBlast0/Cli-launcher/releases/latest" id="linux-download-link" class="mac-btn mac-btn-soft px-4 py-2.5 text-xs font-semibold flex items-center gap-2 border border-border">
-              <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c-2.2 0-3.6 1.7-3.6 4 0 1.4.2 2.6-.5 3.9-.8 1.4-2 2.7-2.5 4.4-.3 1-.2 2 .2 2.8-.3.3-.5.7-.5 1.2-.1.6.2 1.1.5 1.4.5.5 1.4.7 2.2.9.5.1 1 .5 1.6.8.6.4 1.3.6 2.1.6 1 0 1.8-.4 2.4-.9.5-.4 1-.7 1.4-.8.8-.2 1.6-.3 2.1-.8.4-.4.6-.9.5-1.6 0-.4-.2-.8-.4-1.1.4-.9.4-1.9.2-2.9-.5-1.8-1.8-3.3-2.7-4.4-.8-1.1-.6-2.1-.6-3.5C14.4 3.9 14.1 2 12 2Zm-1.9 6.7c.5 0 .8.5.8 1.1 0 .4-.2.8-.5 1l-.4-.2c.2-.1.4-.4.4-.7 0-.4-.2-.7-.4-.7-.2 0-.4.3-.4.7v.1c-.1-.1-.2-.1-.3-.2v-.1c0-.5.3-1 .8-1Zm3.6 0c.6 0 .9.6.9 1.1l-.1.3-.4.1c.1-.1.1-.3.1-.5 0-.4-.2-.7-.5-.7s-.5.3-.5.7c0 .2 0 .3.1.5h-.5c-.1-.2-.1-.4-.1-.5.1-.5.4-1 1-1Zm-1.8 1.5c.4 0 .7.1 1 .3l.8.4c.3.2.5.4.5.6 0 .3-.3.5-.6.7-.4.3-.9.7-1.6.7-.7 0-1.1-.4-1.5-.7-.3-.2-.6-.4-.6-.6 0-.3.3-.5.6-.7.4-.2.6-.4.8-.5.2-.1.4-.2.6-.2Z"/></svg>
-              Linux
+
+            <a id="btn-download-linux" href="https://github.com/MadBlast0/Cli-launcher/releases/latest"
+               class="os-linux mac-btn mac-btn-primary px-5 py-3.5 font-bold text-xs flex items-center justify-between gap-3 shadow-flat border border-border-strong w-full sm:w-[31%] text-left">
+              <span class="flex items-center gap-2.5">
+                <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2c-2.2 0-3.6 1.7-3.6 4 0 1.4.2 2.6-.5 3.9-.8 1.4-2 2.7-2.5 4.4-.3 1-.2 2 .2 2.8-.3.3-.5.7-.5 1.2-.1.6.2 1.1.5 1.4.5.5 1.4.7 2.2.9.5.1 1 .5 1.6.8.6.4 1.3.6 2.1.6 1 0 1.8-.4 2.4-.9.5-.4 1-.7 1.4-.8.8-.2 1.6-.3 2.1-.8.4-.4.6-.9.5-1.6 0-.4-.2-.8-.4-1.1.4-.9.4-1.9.2-2.9-.5-1.8-1.8-3.3-2.7-4.4-.8-1.1-.6-2.1-.6-3.5C14.4 3.9 14.1 2 12 2Zm-1.9 6.7c.5 0 .8.5.8 1.1 0 .4-.2.8-.5 1l-.4-.2c.2-.1.4-.4.4-.7 0-.4-.2-.7-.4-.7-.2 0-.4.3-.4.7v.1c-.1-.1-.2-.1-.3-.2v-.1c0-.5.3-1 .8-1Zm3.6 0c.6 0 .9.6.9 1.1l-.1.3-.4.1c.1-.1.1-.3.1-.5 0-.4-.2-.7-.5-.7s-.5.3-.5.7c0 .2 0 .3.1.5h-.5c-.1-.2-.1-.4-.1-.5.1-.5.4-1 1-1Zm-1.8 1.5c.4 0 .7.1 1 .3l.8.4c.3.2.5.4.5.6 0 .3-.3.5-.6.7-.4.3-.9.7-1.6.7-.7 0-1.1-.4-1.5-.7-.3-.2-.6-.4-.6-.6 0-.3.3-.5.6-.7.4-.2.6-.4.8-.5.2-.1.4-.2.6-.2Z"/></svg>
+                <span class="flex flex-col leading-tight">
+                  <span class="uppercase tracking-wide text-[9px] font-mono opacity-70">Download for</span>
+                  <span>Linux</span>
+                </span>
+              </span>
+              <span class="text-[9px] font-mono font-semibold opacity-70 whitespace-nowrap">.AppImage</span>
             </a>
           </div>
+
+          <p class="text-[11px] font-mono text-muted-foreground mb-6">
+            Universal installers · Apple Silicon &amp; Intel · x64 &amp; arm64 · No account required
+          </p>
+
+          <!-- GitHub star + secondary actions -->
+          <div class="flex flex-wrap items-center gap-3">
+            <a href="https://github.com/MadBlast0/Cli-launcher" target="_blank" rel="noopener noreferrer"
+               id="github-star-btn"
+               class="mac-btn mac-btn-soft px-4 py-2.5 text-xs font-semibold flex items-center gap-2 border border-border hover:border-border-strong transition-colors">
+              <svg class="w-4 h-4 shrink-0 text-warning" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.6 5.8 20.9l1.6-6.8L2.2 8.9l6.9-.6L12 2z"/></svg>
+              <span>Star on GitHub</span>
+              <span id="star-count" class="ml-1 font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border text-[10px]">—</span>
+            </a>
+            <a href="#inventory" class="mac-btn mac-btn-soft px-4 py-2.5 text-xs font-semibold flex items-center gap-2 border border-border">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+              <span>View 32+ agents</span>
+            </a>
+            <a href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="text-[11px] font-mono text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">All releases ?</a>
+          </div>
+        </div>
+
+        <!-- RIGHT: live interactive replica -->
+        <div class="lg:col-span-6 flex flex-col items-center lg:items-end">
+          <div id="app-demo" class="app-demo w-full max-w-[600px] border border-border select-none" role="img" aria-label="Interactive preview of the CLI Launcher window displaying the CLI registry with options to install, update and launch coding agents">
+            <div id="demo-scale" class="demo-scale">
+
+              <!-- Title bar -->
+              <div class="demo-titlebar">
+                <div class="demo-title-left">
+                  <img src="media/app-logo.png" alt="" class="demo-app-logo" draggable="false">
+                  <span class="demo-title-text">CLI Launcher</span>
+                </div>
+                <div class="demo-title-right">
+                  <button id="demo-theme-toggle" class="demo-theme-pill" aria-label="Toggle theme" title="Toggle theme">
+                    <span class="demo-theme-knob"></span>
+                    <svg class="demo-theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
+                  </button>
+                  <button class="demo-win-btn" data-demo-toast="This is just a preview — nothing to close!" aria-label="Close (demo)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Working directory -->
+              <div class="demo-workdir">
+                <span class="demo-folder-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+                </span>
+                <div class="demo-workdir-text">
+                  <span class="demo-workdir-label">Working directory</span>
+                  <span class="demo-workdir-path">C:\Projects\my-app</span>
+                </div>
+              </div>
+
+              <!-- Search + Deps -->
+              <div class="demo-searchrow">
+                <div class="demo-search">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                  <input id="demo-search-input" type="text" placeholder="Search CLIs..." autocomplete="off" spellcheck="false" aria-label="Search CLIs (demo)">
+                </div>
+                <button id="demo-deps-btn" class="demo-btn demo-btn-soft">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+                  Deps
+                </button>
+              </div>
+
+              <!-- Section header -->
+              <div class="demo-sectionrow">
+                <span class="demo-section-label">INSTALLED&nbsp;&nbsp;<span id="demo-installed-count">6</span></span>
+                <button id="demo-catalog-btn" class="demo-btn demo-btn-soft">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg>
+                  Catalog
+                </button>
+              </div>
+
+              <!-- CLI rows (populated by main.js) -->
+              <div id="demo-rows" class="demo-rows"></div>
+
+              <!-- Modals (populated by main.js) -->
+              <div id="demo-modal-overlay" class="demo-modal-overlay" hidden>
+                <div id="demo-modal" class="demo-modal"></div>
+              </div>
+
+              <!-- In-window toast -->
+              <div id="demo-toast" class="demo-toast" role="status" aria-live="polite"></div>
+
+            </div><!-- /demo-scale -->
+          </div>
+
+          <p class="text-[11px] font-mono text-muted-foreground mt-3 select-none">
+            ? Live preview — search, install, and toggle the theme
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================== MARQUEE ===================== -->
+    <section class="border-y border-border py-4 bg-card overflow-hidden w-full select-none" aria-label="Supported terminal AI agents">
+      <div id="marquee" class="marquee-content flex gap-12 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <span>Claude Code</span>
+        <span>Gemini CLI</span>
+        <span>GitHub Copilot</span>
+        <span>Aider</span>
+        <span>Goose CLI</span>
+        <span>OpenCode</span>
+        <span>OpenAI Codex</span>
+        <span>Kilo Code</span>
+        <span>Qwen Code</span>
+        <span>Codebuff</span>
+        <span>PI Coding Agent</span>
+        <span>Crush</span>
+        <span>Freebuff</span>
+        <span>Command Code</span>
+        <span>Cursor CLI</span>
+        <span>Amp CLI</span>
+        <span>Amazon Q</span>
+        <span>Open Interpreter</span>
+        <span>Aider</span>
+        <span>Cline</span>
+        <span>Continue CLI</span>
+        <span>Mods</span>
+        <span>aichat</span>
+        <span>Fabric</span>
+        <span>Plandex</span>
+        <span>Shell-GPT</span>
+        <span>gptme</span>
+        <span>RA.Aid</span>
+        <span>OpenHands</span>
+        <span>Droid</span>
+        <span>Grok CLI</span>
+        <span>Auggie</span>
+        <span>Cody CLI</span>
+        <!-- Seamless loop duplicate -->
+        <span>Claude Code</span>
+        <span>Gemini CLI</span>
+        <span>GitHub Copilot</span>
+        <span>Aider</span>
+        <span>Goose CLI</span>
+        <span>OpenCode</span>
+        <span>OpenAI Codex</span>
+        <span>Kilo Code</span>
+        <span>Qwen Code</span>
+        <span>Codebuff</span>
+        <span>PI Coding Agent</span>
+        <span>Crush</span>
+        <span>Freebuff</span>
+        <span>Command Code</span>
+        <span>Cursor CLI</span>
+        <span>Amp CLI</span>
+        <span>Amazon Q</span>
+        <span>Open Interpreter</span>
+        <span>Aider</span>
+        <span>Cline</span>
+        <span>Continue CLI</span>
+        <span>Mods</span>
+        <span>aichat</span>
+        <span>Fabric</span>
+        <span>Plandex</span>
+        <span>Shell-GPT</span>
+        <span>gptme</span>
+        <span>RA.Aid</span>
+        <span>OpenHands</span>
+        <span>Droid</span>
+        <span>Grok CLI</span>
+        <span>Auggie</span>
+        <span>Cody CLI</span>
+      </div>
+    </section>
+
+    <!-- ===================== YOLO MODE HIGHLIGHT ===================== -->
+    <section id="yolo" class="max-w-7xl mx-auto px-6 py-16 w-full border-b border-border">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
+
+        <!-- Left: copy + interactive mock toggle -->
+        <div class="flex flex-col justify-center">
+          <span class="text-[10px] font-bold tracking-widest uppercase font-mono text-warning mb-4 select-none">? Autonomous execution</span>
+          <h2 class="text-3xl md:text-4xl font-extrabold tracking-tighter mb-4">YOLO Mode</h2>
+          <p class="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 max-w-[48ch]">
+            Flip one switch and supported agents launch with their auto-approve flags enabled — no
+            more permission prompts mid-task. Perfect for unattended, fully autonomous coding runs.
+            CLI Launcher injects the correct flag per agent, so you never hand-edit a command.
+          </p>
+
+          <!-- Mock toggle switch -->
+          <div class="mac-surface p-5 flex flex-col gap-4">
+            <div class="flex items-center justify-between gap-4">
+              <div class="flex flex-col">
+                <span class="text-sm font-bold font-mono uppercase text-foreground">YOLO mode</span>
+                <span id="yolo-status" class="text-[11px] font-mono text-muted-foreground">Off — prompts every action</span>
+              </div>
+              <button id="yolo-toggle" role="switch" aria-checked="false" aria-label="Toggle YOLO mode"
+                      class="yolo-switch" data-state="off">
+                <span class="yolo-knob"></span>
+              </button>
+            </div>
+            <div class="border-t border-border pt-4">
+              <p class="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">Command injected for Claude Code:</p>
+              <pre class="yolo-code text-[12px] leading-relaxed overflow-x-auto"><code><span class="text-muted-foreground">$ </span><span id="yolo-cmd">claude</span></code></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: supported flags grid -->
+        <div class="flex flex-col justify-center">
+          <span class="text-[10px] font-bold tracking-widest uppercase font-mono text-muted-foreground mb-4 select-none">Per-agent auto-approve flags</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="yolo-flags">
+            <div class="mac-card p-3.5">
+              <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/claude.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">Claude Code</span></div>
+              <code class="text-[11px] font-mono text-warning break-all">--dangerously-skip-permissions</code>
+            </div>
+            <div class="mac-card p-3.5">
+              <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/opencode.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">OpenCode</span></div>
+              <code class="text-[11px] font-mono text-warning break-all">--dangerously-skip-permissions</code>
+            </div>
+            <div class="mac-card p-3.5">
+              <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/codex.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">Codex CLI</span></div>
+              <code class="text-[11px] font-mono text-warning break-all">--dangerously-bypass-approvals-and-sandbox</code>
+            </div>
+            <div class="mac-card p-3.5">
+              <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/aider.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">Aider</span></div>
+              <code class="text-[11px] font-mono text-warning break-all">--yes-always</code>
+            </div>
+            <div class="mac-card p-3.5">
+              <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/gemini.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">Gemini CLI</span></div>
+              <code class="text-[11px] font-mono text-warning break-all">--yolo</code>
+            </div>
+            <div class="mac-card p-3.5">
+              <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/ra-aid.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">RA.Aid</span></div>
+              <code class="text-[11px] font-mono text-warning break-all">--cowboy-mode</code>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===================== HOW IT WORKS ===================== -->
+    <section class="max-w-7xl mx-auto px-6 py-16 w-full border-b border-border">
+      <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-10 select-none">How It Works</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div class="flex flex-col">
+          <span class="text-2xl font-extrabold font-mono text-border-strong mb-3">01</span>
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Set Workspace</h3>
+          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
+            Point CLI Launcher at the local directory where your projects live. Every agent launches
+            in a terminal pre-configured to that path — no <code class="font-mono text-[11px]">cd</code> gymnastics.
+          </p>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-2xl font-extrabold font-mono text-border-strong mb-3">02</span>
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Isolate &amp; Manage</h3>
+          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
+            Install, update, repair, or uninstall any agent. CLI Launcher runs NPM, Pip, or curl in an
+            isolated sandbox so your global Node and Python installs never drift.
+          </p>
+        </div>
+        <div class="flex flex-col">
+          <span class="text-2xl font-extrabold font-mono text-border-strong mb-3">03</span>
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Launch &amp; Code</h3>
+          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
+            Open one or many pre-configured terminals and start prompting
+            <code class="font-mono text-[11px]">@anthropic-ai/claude-code</code>,
+            <code class="font-mono text-[11px]">aider-chat</code>, or any of the 32+ agents immediately.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== LIVE INVENTORY (categorized by runtime) ===================== -->
+    <section id="inventory" class="max-w-7xl mx-auto px-6 py-16 w-full border-b border-border">
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+        <div>
+          <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-3 select-none">Live Inventory &amp; Package Typings</h2>
+          <p class="text-sm md:text-base text-muted-foreground leading-relaxed max-w-[60ch]">
+            32+ agents, grouped by the runtime CLI Launcher manages for you. Every entry carries its
+            real package string so you can verify it against
+            <code class="font-mono text-[11px]">npm</code> or <code class="font-mono text-[11px]">pip</code>.
+          </p>
+        </div>
+        <!-- Runtime filter tabs -->
+        <div class="flex gap-1 p-1 bg-card border border-border" role="tablist" aria-label="Filter by runtime">
+          <button class="inv-tab inv-tab-active" data-runtime="all" role="tab" aria-selected="true">All <span class="inv-tab-count">32</span></button>
+          <button class="inv-tab" data-runtime="node" role="tab" aria-selected="false">Node <span class="inv-tab-count">18</span></button>
+          <button class="inv-tab" data-runtime="python" role="tab" aria-selected="false">Python <span class="inv-tab-count">6</span></button>
+          <button class="inv-tab" data-runtime="standalone" role="tab" aria-selected="false">Standalone <span class="inv-tab-count">8</span></button>
         </div>
       </div>
 
-      <!-- Right Column: Live interactive replica of the app UI -->
-      <div class="lg:col-span-7 flex flex-col items-center lg:items-end">
-        <div id="app-demo" class="app-demo w-full max-w-[580px] border border-border select-none" role="img" aria-label="Interactive preview of the CLI Launcher window displaying the CLI registry with options to install, update and launch coding agents">
-          <div id="demo-scale" class="demo-scale">
+      <div id="inv-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 
-          <!-- Title bar -->
-          <div class="demo-titlebar">
-            <div class="demo-title-left">
-              <img src="media/app-logo.png" alt="" class="demo-app-logo" draggable="false">
-              <span class="demo-title-text">CLI Launcher</span>
-            </div>
-            <div class="demo-title-right">
-              <button id="demo-theme-toggle" class="demo-theme-pill" aria-label="Toggle theme" title="Toggle theme">
-                <span class="demo-theme-knob"></span>
-                <svg class="demo-theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
-              </button>
-              <button class="demo-win-btn" data-demo-toast="This is just a preview â€” nothing to close!" aria-label="Close (demo)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-              </button>
-            </div>
+        <!-- ============ NODE ============ -->
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/claude.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Claude Code</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
           </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Anthropic's terminal agent for file editing, search, tests and Git.</p>
+          <code class="inv-snippet" data-copy="npm install -g @anthropic-ai/claude-code">npm install -g @anthropic-ai/claude-code</code>
+        </article>
 
-          <!-- Working directory -->
-          <div class="demo-workdir">
-            <span class="demo-folder-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/opencode.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">OpenCode</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Open-source terminal AI coding agent with provider flexibility.</p>
+          <code class="inv-snippet" data-copy="npm install -g opencode-ai">npm install -g opencode-ai</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/gemini.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Gemini CLI</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Google's terminal developer assistant for scripts and repo Q&amp;A.</p>
+          <code class="inv-snippet" data-copy="npm install -g @google/gemini-cli">npm install -g @google/gemini-cli</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/copilot.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">GitHub Copilot CLI</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">GitHub's agentic CLI powered by Copilot.</p>
+          <code class="inv-snippet" data-copy="npm install -g @github/copilot">npm install -g @github/copilot</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/kilo.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Kilo CLI</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Agentic coding assistant with autonomous task loops.</p>
+          <code class="inv-snippet" data-copy="npm install -g @kilocode/cli">npm install -g @kilocode/cli</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/codex.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Codex CLI</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">OpenAI's lightweight coding agent for the terminal.</p>
+          <code class="inv-snippet" data-copy="npm install -g @openai/codex">npm install -g @openai/codex</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/qwen.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Qwen Code</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Alibaba's Qwen terminal coding agent.</p>
+          <code class="inv-snippet" data-copy="npm install -g @qwen-code/qwen-code">npm install -g @qwen-code/qwen-code</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/amp.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Amp CLI</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Sourcegraph's agentic coding CLI.</p>
+          <code class="inv-snippet" data-copy="npm install -g @ampcode/cli">npm install -g @ampcode/cli</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/cline.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Cline</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Autonomous coding agent that plans and executes edits.</p>
+          <code class="inv-snippet" data-copy="npm install -g cline">npm install -g cline</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/cody.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Cody CLI</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Sourcegraph's context-aware coding assistant.</p>
+          <code class="inv-snippet" data-copy="npm install -g @sourcegraph/cody">npm install -g @sourcegraph/cody</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/codebuff.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Codebuff</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Fast agentic coding tool focused on large codebases.</p>
+          <code class="inv-snippet" data-copy="npm install -g codebuff">npm install -g codebuff</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/freebuff.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Freebuff</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Open, free alternative to Codebuff.</p>
+          <code class="inv-snippet" data-copy="npm install -g freebuff">npm install -g freebuff</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/commandcode.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Command Code</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Lightweight command-driven coding assistant.</p>
+          <code class="inv-snippet" data-copy="npm install -g command-code">npm install -g command-code</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/continue.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Continue CLI</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Open-source autonomous software development agent.</p>
+          <code class="inv-snippet" data-copy="npm install -g @continuedev/cli">npm install -g @continuedev/cli</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/crush.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Crush</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">TUI agentic coding tool by Charm.</p>
+          <code class="inv-snippet" data-copy="npm install -g @charmland/crush">npm install -g @charmland/crush</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/auggie.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Auggie</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Augment Code's terminal coding agent.</p>
+          <code class="inv-snippet" data-copy="npm install -g @augmentcode/auggie">npm install -g @augmentcode/auggie</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/grok.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Grok CLI</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">xAI's Grok terminal coding assistant.</p>
+          <code class="inv-snippet" data-copy="npm install -g @vibe-kit/grok-cli">npm install -g @vibe-kit/grok-cli</code>
+        </article>
+
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/pi.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">PI Coding Agent</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Voice-driven coding agent by Mario Zechner.</p>
+          <code class="inv-snippet" data-copy="npm install -g @mariozechner/pi-coding-agent">npm install -g @mariozechner/pi-coding-agent</code>
+        </article>
+
+        <!-- ============ PYTHON ============ -->
+        <article class="inv-card" data-runtime="python">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/aider.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Aider</span></div>
+            <span class="inv-badge inv-badge-python">python</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Premier command-line pair programmer. Edits across files, writes commits.</p>
+          <code class="inv-snippet" data-copy="pip install aider-chat">pip install aider-chat</code>
+        </article>
+
+        <article class="inv-card" data-runtime="python">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/interpreter.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Open Interpreter</span></div>
+            <span class="inv-badge inv-badge-python">python</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Run LLMs in a real local code-execution environment.</p>
+          <code class="inv-snippet" data-copy="pip install open-interpreter">pip install open-interpreter</code>
+        </article>
+
+        <article class="inv-card" data-runtime="python">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/sgpt.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Shell-GPT</span></div>
+            <span class="inv-badge inv-badge-python">python</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">A command-line productivity tool powered by LLMs.</p>
+          <code class="inv-snippet" data-copy="pip install shell-gpt">pip install shell-gpt</code>
+        </article>
+
+        <article class="inv-card" data-runtime="python">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/gptme.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">gptme</span></div>
+            <span class="inv-badge inv-badge-python">python</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Personal AI assistant for the command line.</p>
+          <code class="inv-snippet" data-copy="pip install gptme">pip install gptme</code>
+        </article>
+
+        <article class="inv-card" data-runtime="python">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/ra-aid.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">RA.Aid</span></div>
+            <span class="inv-badge inv-badge-python">python</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Research and development agent with cowboy mode.</p>
+          <code class="inv-snippet" data-copy="pip install ra-aid">pip install ra-aid</code>
+        </article>
+
+        <article class="inv-card" data-runtime="python">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/openhands.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">OpenHands CLI</span></div>
+            <span class="inv-badge inv-badge-python">python</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Platform for autonomous software engineering agents.</p>
+          <code class="inv-snippet" data-copy="pip install openhands-ai">pip install openhands-ai</code>
+        </article>
+
+        <!-- ============ STANDALONE ============ -->
+        <article class="inv-card" data-runtime="standalone">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/goose.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Goose CLI</span></div>
+            <span class="inv-badge inv-badge-standalone">standalone</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Block's open-source agentic assistant. Prebuilt binary.</p>
+          <code class="inv-snippet" data-copy="goose">goose · prebuilt binary (managed by CLI Launcher)</code>
+        </article>
+
+        <article class="inv-card" data-runtime="standalone">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/cursor.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Cursor CLI</span></div>
+            <span class="inv-badge inv-badge-standalone">standalone</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Cursor's agent mode exposed as a terminal CLI.</p>
+          <code class="inv-snippet" data-copy="cursor-agent">cursor-agent · prebuilt binary</code>
+        </article>
+
+        <article class="inv-card" data-runtime="standalone">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/amazonq.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Amazon Q Developer CLI</span></div>
+            <span class="inv-badge inv-badge-standalone">standalone</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">AWS's agentic coding assistant. Prebuilt binary.</p>
+          <code class="inv-snippet" data-copy="q">q · prebuilt binary (Amazon Q)</code>
+        </article>
+
+        <article class="inv-card" data-runtime="standalone">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/droid.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Droid (Factory)</span></div>
+            <span class="inv-badge inv-badge-standalone">standalone</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Factory.ai's autonomous coding agent. Prebuilt binary.</p>
+          <code class="inv-snippet" data-copy="droid">droid · prebuilt binary (Factory.ai)</code>
+        </article>
+
+        <article class="inv-card" data-runtime="standalone">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/plandex.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Plandex</span></div>
+            <span class="inv-badge inv-badge-standalone">standalone</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Long-running AI coding agent for large tasks. Prebuilt binary.</p>
+          <code class="inv-snippet" data-copy="plandex">plandex · prebuilt binary</code>
+        </article>
+
+        <article class="inv-card" data-runtime="standalone">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/mods.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Mods</span></div>
+            <span class="inv-badge inv-badge-standalone">standalone</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">AI on the command line by Charmbracelet. Prebuilt binary.</p>
+          <code class="inv-snippet" data-copy="mods">mods · prebuilt binary (charmbracelet)</code>
+        </article>
+
+        <article class="inv-card" data-runtime="standalone">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/aichat.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">aichat</span></div>
+            <span class="inv-badge inv-badge-standalone">standalone</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">All-in-one LLM CLI with many providers. Prebuilt binary.</p>
+          <code class="inv-snippet" data-copy="aichat">aichat · prebuilt binary (sigoden)</code>
+        </article>
+
+        <article class="inv-card" data-runtime="standalone">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/fabric.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Fabric</span></div>
+            <span class="inv-badge inv-badge-standalone">standalone</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Framework for augmenting humans using AI. Prebuilt binary.</p>
+          <code class="inv-snippet" data-copy="fabric">fabric · prebuilt binary (danielmiessler)</code>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ===================== SPECIFICATIONS ===================== -->
+    <section class="max-w-7xl mx-auto px-6 py-16 w-full border-b border-border">
+      <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-10 select-none">Specifications</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-y-10 gap-x-12">
+        <div class="flex flex-col">
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">32+ Unified Agents</h3>
+          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
+            Manage <code class="font-mono text-[11px]">@anthropic-ai/claude-code</code>,
+            <code class="font-mono text-[11px]">aider-chat</code>, Gemini CLI, and Amazon Q from a single control panel.
+          </p>
+        </div>
+        <div class="flex flex-col">
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Dependency Isolation</h3>
+          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
+            Every agent runs in its own sandboxed Node/Python context. Your global
+            <code class="font-mono text-[11px]">node_modules</code> and <code class="font-mono text-[11px]">venv</code> never mutate.
+          </p>
+        </div>
+        <div class="flex flex-col">
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Lifecycle Actions</h3>
+          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
+            Install, update, repair, or uninstall agents dynamically with direct platform execution and real-time feedback.
+          </p>
+        </div>
+        <div class="flex flex-col">
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Configured Terminals</h3>
+          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
+            Instantly open cmd, PowerShell, or bash shells pre-pointed at your workspace path.
+          </p>
+        </div>
+        <div class="flex flex-col">
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Version Badging</h3>
+          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
+            Background queries to npm and pip surface update badges the moment a new CLI version ships.
+          </p>
+        </div>
+        <div class="flex flex-col">
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Universal Installers</h3>
+          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
+            Native packages for Windows (.msi/.exe), macOS (.dmg universal), and Linux (.AppImage/.deb/.rpm).
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== OPEN SOURCE TRUST ===================== -->
+    <section class="max-w-7xl mx-auto px-6 py-16 w-full">
+      <div class="border border-border bg-card p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div class="flex flex-col gap-3 text-center md:text-left">
+          <h2 class="text-2xl md:text-3xl font-extrabold tracking-tighter">Open source you can audit</h2>
+          <p class="text-sm text-muted-foreground max-w-[52ch]">
+            CLI Launcher is MIT-licensed and built in the open. Read the code, file issues, or ship a
+            PR — it's your machine, your agents, your rules.
+          </p>
+          <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-1">
+            <span class="text-[11px] font-mono px-2 py-1 bg-secondary border border-border text-secondary-foreground">MIT License</span>
+            <span class="text-[11px] font-mono px-2 py-1 bg-secondary border border-border text-secondary-foreground">Electron · React · TS</span>
+            <span class="text-[11px] font-mono px-2 py-1 bg-secondary border border-border text-secondary-foreground">No telemetry</span>
+          </div>
+        </div>
+        <div class="flex flex-col items-center gap-3 shrink-0">
+          <a href="https://github.com/MadBlast0/Cli-launcher" target="_blank" rel="noopener noreferrer" id="github-star-btn-2"
+             class="mac-btn mac-btn-primary px-6 py-4 font-bold text-sm flex items-center gap-3 shadow-flat border border-border-strong">
+            <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+            <span class="flex flex-col leading-tight">
+              <span>Star on GitHub</span>
+              <span id="star-count-2" class="text-[10px] font-mono opacity-70">— stars</span>
             </span>
-            <div class="demo-workdir-text">
-              <span class="demo-workdir-label">Working directory</span>
-              <span class="demo-workdir-path">C:\Projects\my-app</span>
-            </div>
-          </div>
-
-          <!-- Search + Deps -->
-          <div class="demo-searchrow">
-            <div class="demo-search">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              <input id="demo-search-input" type="text" placeholder="Search CLIs..." autocomplete="off" spellcheck="false" aria-label="Search CLIs (demo)">
-            </div>
-            <button id="demo-deps-btn" class="demo-btn demo-btn-soft">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
-              Deps
-            </button>
-          </div>
-
-          <!-- Section header -->
-          <div class="demo-sectionrow">
-            <span class="demo-section-label">INSTALLED&nbsp;&nbsp;<span id="demo-installed-count">6</span></span>
-            <button id="demo-catalog-btn" class="demo-btn demo-btn-soft">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg>
-              Catalog
-            </button>
-          </div>
-
-          <!-- CLI rows (populated by main.js) -->
-          <div id="demo-rows" class="demo-rows"></div>
-
-          <!-- Modals (populated by main.js) -->
-          <div id="demo-modal-overlay" class="demo-modal-overlay" hidden>
-            <div id="demo-modal" class="demo-modal"></div>
-          </div>
-
-          <!-- In-window toast -->
-          <div id="demo-toast" class="demo-toast" role="status" aria-live="polite"></div>
-
-          </div><!-- /demo-scale -->
-        </div>
-
-        <p class="text-[11px] font-mono text-muted-foreground mt-3 select-none">
-          â–² Live preview â€” try the search, counters, and theme switch
-        </p>
-      </div>
-
-    </div>
-  </section>
-
-  <!-- Supported CLIs scrolling marquee -->
-  <section class="border-y border-border py-4 bg-card overflow-hidden w-full select-none">
-    <div id="marquee" class="marquee-content flex gap-12 font-mono text-xs uppercase tracking-wider text-muted-foreground">
-      <span>Claude Code</span>
-      <span>Gemini CLI</span>
-      <span>GitHub Copilot</span>
-      <span>Aider</span>
-      <span>Goose CLI</span>
-      <span>OpenCode</span>
-      <span>OpenAI Codex</span>
-      <span>Kilo Code</span>
-      <span>Qwen Code</span>
-      <span>Codebuff</span>
-      <span>PI Coding Agent</span>
-      <span>Crush</span>
-      <span>Freebuff</span>
-      <span>Command Code</span>
-      <span>Cursor CLI</span>
-      <span>Amp CLI</span>
-      <span>Amazon Q</span>
-      <!-- Seamless loop duplicate -->
-      <span>Claude Code</span>
-      <span>Gemini CLI</span>
-      <span>GitHub Copilot</span>
-      <span>Aider</span>
-      <span>Goose CLI</span>
-      <span>OpenCode</span>
-      <span>OpenAI Codex</span>
-      <span>Kilo Code</span>
-      <span>Qwen Code</span>
-      <span>Codebuff</span>
-      <span>PI Coding Agent</span>
-      <span>Crush</span>
-      <span>Freebuff</span>
-      <span>Command Code</span>
-      <span>Cursor CLI</span>
-      <span>Amp CLI</span>
-      <span>Amazon Q</span>
-    </div>
-  </section>
-
-  <!-- How It Works Section (New) -->
-  <section class="max-w-7xl mx-auto px-6 py-16 w-full border-b border-border">
-    <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-10 select-none">
-      How It Works
-    </h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-      <!-- Step 1 -->
-      <div class="flex flex-col">
-        <span class="text-2xl font-extrabold font-mono text-border-strong mb-3">01</span>
-        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Set Workspace</h3>
-        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-          Select the local directory where your projects reside. The launcher configures target execution environments around this workspace location.
-        </p>
-      </div>
-      <!-- Step 2 -->
-      <div class="flex flex-col">
-        <span class="text-2xl font-extrabold font-mono text-border-strong mb-3">02</span>
-        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Manage Agents</h3>
-        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-          Install, update, repair, or uninstall any supported coding client. The application issues NPM, Pip, or curl scripts in the background.
-        </p>
-      </div>
-      <!-- Step 3 -->
-      <div class="flex flex-col">
-        <span class="text-2xl font-extrabold font-mono text-border-strong mb-3">03</span>
-        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Launch and Code</h3>
-        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-          Launch pre-configured terminal shells pointing directly to your projects. Start prompting your terminal assistant immediately.
-        </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- Featured Coding Agents Section (New) -->
-  <section class="max-w-7xl mx-auto px-6 py-16 w-full border-b border-border">
-    <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-10 select-none">
-      Featured Assistants
-    </h2>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-12">
-      <!-- Agent 1 -->
-      <div class="flex gap-4">
-        <div class="w-1.5 bg-primary shrink-0"></div>
-        <div class="flex flex-col">
-          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Claude Code</h3>
-          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-            Anthropic's terminal agent designed for direct file editing, workspace searching, test execution, and Git management within your repositories.
-          </p>
+          </a>
+          <a href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="text-[11px] font-mono text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">View all releases ?</a>
         </div>
       </div>
-      <!-- Agent 2 -->
-      <div class="flex gap-4">
-        <div class="w-1.5 bg-primary shrink-0"></div>
-        <div class="flex flex-col">
-          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Aider</h3>
-          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-            The premier command-line pairing assistant. Edit complex code across multiple files, discuss changes, and let it generate structured Git commits automatically.
-          </p>
-        </div>
-      </div>
-      <!-- Agent 3 -->
-      <div class="flex gap-4">
-        <div class="w-1.5 bg-primary shrink-0"></div>
-        <div class="flex flex-col">
-          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Goose CLI</h3>
-          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-            Block's open-source agentic assistant. Executes complete workflows, reads code context, runs compilation scripts, and tests files to solve engineering cards.
-          </p>
-        </div>
-      </div>
-      <!-- Agent 4 -->
-      <div class="flex gap-4">
-        <div class="w-1.5 bg-primary shrink-0"></div>
-        <div class="flex flex-col">
-          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Gemini CLI</h3>
-          <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-            Google's terminal developer assistant. Seamlessly integrated for quick script writing, repository information fetching, and immediate terminal support.
-          </p>
-        </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- Complete Features Grid -->
-  <section class="max-w-7xl mx-auto px-6 py-16 w-full">
-    <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-10 select-none">
-      Specifications
-    </h2>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-y-10 gap-x-12">
-      <!-- Feature 1 -->
-      <div class="flex flex-col">
-        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">17 Unified Agents</h3>
-        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-          Manage terminal AI tools like Claude Code, Gemini CLI, Aider, and Amazon Q all from a single control panel.
-        </p>
-      </div>
-      <!-- Feature 2 -->
-      <div class="flex flex-col">
-        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Lifecycle Actions</h3>
-        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-          Install, update, repair, or uninstall agents dynamically. Direct platform execution with real-time feedback.
-        </p>
-      </div>
-      <!-- Feature 3 -->
-      <div class="flex flex-col">
-        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Configured Terminal</h3>
-        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-          Instantly open shells (cmd, powershell, bash) automatically configured to run in your selected workspace path.
-        </p>
-      </div>
-      <!-- Feature 4 -->
-      <div class="flex flex-col">
-        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Workspace Reordering</h3>
-        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-          Drag and drop agents to prioritize your favorites. Layout configuration automatically persists across sessions.
-        </p>
-      </div>
-      <!-- Feature 5 -->
-      <div class="flex flex-col">
-        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Version Badging</h3>
-        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-          Automatic background queries to npm and pip alert you with update badges whenever a new CLI version releases.
-        </p>
-      </div>
-      <!-- Feature 6 -->
-      <div class="flex flex-col">
-        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Universal Installers</h3>
-        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-          Native pre-packaged installer files for Windows (MSI, NSIS, Portable), macOS (DMG), and Linux (AppImage, deb, rpm).
-        </p>
-      </div>
-    </div>
-  </section>
+  </main>
 
-  <!-- Minimal Footer -->
+  <!-- ===================== FOOTER ===================== -->
   <footer class="border-t border-border py-8 text-center text-xs text-muted-foreground font-mono mt-auto select-none">
     <p>
-      CLI Launcher is open-source under the MIT License. View on 
+      CLI Launcher is open-source under the MIT License. View on
       <a href="https://github.com/MadBlast0/Cli-launcher" class="underline hover:text-foreground transition-colors">GitHub</a>.
     </p>
   </footer>
 
-  <!-- Vanilla JavaScript Logic -->
-  <script src="main.js?v=3"></script>
+  <script src="main.js?v=4"></script>
 </body>
 </html>
-

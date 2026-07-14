@@ -20,6 +20,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   try {
+    initStarCounter();
+  } catch (e) {
+    console.error('Error initializing star counter:', e);
+  }
+
+  try {
+    initInventoryTabs();
+  } catch (e) {
+    console.error('Error initializing inventory tabs:', e);
+  }
+
+  try {
+    initYoloToggle();
+  } catch (e) {
+    console.error('Error initializing YOLO toggle:', e);
+  }
+
+  try {
     initAppDemo();
   } catch (e) {
     console.error('Error initializing app demo:', e);
@@ -411,18 +429,130 @@ function detectOS() {
   const userAgent = window.navigator.userAgent || '';
   const platform = window.navigator.platform || '';
   
-  const primaryText = document.getElementById('primary-download-text');
-  
+  const macBtn = document.getElementById('btn-download-mac');
+  const winBtn = document.getElementById('btn-download-win');
+  const linuxBtn = document.getElementById('btn-download-linux');
+
   if (userAgent.indexOf('Win') !== -1 || platform.indexOf('Win') !== -1) {
     detectedOS = 'Windows';
-    if (primaryText) primaryText.textContent = 'Download for Windows';
+    if (winBtn) winBtn.classList.add('os-current');
   } else if (userAgent.indexOf('Mac') !== -1 || platform.indexOf('Mac') !== -1) {
     detectedOS = 'macOS';
-    if (primaryText) primaryText.textContent = 'Download for macOS';
+    if (macBtn) macBtn.classList.add('os-current');
   } else if (userAgent.indexOf('Linux') !== -1 || platform.indexOf('Linux') !== -1) {
     detectedOS = 'Linux';
-    if (primaryText) primaryText.textContent = 'Download for Linux';
+    if (linuxBtn) linuxBtn.classList.add('os-current');
   }
+}
+
+/**
+ * Live GitHub star counter (real-time metric beside install actions).
+ */
+function initStarCounter() {
+  const repoOwner = 'MadBlast0';
+  const repoName = 'Cli-launcher';
+  const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}`;
+  const els = [
+    document.getElementById('star-count'),
+    document.getElementById('star-count-2'),
+  ].filter(Boolean);
+
+  function paint(n) {
+    if (!n && n !== 0) return;
+    const pretty = n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n);
+    els.forEach((el) => {
+      if (el.id === 'star-count-2') {
+        el.textContent = pretty + ' stars';
+      } else {
+        el.textContent = pretty;
+      }
+    });
+  }
+
+  // Optimistic fallback so the layout never shows a bare dash forever
+  paint(0);
+
+  fetch(apiURL)
+    .then((r) => { if (!r.ok) throw new Error('API failed'); return r.json(); })
+    .then((data) => {
+      if (typeof data.stargazers_count === 'number') {
+        paint(data.stargazers_count);
+        const btn = document.getElementById('github-star-btn');
+        if (btn) btn.setAttribute('aria-label', 'Star on GitHub — ' + data.stargazers_count + ' stars');
+      }
+    })
+    .catch((err) => {
+      console.warn('Could not fetch GitHub star count.', err);
+    });
+}
+
+/**
+ * Runtime-based filtering for the Live Inventory grid.
+ */
+function initInventoryTabs() {
+  const tabs = Array.from(document.querySelectorAll('.inv-tab'));
+  const cards = Array.from(document.querySelectorAll('.inv-card'));
+  if (!tabs.length || !cards.length) return;
+
+  const counts = { all: cards.length, node: 0, python: 0, standalone: 0 };
+  cards.forEach((c) => {
+    const rt = c.getAttribute('data-runtime');
+    if (counts[rt] !== undefined) counts[rt]++;
+  });
+  tabs.forEach((t) => {
+    const rt = t.getAttribute('data-runtime');
+    const badge = t.querySelector('.inv-tab-count');
+    if (badge && counts[rt] !== undefined) badge.textContent = String(counts[rt]);
+  });
+
+  function activate(runtime) {
+    tabs.forEach((t) => {
+      const active = t.getAttribute('data-runtime') === runtime;
+      t.classList.toggle('inv-tab-active', active);
+      t.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    cards.forEach((c) => {
+      const show = runtime === 'all' || c.getAttribute('data-runtime') === runtime;
+      c.classList.toggle('inv-card-hidden', !show);
+    });
+  }
+
+  tabs.forEach((t) => {
+    t.addEventListener('click', () => activate(t.getAttribute('data-runtime')));
+  });
+}
+
+/**
+ * Interactive YOLO Mode mock: flips the switch and rewrites the injected
+ * launch command for Claude Code to show the skip-permissions flag.
+ */
+function initYoloToggle() {
+  const toggle = document.getElementById('yolo-toggle');
+  const cmd = document.getElementById('yolo-cmd');
+  const status = document.getElementById('yolo-status');
+  if (!toggle) return;
+
+  const ON = 'claude --dangerously-skip-permissions';
+  const OFF = 'claude';
+
+  function render(on) {
+    toggle.setAttribute('aria-checked', on ? 'true' : 'false');
+    toggle.dataset.state = on ? 'on' : 'off';
+    if (cmd) cmd.textContent = on ? ON : OFF;
+    if (status) {
+      status.textContent = on
+        ? 'On — auto-approves every action (--dangerously-skip-permissions)'
+        : 'Off — prompts every action';
+    }
+  }
+
+  toggle.addEventListener('click', () => {
+    const on = toggle.getAttribute('aria-checked') !== 'true';
+    render(on);
+  });
+
+  // Allow keyboard toggle via space/enter (native button handles this)
+  render(false);
 }
 
 /**
@@ -514,21 +644,27 @@ function fetchLatestRelease() {
       const winEl = document.getElementById('win-download-link');
       const macEl = document.getElementById('mac-download-link');
       const linuxEl = document.getElementById('linux-download-link');
-      
+
       if (winEl && winURL !== defaultReleasePage) winEl.href = winURL;
       if (macEl && macURL !== defaultReleasePage) macEl.href = macURL;
       if (linuxEl && linuxURL !== defaultReleasePage) linuxEl.href = linuxURL;
 
-      // Update primary CTA button based on detected OS
-      const primaryBtn = document.getElementById('primary-download');
-      if (primaryBtn) {
-        if (detectedOS === 'Windows') {
-          primaryBtn.href = winURL;
-        } else if (detectedOS === 'macOS') {
-          primaryBtn.href = macURL;
-        } else if (detectedOS === 'Linux') {
-          primaryBtn.href = linuxURL;
-        }
+      // Update the three hero platform buttons
+      const macBtn = document.getElementById('btn-download-mac');
+      const winBtn = document.getElementById('btn-download-win');
+      const linuxBtn = document.getElementById('btn-download-linux');
+
+      if (macBtn && macURL !== defaultReleasePage) macBtn.href = macURL;
+      if (winBtn && winURL !== defaultReleasePage) winBtn.href = winURL;
+      if (linuxBtn && linuxURL !== defaultReleasePage) linuxBtn.href = linuxURL;
+
+      // Point the current-platform button at its exact asset
+      if (detectedOS === 'Windows' && winBtn && winURL !== defaultReleasePage) {
+        winBtn.href = winURL;
+      } else if (detectedOS === 'macOS' && macBtn && macURL !== defaultReleasePage) {
+        macBtn.href = macURL;
+      } else if (detectedOS === 'Linux' && linuxBtn && linuxURL !== defaultReleasePage) {
+        linuxBtn.href = linuxURL;
       }
     })
     .catch(err => {

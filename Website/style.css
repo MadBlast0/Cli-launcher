@@ -588,6 +588,125 @@ html:not(.dark) .demo-theme-icon { left: 6px; right: auto; }
 }
 .demo-modal-footer-btn:hover { background: var(--accent); }
 
+/* ============================================================
+   Platform-aware hero download buttons
+   ============================================================ */
+.os-current {
+  position: relative;
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.os-current::after {
+  content: 'recommended';
+  position: absolute;
+  top: -9px; right: 10px;
+  font-family: var(--font-mono);
+  font-size: 8px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  background: var(--accent); color: var(--accent-foreground);
+  border: 1px solid var(--border);
+  padding: 1px 5px;
+}
+
+/* ============================================================
+   Live Inventory grid (categorized by runtime)
+   ============================================================ */
+.inv-tab {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 600;
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--muted-foreground);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.inv-tab:hover { color: var(--foreground); background: var(--accent-soft); }
+.inv-tab-active { background: var(--primary); color: var(--primary-foreground); }
+.inv-tab-count {
+  font-size: 10px;
+  opacity: 0.7;
+  margin-left: 2px;
+}
+
+.inv-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 16px;
+  display: flex; flex-direction: column;
+  transition: background-color 0.12s ease, border-color 0.12s ease, transform 0.08s ease;
+}
+.inv-card:hover {
+  background: var(--accent-soft);
+  border-color: var(--border-strong);
+}
+.inv-card-hidden { display: none; }
+
+.inv-badge {
+  font-family: var(--font-mono);
+  font-size: 9px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  padding: 3px 7px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.inv-badge-node { color: #2f6f4f; background: rgba(47, 111, 79, 0.12); border-color: rgba(47, 111, 79, 0.35); }
+.inv-badge-python { color: #3a5a8c; background: rgba(58, 90, 140, 0.12); border-color: rgba(58, 90, 140, 0.35); }
+.inv-badge-standalone { color: #8a6a2a; background: rgba(138, 106, 42, 0.12); border-color: rgba(138, 106, 42, 0.35); }
+html.dark .inv-badge-node { color: #6fcf97; }
+html.dark .inv-badge-python { color: #7aa2e0; }
+html.dark .inv-badge-standalone { color: #d6b15e; }
+
+.inv-snippet {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted-foreground);
+  background: var(--input);
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  margin-top: auto;
+  white-space: nowrap;
+  overflow-x: auto;
+  cursor: copy;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.inv-snippet:hover { color: var(--foreground); border-color: var(--border-strong); }
+.inv-snippet.copied { color: var(--success); border-color: var(--success); }
+
+/* ============================================================
+   YOLO Mode mock toggle + code
+   ============================================================ */
+.yolo-switch {
+  position: relative;
+  width: 54px; height: 28px;
+  background: var(--input);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+.yolo-switch[data-state="on"] {
+  background: var(--warning);
+  border-color: var(--warning);
+}
+.yolo-knob {
+  position: absolute; top: 2px; left: 2px;
+  width: 22px; height: 22px;
+  background: var(--card);
+  border: 1px solid var(--border-strong);
+  transition: transform 0.18s ease, background-color 0.18s ease;
+}
+.yolo-switch[data-state="on"] .yolo-knob { transform: translateX(26px); }
+
+.yolo-code {
+  background: var(--input);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  color: var(--foreground);
+  font-family: var(--font-mono);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .marquee-content {
     animation: none;
@@ -598,5 +717,6 @@ html:not(.dark) .demo-theme-icon { left: 6px; right: auto; }
   .mac-btn:active {
     transform: none;
   }
+  .yolo-knob { transition: none; }
 }
 
