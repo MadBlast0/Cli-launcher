@@ -3,25 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <base href="/Website/">
 
-  <!-- Prevent theme flash: resolve saved/system theme before first paint -->
-  <script>
-    (function () {
-      try {
-        var saved = localStorage.getItem('theme');
-        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        var isDark = saved === 'dark' || (!saved && prefersDark);
-        document.documentElement.classList.toggle('dark', isDark);
-      } catch (e) {}
-    })();
-  </script>
+  <!-- Static <base> so all relative assets (style.css, main.js, media/*) resolve
+       against the /Website/ mount even under clean URLs like /Website/downloads/. -->
+
+  <!-- Global site bootstrap: URL normalize + theme (prevents flash) -->
+  <script src="theme.js"></script>
 
   <!-- =========================================================
        HIGH-INTENT SEO · primary query: "CLI Launcher",
        "Claude Code", "Aider", "Open Interpreter", "terminal AI agent"
        ========================================================= -->
   <title>CLI Launcher | Run & Manage Claude Code, Aider & 32+ Terminal AI Agents</title>
-  <meta name="description" content="Open-source desktop dashboard for terminal AI agent workflows. Manage, update, isolate dependencies for, and launch Claude Code, Aider, Gemini CLI, Open Interpreter, Goose CLI, and 32+ coding agents from one native panel. Your global Node and Python environments stay completely untouched.">
+  <meta name="description" content="Open-source desktop panel to install, update, uninstall, and launch Claude Code, Aider, Gemini CLI and 32+ terminal AI agents from one place — no more hand-managing global npm and pip installs.">
   <meta name="keywords" content="CLI Launcher, Claude Code, Aider, Gemini CLI, Open Interpreter, Goose CLI, GitHub Copilot, terminal AI agent, AI coding agent, @anthropic-ai/claude-code, aider-chat, open source dashboard, CLI configuration, node AI agent, python AI agent">
   <link rel="canonical" href="https://cli-launcher.veyl.in/">
   <meta name="robots" content="index, follow, max-image-preview:large">
@@ -34,7 +29,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://cli-launcher.veyl.in/">
   <meta property="og:title" content="CLI Launcher | Run & Manage Claude Code, Aider & 32+ Terminal AI Agents">
-  <meta property="og:description" content="Native cross-platform desktop panel that installs, updates, isolates dependencies for, and launches Claude Code, Aider, Gemini CLI, Open Interpreter and 32+ terminal AI agents in pre-configured terminals.">
+  <meta property="og:description" content="Native cross-platform desktop panel that installs, updates, and launches Claude Code, Aider, Gemini CLI, Open Interpreter and 32+ terminal AI agents from one place — no more global npm/pip juggling.">
   <meta property="og:image" content="media/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
@@ -46,7 +41,7 @@
   <meta property="twitter:card" content="summary_large_image">
   <meta property="twitter:url" content="https://cli-launcher.veyl.in/">
   <meta property="twitter:title" content="CLI Launcher | Run & Manage Claude Code, Aider & 32+ Terminal AI Agents">
-  <meta property="twitter:description" content="Native desktop panel for Claude Code, Aider, Gemini CLI, Open Interpreter and 32+ terminal AI agents. Your global Node and Python stay untouched.">
+  <meta property="twitter:description" content="Native desktop panel to install, update, and launch Claude Code, Aider, Gemini CLI, Open Interpreter and 32+ terminal AI agents from one place.">
   <meta property="twitter:image" content="media/og-image.png">
 
   <!-- Structured data for crawlers indexing hot AI tools -->
@@ -60,7 +55,7 @@
     "operatingSystem": "Windows, macOS, Linux",
     "softwareVersion": "0.0.3",
     "url": "https://cli-launcher.veyl.in/",
-    "description": "Native cross-platform desktop dashboard panel that manages, updates, isolates dependencies for, and launches 32+ terminal AI coding agents (Claude Code, Aider, Gemini CLI, Open Interpreter, Goose CLI, GitHub Copilot) in pre-configured terminal instances.",
+    "description": "Native cross-platform desktop dashboard panel that manages, updates, and launches 32+ terminal AI coding agents (Claude Code, Aider, Gemini CLI, Open Interpreter, Goose CLI, GitHub Copilot) from one place.",
     "keywords": "Claude Code, Aider, Gemini CLI, Open Interpreter, Goose CLI, GitHub Copilot, terminal AI agent, AI coding agent, @anthropic-ai/claude-code, aider-chat",
     "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
     "license": "https://spdx.org/licenses/MIT.html",
@@ -68,16 +63,9 @@
     "programmingLanguage": ["TypeScript", "JavaScript", "Python"],
     "runtimePlatform": "Electron",
     "author": { "@type": "Person", "name": "Mad Blast" },
-    "publisher": { "@type": "Organization", "name": "CLI Launcher" },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "5.0",
-      "ratingCount": "1",
-      "bestRating": "5",
-      "worstRating": "1"
-    }
+    "publisher": { "@type": "Organization", "name": "CLI Launcher" }
   }
-  </script>
+</script>
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -102,15 +90,85 @@
     "publisher": { "@type": "Organization", "name": "CLI Launcher" }
   }
   </script>
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://cli-launcher.veyl.in/" }
-    ]
-  }
-  </script>
+   <script type="application/ld+json">
+   {
+     "@context": "https://schema.org",
+     "@type": "BreadcrumbList",
+     "itemListElement": [
+       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://cli-launcher.veyl.in/" }
+     ]
+   }
+   </script>
+
+   <!-- Organization entity (improves GEO entity clarity) -->
+   <script type="application/ld+json">
+   {
+     "@context": "https://schema.org",
+     "@type": "Organization",
+     "name": "CLI Launcher",
+     "url": "https://cli-launcher.veyl.in/",
+     "logo": "https://cli-launcher.veyl.in/media/app-logo.png",
+     "sameAs": ["https://github.com/MadBlast0/Cli-launcher"]
+   }
+   </script>
+
+   <!-- FAQ structured data (AEO answer snippets + GEO citations) -->
+   <script type="application/ld+json">
+   {
+     "@context": "https://schema.org",
+     "@type": "FAQPage",
+     "mainEntity": [
+       {
+         "@type": "Question",
+         "name": "What is CLI Launcher?",
+         "acceptedAnswer": {
+           "@type": "Answer",
+           "text": "CLI Launcher is a free, open-source desktop application that lets you install, update, uninstall, and launch 32+ terminal AI coding agents — such as Claude Code, Aider, Gemini CLI, and Open Interpreter — from a single control panel."
+         }
+       },
+       {
+         "@type": "Question",
+         "name": "Does CLI Launcher sandbox or isolate the agents it installs?",
+         "acceptedAnswer": {
+           "@type": "Answer",
+           "text": "No. CLI Launcher is a management panel, not a sandbox. It installs and launches agents using your system's existing Node, Python, or standalone runtimes; it does not create isolated environments or virtualize dependencies."
+         }
+       },
+       {
+         "@type": "Question",
+         "name": "Which terminal AI agents are supported?",
+         "acceptedAnswer": {
+           "@type": "Answer",
+           "text": "CLI Launcher supports 32+ agents across three runtimes: 18 Node-based (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Codex, and more), 6 Python-based (Aider, Open Interpreter, Shell-GPT, gptme, RA.Aid, OpenHands), and 8 standalone binaries (Goose, Cursor, Amazon Q, Plandex, Mods, aichat, Fabric, and others)."
+         }
+       },
+       {
+         "@type": "Question",
+         "name": "Is CLI Launcher free and open source?",
+         "acceptedAnswer": {
+           "@type": "Answer",
+           "text": "Yes. CLI Launcher is MIT-licensed and free to use. The source code is available on GitHub at https://github.com/MadBlast0/Cli-launcher."
+         }
+       },
+       {
+         "@type": "Question",
+         "name": "How do I install CLI Launcher?",
+         "acceptedAnswer": {
+           "@type": "Answer",
+           "text": "Download a native installer (.dmg, .msi, or .AppImage) from the Downloads page, or run the one-line installer: curl -fsSL https://cli-launcher.veyl.in/install.sh | sh on macOS and Linux, or the install.ps1 PowerShell script on Windows."
+         }
+       },
+       {
+         "@type": "Question",
+         "name": "What is YOLO Mode in CLI Launcher?",
+         "acceptedAnswer": {
+           "@type": "Answer",
+           "text": "YOLO Mode is a toggle that launches supported agents with their auto-approve flags enabled — for example, Claude Code's --dangerously-skip-permissions — so they run unattended without permission prompts. Use it only in trusted working directories."
+         }
+       }
+     ]
+   }
+   </script>
 
   <!-- Fonts (preconnect for performance) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -168,43 +226,14 @@
 </head>
 <body class="min-h-screen flex flex-col bg-background text-foreground font-sans relative antialiased">
 
-  <!-- ===================== TOPBAR ===================== -->
-  <header class="w-full border-b border-border bg-card/90 backdrop-blur-md sticky top-0 z-40 h-14 flex items-center justify-between px-6 select-none">
-    <a href="index.html" class="flex items-center gap-2.5 focus-visible:outline-none">
-      <img src="media/app-logo.png" alt="CLI Launcher Logo" class="w-6 h-6 object-contain">
-      <span class="text-xs font-bold font-mono tracking-widest uppercase text-foreground">CLI Launcher</span>
-    </a>
-
-    <nav class="flex items-center gap-5 sm:gap-6 text-xs font-bold font-mono">
-      <a href="downloads.html" class="hover:text-foreground text-muted-foreground transition-colors">Downloads</a>
-      <a href="#inventory" class="hidden sm:inline hover:text-foreground text-muted-foreground transition-colors">Agents</a>
-      <a href="#yolo" class="hidden sm:inline hover:text-foreground text-muted-foreground transition-colors">YOLO</a>
-      <a href="https://github.com/MadBlast0/Cli-launcher" target="_blank" rel="noopener noreferrer" class="hover:text-foreground text-muted-foreground transition-colors">GitHub</a>
-
-      <button id="theme-toggle" class="mac-btn mac-btn-soft mac-btn-icon w-8 h-8 flex items-center justify-center border border-border focus-visible:outline-none" aria-label="Toggle theme">
-        <svg id="sun-icon" class="hidden w-4 h-4 text-foreground" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2"></path>
-          <path d="M12 20v2"></path>
-          <path d="m4.93 4.93 1.41 1.41"></path>
-          <path d="m17.66 17.66 1.41 1.41"></path>
-          <path d="M2 12h2"></path>
-          <path d="M20 12h2"></path>
-          <path d="m6.34 17.66-1.41 1.41"></path>
-          <path d="m19.07 4.93-1.41 1.41"></path>
-        </svg>
-        <svg id="moon-icon" class="w-4 h-4 text-foreground" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-        </svg>
-      </button>
-    </nav>
-  </header>
+  <!-- ===================== TOPBAR (global) ===================== -->
+  <script src="topbar.js"></script>
 
   <main class="flex-1 flex flex-col w-full pb-20 md:pb-0">
 
     <!-- ===================== HERO (above the fold) ===================== -->
-    <section class="max-w-7xl mx-auto px-6 pt-14 lg:pt-20 pb-10 w-full">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+    <section class="max-w-7xl mx-auto px-6 pt-10 lg:pt-14 pb-10 w-full">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center">
 
         <!-- BLOCK 1: copy (top-left on desktop, first on mobile) -->
         <div class="lg:col-span-6 lg:col-start-1 lg:row-start-1 flex flex-col">
@@ -218,11 +247,11 @@
             One Desktop Panel for <span class="text-foreground">Every Terminal AI Agent</span>
           </h1>
 
-          <!-- Subheadline: dependency isolation is the hook -->
-          <p class="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 max-w-[52ch]">
-            Install, update, and launch terminal AI tools with one click. CLI Launcher isolates every
-            agent in its own dependency sandbox, so your global Node and Python environments stay
-            <span class="text-foreground font-semibold">completely untouched</span>.
+          <!-- Subheadline: one-panel management is the hook -->
+          <p class="text-sm md:text-base text-muted-foreground leading-relaxed mb-0 max-w-[52ch]">
+            Install, uninstall, update, and launch 32+ terminal AI agents from
+            <span class="text-foreground font-semibold">one desktop panel</span> —
+            no more hand-managing global npm and pip installs or juggling terminals.
            </p>
         </div>
 
@@ -295,12 +324,13 @@
               <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
               <span>View 32+ agents</span>
             </a>
+            <a href="docs.html" class="text-[11px] font-mono text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">Documentation →</a>
             <a href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="text-[11px] font-mono text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">All releases →</a>
           </div>
         </div>
 
         <!-- BLOCK 2: live interactive replica (middle on mobile, right on desktop) -->
-        <div class="order-2 lg:col-span-6 flex flex-col items-center lg:items-end">
+        <div class="order-2 lg:col-span-6 lg:col-start-7 lg:row-start-1 lg:row-span-2 flex flex-col items-center lg:items-end justify-center">
           <div id="app-demo" class="app-demo w-full max-w-[600px] border border-border select-none" role="group" aria-label="Interactive preview of the CLI Launcher window. You can search, install agents, and toggle the theme.">
             <div id="demo-scale" class="demo-scale">
 
@@ -529,10 +559,10 @@
         </div>
         <div class="flex flex-col">
           <span class="text-2xl font-extrabold font-mono text-border-strong mb-3">02</span>
-          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Isolate &amp; Manage</h3>
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Manage &amp; Update</h3>
           <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-            Install, update, repair, or uninstall any agent. CLI Launcher runs NPM, Pip, or curl in an
-            isolated sandbox so your global Node and Python installs never drift.
+            Install, update, repair, or uninstall any agent and track every version in one place — no
+            hand-editing global Node and Python installs or chasing version clashes.
           </p>
         </div>
         <div class="flex flex-col">
@@ -568,7 +598,7 @@
             <tr>
               <td class="p-4 align-top font-semibold text-foreground">Install an agent</td>
               <td class="p-4 align-top text-muted-foreground">Run <code class="font-mono text-[11px]">npm i -g</code> yourself; risks global version clashes.</td>
-              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>One click &mdash; isolated, version-pinned.</span></td>
+              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>One click &mdash; version-pinned and tracked.</span></td>
             </tr>
             <tr>
               <td class="p-4 align-top font-semibold text-foreground">Update everything</td>
@@ -576,9 +606,9 @@
               <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Bulk update in a single click.</span></td>
             </tr>
             <tr>
-              <td class="p-4 align-top font-semibold text-foreground">Dependency isolation</td>
-              <td class="p-4 align-top text-muted-foreground">Pollutes your global Node &amp; Python installs.</td>
-              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Each agent sandboxed &mdash; globals stay clean.</span></td>
+              <td class="p-4 align-top font-semibold text-foreground">Centralized management</td>
+              <td class="p-4 align-top text-muted-foreground">Track 32 packages by hand across global installs.</td>
+              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>All agents tracked &amp; updatable from one panel.</span></td>
             </tr>
             <tr>
               <td class="p-4 align-top font-semibold text-foreground">Launch in a terminal</td>
@@ -933,10 +963,10 @@
           </p>
         </div>
         <div class="flex flex-col">
-          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Dependency Isolation</h3>
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Centralized Management</h3>
           <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
-            Every agent runs in its own sandboxed Node/Python context. Your global
-            <code class="font-mono text-[11px]">node_modules</code> and <code class="font-mono text-[11px]">venv</code> never mutate.
+            Install, update, and uninstall every agent from one place — no scattered
+            <code class="font-mono text-[11px]">npm i -g</code> and <code class="font-mono text-[11px]">pip install</code> commands across your terminal history.
           </p>
         </div>
         <div class="flex flex-col">
@@ -995,14 +1025,49 @@
       </div>
     </section>
 
+  <!-- ===================== FAQ (AEO / GEO) ===================== -->
+  <section id="faq" class="max-w-7xl mx-auto px-6 py-16 w-full border-b border-border">
+    <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-10 select-none">Frequently Asked Questions</h2>
+    <div class="flex flex-col divide-y divide-border border border-border">
+      <div class="p-6">
+        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">What is CLI Launcher?</h3>
+        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">CLI Launcher is a free, open-source desktop application that lets you install, update, uninstall, and launch 32+ terminal AI coding agents — such as Claude Code, Aider, Gemini CLI, and Open Interpreter — from a single control panel.</p>
+      </div>
+      <div class="p-6">
+        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Does CLI Launcher sandbox or isolate the agents it installs?</h3>
+        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">No. CLI Launcher is a management panel, not a sandbox. It installs and launches agents using your system's existing Node, Python, or standalone runtimes; it does not create isolated environments or virtualize dependencies.</p>
+      </div>
+      <div class="p-6">
+        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Which terminal AI agents are supported?</h3>
+        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">CLI Launcher supports 32+ agents across three runtimes: 18 Node-based (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Codex, and more), 6 Python-based (Aider, Open Interpreter, Shell-GPT, gptme, RA.Aid, OpenHands), and 8 standalone binaries (Goose, Cursor, Amazon Q, Plandex, Mods, aichat, Fabric, and others).</p>
+      </div>
+      <div class="p-6">
+        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Is CLI Launcher free and open source?</h3>
+        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">Yes. CLI Launcher is MIT-licensed and free to use. The source code is available on <a href="https://github.com/MadBlast0/Cli-launcher" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">GitHub</a>.</p>
+      </div>
+      <div class="p-6">
+        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">How do I install CLI Launcher?</h3>
+        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">Download a native installer (.dmg, .msi, or .AppImage) from the <a href="downloads.html" class="underline hover:text-foreground">Downloads</a> page, or run the one-line installer: <code class="font-mono text-[11px]">curl -fsSL https://cli-launcher.veyl.in/install.sh | sh</code> on macOS and Linux, or the install.ps1 PowerShell script on Windows.</p>
+      </div>
+      <div class="p-6">
+        <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">What is YOLO Mode in CLI Launcher?</h3>
+        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">YOLO Mode is a toggle that launches supported agents with their auto-approve flags enabled — for example, Claude Code's <code class="font-mono text-[11px]">--dangerously-skip-permissions</code> — so they run unattended without permission prompts. Use it only in trusted working directories.</p>
+      </div>
+    </div>
+  </section>
+
   </main>
 
   <!-- ===================== FOOTER ===================== -->
   <footer class="border-t border-border py-8 text-center text-xs text-muted-foreground font-mono mt-auto select-none">
     <p>
-      CLI Launcher is open-source under the MIT License. View on
-      <a href="https://github.com/MadBlast0/Cli-launcher" class="underline hover:text-foreground transition-colors">GitHub</a>.
+      <a href="docs.html" class="underline hover:text-foreground transition-colors">Docs</a>
+      &middot;
+      <a href="downloads.html" class="underline hover:text-foreground transition-colors">Downloads</a>
+      &middot;
+      <a href="https://github.com/MadBlast0/Cli-launcher" class="underline hover:text-foreground transition-colors">GitHub</a>
     </p>
+    <p class="mt-2">CLI Launcher is open-source under the MIT License.</p>
   </footer>
 
   <!-- Mobile sticky download bar (conversion CTA, mobile only) -->

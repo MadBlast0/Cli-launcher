@@ -1,8 +1,15 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/Website/">
+
+  <!-- Static <base> so all relative assets (style.css, main.js, media/*) resolve
+       against the /Website/ mount even under clean URLs like /Website/downloads/. -->
+
+  <!-- Global site bootstrap: URL normalize + theme (prevents flash) -->
+  <script src="theme.js"></script>
   
   <!-- SEO & Metadata -->
   <title>Downloads - CLI Launcher</title>
@@ -18,6 +25,7 @@
   <meta property="og:title" content="Downloads - CLI Launcher">
   <meta property="og:description" content="Download the latest native packages of CLI Launcher for Windows, macOS, and Linux. Access signed builds and release mirrors.">
   <meta property="og:image" content="media/og-image.png">
+  <meta property="og:image:alt" content="CLI Launcher download page showing installers for Windows, macOS, and Linux">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
 
@@ -27,6 +35,7 @@
   <meta property="twitter:title" content="Downloads - CLI Launcher">
   <meta property="twitter:description" content="Download the latest native packages of CLI Launcher for Windows, macOS, and Linux. Access signed builds and release mirrors.">
   <meta property="twitter:image" content="media/og-image.png">
+  <meta property="twitter:image:alt" content="CLI Launcher download page showing installers for Windows, macOS, and Linux">
 
   <!-- Website + Breadcrumb structured data -->
   <script type="application/ld+json">
@@ -46,6 +55,48 @@
     "itemListElement": [
       { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://cli-launcher.veyl.in/" },
       { "@type": "ListItem", "position": 2, "name": "Downloads", "item": "https://cli-launcher.veyl.in/downloads.html" }
+    ]
+  }
+  </script>
+
+  <!-- FAQ structured data (AEO + GEO) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Which installer should I download for my operating system?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "macOS users can download a universal .dmg (or Apple Silicon / Intel .dmg, or a .zip); Windows users can choose a .msi, .exe, or portable binary; Linux users can pick an .AppImage, .deb, .rpm, or .tar.gz. All builds are free and open source."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I install CLI Launcher from the terminal?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "On macOS and Linux run: curl -fsSL https://cli-launcher.veyl.in/install.sh | sh (or wget -qO- https://cli-launcher.veyl.in/install.sh | sh). On Windows run the PowerShell installer: powershell -ExecutionPolicy Bypass -c \"irm https://cli-launcher.veyl.in/install.ps1 | iex\". You can also clone the repository and run npm install && npm run build."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is CLI Launcher free to download?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. CLI Launcher is MIT-licensed, completely free, and requires no account to download or use."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How do I verify my CLI Launcher download?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Every artifact is compiled automatically from the open-source repository via GitHub Actions. Release checksums and alternative mirrors are published on the official GitHub Releases page."
+        }
+      }
     ]
   }
   </script>
@@ -102,37 +153,8 @@
 </head>
 <body class="min-h-screen flex flex-col bg-background text-foreground font-sans relative">
 
-  <!-- Topbar -->
-  <header class="w-full border-b border-border bg-card/90 backdrop-blur-md sticky top-0 z-40 h-14 flex items-center justify-between px-6 select-none">
-    <a href="index.html" class="flex items-center gap-2.5 focus-visible:outline-none">
-      <img src="media/app-logo.png" alt="CLI Launcher Logo" class="w-6 h-6 object-contain">
-      <span class="text-xs font-bold font-mono tracking-widest uppercase text-foreground">CLI Launcher</span>
-    </a>
-    
-    <nav class="flex items-center gap-6 text-xs font-bold font-mono">
-      <a href="downloads.html" class="hover:text-foreground text-foreground transition-colors">Downloads</a>
-      <a href="https://github.com/MadBlast0/Cli-launcher" target="_blank" rel="noopener noreferrer" class="hover:text-foreground text-muted-foreground transition-colors">GitHub</a>
-      
-      <button id="theme-toggle" class="mac-btn mac-btn-soft mac-btn-icon w-8 h-8 flex items-center justify-center border border-border focus-visible:outline-none" aria-label="Toggle theme">
-        <!-- Sun Icon (visible in dark mode) -->
-        <svg id="sun-icon" class="hidden w-4 h-4 text-foreground" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="4"></circle>
-          <path d="M12 2v2"></path>
-          <path d="M12 20v2"></path>
-          <path d="m4.93 4.93 1.41 1.41"></path>
-          <path d="m17.66 17.66 1.41 1.41"></path>
-          <path d="M2 12h2"></path>
-          <path d="M20 12h2"></path>
-          <path d="m6.34 17.66-1.41 1.41"></path>
-          <path d="m19.07 4.93-1.41 1.41"></path>
-        </svg>
-        <!-- Moon Icon (visible in light mode) -->
-        <svg id="moon-icon" class="w-4 h-4 text-foreground" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-        </svg>
-      </button>
-    </nav>
-  </header>
+  <!-- ===================== TOPBAR (global) ===================== -->
+  <script src="topbar.js"></script>
 
   <!-- Downloads Content Area -->
   <main class="max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-12 flex-1 w-full pb-20 md:pb-12">
@@ -431,14 +453,41 @@
       All artifacts listed here are compiled automatically from the open-source repository files via GitHub Actions. If a download from the primary GitHub CDN fails, you can find alternative mirrors and release package checksums directly on the official 
       <a href="https://github.com/MadBlast0/Cli-launcher/releases" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">Releases page</a>. To build from source, clone the repository locally and run "npm install && npm run build".
     </div>
+    <!-- FAQ (AEO / GEO) -->
+    <section id="faq" class="max-w-5xl mx-auto px-4 sm:px-6 mt-12 mb-4">
+      <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-6 select-none">Frequently Asked Questions</h2>
+      <div class="flex flex-col divide-y divide-border border border-border">
+        <div class="p-5 sm:p-6">
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Which installer should I download for my operating system?</h3>
+          <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">macOS users can download a universal <code class="font-mono text-[11px]">.dmg</code> (or Apple Silicon / Intel <code class="font-mono text-[11px]">.dmg</code>, or a <code class="font-mono text-[11px]">.zip</code>); Windows users can choose a <code class="font-mono text-[11px]">.msi</code>, <code class="font-mono text-[11px]">.exe</code>, or portable binary; Linux users can pick an <code class="font-mono text-[11px]">.AppImage</code>, <code class="font-mono text-[11px]">.deb</code>, <code class="font-mono text-[11px]">.rpm</code>, or <code class="font-mono text-[11px]">.tar.gz</code>. All builds are free and open source.</p>
+        </div>
+        <div class="p-5 sm:p-6">
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">How do I install CLI Launcher from the terminal?</h3>
+          <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">On macOS and Linux run <code class="font-mono text-[11px]">curl -fsSL https://cli-launcher.veyl.in/install.sh | sh</code> (or the <code class="font-mono text-[11px]">wget</code> equivalent). On Windows run the PowerShell installer: <code class="font-mono text-[11px]">powershell -ExecutionPolicy Bypass -c "irm https://cli-launcher.veyl.in/install.ps1 | iex"</code>. You can also clone the repository and run <code class="font-mono text-[11px]">npm install &amp;&amp; npm run build</code>.</p>
+        </div>
+        <div class="p-5 sm:p-6">
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Is CLI Launcher free to download?</h3>
+          <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">Yes. CLI Launcher is MIT-licensed, completely free, and requires no account to download or use.</p>
+        </div>
+        <div class="p-5 sm:p-6">
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">How do I verify my CLI Launcher download?</h3>
+          <p class="text-xs sm:text-sm text-muted-foreground leading-relaxed">Every artifact is compiled automatically from the open-source repository via GitHub Actions. Release checksums and alternative mirrors are published on the official <a href="https://github.com/MadBlast0/Cli-launcher/releases" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">GitHub Releases page</a>.</p>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Minimal Footer -->
   <footer class="border-t border-border py-8 text-center text-xs text-muted-foreground font-mono mt-auto select-none">
     <p>
-      CLI Launcher is open-source under the MIT License. View on 
-      <a href="https://github.com/MadBlast0/Cli-launcher" class="underline hover:text-foreground transition-colors">GitHub</a>.
+      <a href="docs.html" class="underline hover:text-foreground transition-colors">Docs</a>
+      &middot;
+      <a href="downloads.html" class="underline hover:text-foreground transition-colors">Downloads</a>
+      &middot;
+      <a href="https://github.com/MadBlast0/Cli-launcher" class="underline hover:text-foreground transition-colors">GitHub</a>
     </p>
+    <p class="mt-2">CLI Launcher is open-source under the MIT License.</p>
   </footer>
 
   <!-- Mobile sticky download bar (conversion CTA, mobile only) -->
