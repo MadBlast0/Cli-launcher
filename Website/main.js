@@ -26,6 +26,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   try {
+    initDownloadInstalls();
+  } catch (e) {
+    console.error('Error initializing download installs:', e);
+  }
+
+  try {
     initStarCounter();
   } catch (e) {
     console.error('Error initializing star counter:', e);
@@ -513,6 +519,7 @@ function initTheme() {
  * Detect user's Operating System and update primary CTA button
  */
 let detectedOS = 'Windows'; // Default fallback
+let LATEST = { win: '', mac: '', linux: '' }; // per-OS asset URLs (downloads.html)
 
 function detectOS() {
   const userAgent = window.navigator.userAgent || '';
@@ -532,6 +539,16 @@ function detectOS() {
     detectedOS = 'Linux';
     if (linuxBtn) linuxBtn.classList.add('os-current');
   }
+
+  // Downloads page: surface the user's platform (recommended card + badge).
+  const secMap = { Windows: 'section-windows', macOS: 'section-macos', Linux: 'section-linux' };
+  const badgeMap = { Windows: 'rec-badge-windows', macOS: 'rec-badge-macos', Linux: 'rec-badge-linux' };
+  Object.keys(badgeMap).forEach((os) => {
+    const b = document.getElementById(badgeMap[os]);
+    if (b) b.classList.toggle('hidden', os !== detectedOS);
+  });
+  const recName = document.getElementById('rec-os-name');
+  if (recName) recName.textContent = 'Download for ' + (detectedOS || 'your system');
 }
 
 /**
@@ -834,6 +851,12 @@ function fetchLatestRelease() {
       } else if (detectedOS === 'Linux' && linuxBtn && linuxURL !== defaultReleasePage) {
         linuxBtn.href = linuxURL;
       }
+
+      // Downloads page: cache per-OS asset URLs + update the recommended card.
+      if (winURL !== defaultReleasePage) LATEST.win = winURL;
+      if (macURL !== defaultReleasePage) LATEST.mac = macURL;
+      if (linuxURL !== defaultReleasePage) LATEST.linux = linuxURL;
+      applyRecommended();
     })
     .catch(err => {
       console.warn('Could not fetch latest release, falling back to cached/static version.', err);
@@ -847,4 +870,54 @@ function fetchLatestRelease() {
         if (!shown) badge.textContent = STATIC_VERSION;
       }
     });
+}
+
+/**
+ * Downloads page: point the "Recommended for your system" card at the asset
+ * for the visitor's detected OS (falls back to the releases page on error).
+ */
+function applyRecommended() {
+  const link = document.getElementById('rec-download-link');
+  if (!link) return;
+  const urlMap = { Windows: LATEST.win, macOS: LATEST.mac, Linux: LATEST.linux };
+  const url = urlMap[detectedOS] || LATEST.mac || 'https://github.com/MadBlast0/Cli-launcher/releases/latest';
+  link.href = url;
+
+  const label = document.getElementById('rec-download-label');
+  if (label) label.textContent = 'Download for ' + (detectedOS || 'your system');
+
+  const cmd = document.getElementById('rec-install-cmd');
+  if (cmd) {
+    const cmds = {
+      Windows: 'powershell -ExecutionPolicy Bypass -c "irm https://cli-launcher.veyl.in/install.ps1 | iex"',
+      macOS: 'curl -fsSL https://cli-launcher.veyl.in/install.sh | sh',
+      Linux: 'curl -fsSL https://cli-launcher.veyl.in/install.sh | sh',
+    };
+    cmd.textContent = cmds[detectedOS] || cmds.Linux;
+  }
+}
+
+/**
+ * Wire the per-platform terminal-install copy buttons + the recommended card
+ * copy button (both carry the command in data-install-cmd / #rec-install-cmd).
+ */
+function initDownloadInstalls() {
+  const wire = (btn, getText) => {
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      const text = typeof getText === 'function' ? getText() : (btn.getAttribute('data-install-cmd') || '');
+      const ok = await copyText(text);
+      const orig = btn.textContent;
+      btn.textContent = ok ? 'Copied' : 'Copy';
+      showToast(ok ? 'Command copied to clipboard' : 'Copy failed');
+      setTimeout(() => { btn.textContent = orig; }, 1400);
+    });
+  };
+
+  const recCmd = document.getElementById('rec-install-cmd');
+  wire(document.getElementById('rec-install-copy'), () => (recCmd ? recCmd.textContent : ''));
+
+  document.querySelectorAll('.copy-btn[data-install-cmd]').forEach((b) => {
+    wire(b, () => b.getAttribute('data-install-cmd'));
+  });
 }
