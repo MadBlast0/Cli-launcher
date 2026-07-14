@@ -7,26 +7,51 @@
   <!-- SEO & Metadata -->
   <title>Downloads - CLI Launcher</title>
   <meta name="description" content="Download the latest version of CLI Launcher for Windows, macOS, and Linux. Choose between native installers, portable binaries, and repository mirrors.">
-  <link rel="canonical" href="https://madblast0.github.io/Cli-launcher/downloads.html">
+  <link rel="canonical" href="https://cli-launcher.veyl.in/downloads.html">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#1a1a1a">
+  <link rel="preconnect" href="https://api.github.com">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://madblast0.github.io/Cli-launcher/downloads.html">
+  <meta property="og:url" content="https://cli-launcher.veyl.in/downloads.html">
   <meta property="og:title" content="Downloads - CLI Launcher">
   <meta property="og:description" content="Download the latest native packages of CLI Launcher for Windows, macOS, and Linux. Access signed builds and release mirrors.">
-  <meta property="og:image" content="https://raw.githubusercontent.com/MadBlast0/Cli-launcher/main/media/screenshot.png">
+  <meta property="og:image" content="media/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://madblast0.github.io/Cli-launcher/downloads.html">
+  <meta property="twitter:url" content="https://cli-launcher.veyl.in/downloads.html">
   <meta property="twitter:title" content="Downloads - CLI Launcher">
   <meta property="twitter:description" content="Download the latest native packages of CLI Launcher for Windows, macOS, and Linux. Access signed builds and release mirrors.">
-  <meta property="twitter:image" content="https://raw.githubusercontent.com/MadBlast0/Cli-launcher/main/media/screenshot.png">
-  
+  <meta property="twitter:image" content="media/og-image.png">
+
+  <!-- Website + Breadcrumb structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "CLI Launcher",
+    "url": "https://cli-launcher.veyl.in/",
+    "inLanguage": "en",
+    "publisher": { "@type": "Organization", "name": "CLI Launcher" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://cli-launcher.veyl.in/" },
+      { "@type": "ListItem", "position": 2, "name": "Downloads", "item": "https://cli-launcher.veyl.in/downloads.html" }
+    ]
+  }
+  </script>
+
   <!-- Custom Stylesheet (app theme color tokens & fonts) -->
-  <link rel="stylesheet" href="style.css?v=3">
+  <link rel="stylesheet" href="style.css?v=4">
 
   <!-- Tailwind CSS Play CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -110,9 +135,9 @@
   </header>
 
   <!-- Downloads Content Area -->
-  <main class="max-w-4xl mx-auto px-6 py-12 flex-1 w-full">
+  <main class="max-w-4xl mx-auto px-6 py-12 flex-1 w-full pb-20 md:pb-12">
     <div class="mb-10">
-      <h1 class="text-3xl font-extrabold tracking-tighter mb-3">Available Downloads</h1>
+      <h1 class="text-3xl font-extrabold tracking-tighter mb-3 flex items-center gap-3 flex-wrap">Available Downloads <span id="version-badge" class="text-[11px] font-mono px-2 py-1 bg-secondary text-secondary-foreground border border-border rounded">v0.0.3</span></h1>
       <p class="text-sm text-muted-foreground leading-relaxed max-w-[65ch]">
         Select your platform to download the latest signed build of CLI Launcher. All installation files are compiled via GitHub CI and mirrored on the official GitHub Release CDN.
       </p>
@@ -356,8 +381,18 @@
     </p>
   </footer>
 
+  <!-- Mobile sticky download bar (conversion CTA, mobile only) -->
+  <div class="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur-md px-4 flex items-center gap-3" style="padding-top:0.75rem;padding-bottom:calc(0.75rem + env(safe-area-inset-bottom, 0px));">
+    <div class="flex-1 min-w-0">
+      <div class="text-[10px] font-mono uppercase tracking-wider text-muted-foreground leading-none">CLI Launcher</div>
+      <div class="text-xs text-foreground font-semibold truncate leading-tight mt-0.5">Free &middot; Open-source</div>
+    </div>
+    <a href="https://github.com/MadBlast0/Cli-launcher/releases/latest" target="_blank" rel="noopener noreferrer"
+       class="mac-btn mac-btn-primary px-5 py-2.5 text-xs font-bold whitespace-nowrap shrink-0">Download</a>
+  </div>
+
   <!-- Vanilla JavaScript Logic -->
-  <script src="main.js?v=3"></script>
+  <script src="main.js?v=4"></script>
 </body>
 </html>
 

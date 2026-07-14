@@ -4,8 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 
+  <!-- Prevent theme flash: resolve saved/system theme before first paint -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var isDark = saved === 'dark' || (!saved && prefersDark);
+        document.documentElement.classList.toggle('dark', isDark);
+      } catch (e) {}
+    })();
+  </script>
+
   <!-- =========================================================
-       HIGH-INTENT SEO — primary query: "CLI Launcher",
+       HIGH-INTENT SEO ï¿½ primary query: "CLI Launcher",
        "Claude Code", "Aider", "Open Interpreter", "terminal AI agent"
        ========================================================= -->
   <title>CLI Launcher | Run & Manage Claude Code, Aider & 32+ Terminal AI Agents</title>
@@ -23,7 +35,9 @@
   <meta property="og:url" content="https://cli-launcher.veyl.in/">
   <meta property="og:title" content="CLI Launcher | Run & Manage Claude Code, Aider & 32+ Terminal AI Agents">
   <meta property="og:description" content="Native cross-platform desktop panel that installs, updates, isolates dependencies for, and launches Claude Code, Aider, Gemini CLI, Open Interpreter and 32+ terminal AI agents in pre-configured terminals.">
-  <meta property="og:image" content="https://raw.githubusercontent.com/MadBlast0/Cli-launcher/main/media/screenshot.png">
+  <meta property="og:image" content="media/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="CLI Launcher desktop dashboard showing installed terminal AI agents">
   <meta property="og:site_name" content="CLI Launcher">
   <meta property="og:locale" content="en_US">
@@ -33,7 +47,7 @@
   <meta property="twitter:url" content="https://cli-launcher.veyl.in/">
   <meta property="twitter:title" content="CLI Launcher | Run & Manage Claude Code, Aider & 32+ Terminal AI Agents">
   <meta property="twitter:description" content="Native desktop panel for Claude Code, Aider, Gemini CLI, Open Interpreter and 32+ terminal AI agents. Your global Node and Python stay untouched.">
-  <meta property="twitter:image" content="https://raw.githubusercontent.com/MadBlast0/Cli-launcher/main/media/screenshot.png">
+  <meta property="twitter:image" content="media/og-image.png">
 
   <!-- Structured data for crawlers indexing hot AI tools -->
   <script type="application/ld+json">
@@ -77,9 +91,31 @@
   }
   </script>
 
+  <!-- Website + Breadcrumb structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "CLI Launcher",
+    "url": "https://cli-launcher.veyl.in/",
+    "inLanguage": "en",
+    "publisher": { "@type": "Organization", "name": "CLI Launcher" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://cli-launcher.veyl.in/" }
+    ]
+  }
+  </script>
+
   <!-- Fonts (preconnect for performance) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://api.github.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&family=Geist+Mono:wght@300;400;500;600;700&display=swap">
 
   <!-- App theme tokens & custom component styles -->
@@ -164,17 +200,17 @@
     </nav>
   </header>
 
-  <main class="flex-1 flex flex-col w-full">
+  <main class="flex-1 flex flex-col w-full pb-20 md:pb-0">
 
     <!-- ===================== HERO (above the fold) ===================== -->
     <section class="max-w-7xl mx-auto px-6 pt-14 lg:pt-20 pb-10 w-full">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
 
-        <!-- LEFT: copy + platform-aware CTA grid -->
-        <div class="lg:col-span-6 flex flex-col">
+        <!-- BLOCK 1: copy (top-left on desktop, first on mobile) -->
+        <div class="lg:col-span-6 lg:col-start-1 lg:row-start-1 flex flex-col">
           <div class="flex items-center gap-2.5 mb-6">
             <img src="media/app-logo.png" alt="CLI Launcher Logo" class="w-7 h-7 object-contain">
-            <span class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground select-none">Open-source · MIT</span>
+            <span class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground select-none">Open-source ï¿½ MIT</span>
           </div>
 
           <!-- High-intent headline -->
@@ -190,7 +226,14 @@
             Install, update, and launch terminal AI tools with one click. CLI Launcher isolates every
             agent in its own dependency sandbox, so your global Node and Python environments stay
             <span class="text-foreground font-semibold">completely untouched</span>.
-          </p>
+           </p>
+        </div>
+
+        <!-- BLOCK 3: version badge + CTAs (bottom-left on desktop, after demo on mobile) -->
+        <div class="lg:col-span-6 lg:col-start-1 lg:row-start-2 flex flex-col order-3">
+          <div class="mb-6">
+            <span id="version-badge" class="text-[11px] font-mono px-2 py-1 bg-secondary text-secondary-foreground border border-border rounded">v0.0.3</span>
+          </div>
 
           <!-- Platform-aware primary grid -->
           <div id="download" class="flex flex-col sm:flex-row gap-3 mb-4">
@@ -232,8 +275,15 @@
           </div>
 
           <p class="text-[11px] font-mono text-muted-foreground mb-6">
-            Universal installers · Apple Silicon &amp; Intel · x64 &amp; arm64 · No account required
+            Universal installers ï¿½ Apple Silicon &amp; Intel ï¿½ x64 &amp; arm64 ï¿½ No account required
           </p>
+
+          <!-- One-line terminal install (platform-aware) -->
+          <div class="mac-surface p-3 flex items-center gap-3 mb-6 w-full max-w-[460px]">
+            <span class="text-[10px] font-mono uppercase tracking-wider text-muted-foreground whitespace-nowrap select-none">Terminal</span>
+            <code id="install-cmd" class="flex-1 text-[12px] font-mono text-foreground whitespace-nowrap overflow-x-auto">curl -fsSL https://cli-launcher.veyl.in/install.sh | sh</code>
+            <button id="install-copy" class="mac-btn mac-btn-soft px-2.5 py-1.5 text-[11px] font-mono border border-border shrink-0" aria-label="Copy install command" type="button">Copy</button>
+          </div>
 
           <!-- GitHub star + secondary actions -->
           <div class="flex flex-wrap items-center gap-3">
@@ -242,7 +292,7 @@
                class="mac-btn mac-btn-soft px-4 py-2.5 text-xs font-semibold flex items-center gap-2 border border-border hover:border-border-strong transition-colors">
               <svg class="w-4 h-4 shrink-0 text-warning" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l2.9 6.3 6.9.6-5.2 4.6 1.6 6.8L12 17.6 5.8 20.9l1.6-6.8L2.2 8.9l6.9-.6L12 2z"/></svg>
               <span>Star on GitHub</span>
-              <span id="star-count" class="ml-1 font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border text-[10px]">—</span>
+              <span id="star-count" class="ml-1 font-mono px-1.5 py-0.5 bg-secondary text-secondary-foreground border border-border text-[10px]">ï¿½</span>
             </a>
             <a href="#inventory" class="mac-btn mac-btn-soft px-4 py-2.5 text-xs font-semibold flex items-center gap-2 border border-border">
               <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
@@ -254,7 +304,7 @@
 
         <!-- RIGHT: live interactive replica -->
         <div class="lg:col-span-6 flex flex-col items-center lg:items-end">
-          <div id="app-demo" class="app-demo w-full max-w-[600px] border border-border select-none" role="img" aria-label="Interactive preview of the CLI Launcher window displaying the CLI registry with options to install, update and launch coding agents">
+          <div id="app-demo" class="app-demo w-full max-w-[600px] border border-border select-none" role="group" aria-label="Interactive preview of the CLI Launcher window. You can search, install agents, and toggle the theme.">
             <div id="demo-scale" class="demo-scale">
 
               <!-- Title bar -->
@@ -268,7 +318,7 @@
                     <span class="demo-theme-knob"></span>
                     <svg class="demo-theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>
                   </button>
-                  <button class="demo-win-btn" data-demo-toast="This is just a preview — nothing to close!" aria-label="Close (demo)">
+                  <button class="demo-win-btn" data-demo-toast="This is just a preview ï¿½ nothing to close!" aria-label="Close (demo)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
                   </button>
                 </div>
@@ -321,7 +371,7 @@
           </div>
 
           <p class="text-[11px] font-mono text-muted-foreground mt-3 select-none">
-            ? Live preview — search, install, and toggle the theme
+            ? Live preview ï¿½ search, install, and toggle the theme
           </p>
         </div>
 
@@ -410,7 +460,7 @@
           <span class="text-[10px] font-bold tracking-widest uppercase font-mono text-warning mb-4 select-none">? Autonomous execution</span>
           <h2 class="text-3xl md:text-4xl font-extrabold tracking-tighter mb-4">YOLO Mode</h2>
           <p class="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 max-w-[48ch]">
-            Flip one switch and supported agents launch with their auto-approve flags enabled — no
+            Flip one switch and supported agents launch with their auto-approve flags enabled ï¿½ no
             more permission prompts mid-task. Perfect for unattended, fully autonomous coding runs.
             CLI Launcher injects the correct flag per agent, so you never hand-edit a command.
           </p>
@@ -420,7 +470,7 @@
             <div class="flex items-center justify-between gap-4">
               <div class="flex flex-col">
                 <span class="text-sm font-bold font-mono uppercase text-foreground">YOLO mode</span>
-                <span id="yolo-status" class="text-[11px] font-mono text-muted-foreground">Off — prompts every action</span>
+                <span id="yolo-status" class="text-[11px] font-mono text-muted-foreground">Off ï¿½ prompts every action</span>
               </div>
               <button id="yolo-toggle" role="switch" aria-checked="false" aria-label="Toggle YOLO mode"
                       class="yolo-switch" data-state="off">
@@ -477,7 +527,7 @@
           <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Set Workspace</h3>
           <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
             Point CLI Launcher at the local directory where your projects live. Every agent launches
-            in a terminal pre-configured to that path — no <code class="font-mono text-[11px]">cd</code> gymnastics.
+            in a terminal pre-configured to that path ï¿½ no <code class="font-mono text-[11px]">cd</code> gymnastics.
           </p>
         </div>
         <div class="flex flex-col">
@@ -497,6 +547,64 @@
             <code class="font-mono text-[11px]">aider-chat</code>, or any of the 32+ agents immediately.
           </p>
         </div>
+      </div>
+    </section>
+
+    <!-- ===================== COMPARISON ===================== -->
+    <section id="compare" class="max-w-7xl mx-auto px-6 py-16 w-full border-b border-border">
+      <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-3 select-none">Why CLI Launcher</h2>
+      <p class="text-sm md:text-base text-muted-foreground leading-relaxed max-w-[62ch] mb-8">
+        Every terminal AI agent can be installed by hand &mdash; but at 32+ tools that means global
+        clutter, version clashes, and a lot of terminal juggling. Here is the difference.
+      </p>
+
+      <div class="overflow-x-auto border border-border rounded-lg">
+        <table class="w-full text-sm border-collapse min-w-[640px]">
+          <thead>
+            <tr class="bg-card text-left">
+              <th class="p-4 font-mono text-[11px] uppercase tracking-wider text-muted-foreground font-bold">Task</th>
+              <th class="p-4 font-mono text-[11px] uppercase tracking-wider text-muted-foreground font-bold">Manual <span class="text-[10px] normal-case">(npm i -g / pip)</span></th>
+              <th class="p-4 font-mono text-[11px] uppercase tracking-wider text-foreground font-bold">With CLI Launcher</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <tr>
+              <td class="p-4 align-top font-semibold text-foreground">Install an agent</td>
+              <td class="p-4 align-top text-muted-foreground">Run <code class="font-mono text-[11px]">npm i -g</code> yourself; risks global version clashes.</td>
+              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>One click &mdash; isolated, version-pinned.</span></td>
+            </tr>
+            <tr>
+              <td class="p-4 align-top font-semibold text-foreground">Update everything</td>
+              <td class="p-4 align-top text-muted-foreground">Track 32 packages and update each by hand.</td>
+              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Bulk update in a single click.</span></td>
+            </tr>
+            <tr>
+              <td class="p-4 align-top font-semibold text-foreground">Dependency isolation</td>
+              <td class="p-4 align-top text-muted-foreground">Pollutes your global Node &amp; Python installs.</td>
+              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Each agent sandboxed &mdash; globals stay clean.</span></td>
+            </tr>
+            <tr>
+              <td class="p-4 align-top font-semibold text-foreground">Launch in a terminal</td>
+              <td class="p-4 align-top text-muted-foreground">Open a terminal, <code class="font-mono text-[11px]">cd</code>, retype the command.</td>
+              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Pre-configured terminal, one click.</span></td>
+            </tr>
+            <tr>
+              <td class="p-4 align-top font-semibold text-foreground">Switch runtimes</td>
+              <td class="p-4 align-top text-muted-foreground">Juggle <code class="font-mono text-[11px]">nvm</code> / <code class="font-mono text-[11px]">pyenv</code> per project.</td>
+              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Per-agent runtime managed for you.</span></td>
+            </tr>
+            <tr>
+              <td class="p-4 align-top font-semibold text-foreground">Repair or remove</td>
+              <td class="p-4 align-top text-muted-foreground">Manual cleanup of leftover files.</td>
+              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>One-click repair or uninstall.</span></td>
+            </tr>
+            <tr>
+              <td class="p-4 align-top font-semibold text-foreground">Run many agents</td>
+              <td class="p-4 align-top text-muted-foreground">Tab-sprawl across scattered terminals.</td>
+              <td class="p-4 align-top text-foreground"><span class="inline-flex items-center gap-2"><svg class="w-4 h-4 text-success shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>One panel, all agents, one view.</span></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </section>
 
@@ -525,7 +633,7 @@
         <!-- ============ NODE ============ -->
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/claude.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Claude Code</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/claude.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Claude Code</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Anthropic's terminal agent for file editing, search, tests and Git.</p>
@@ -534,7 +642,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/opencode.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">OpenCode</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/opencode.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">OpenCode</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Open-source terminal AI coding agent with provider flexibility.</p>
@@ -543,7 +651,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/gemini.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Gemini CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/gemini.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Gemini CLI</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Google's terminal developer assistant for scripts and repo Q&amp;A.</p>
@@ -552,7 +660,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/copilot.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">GitHub Copilot CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/copilot.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">GitHub Copilot CLI</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">GitHub's agentic CLI powered by Copilot.</p>
@@ -561,7 +669,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/kilo.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Kilo CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/kilo.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Kilo CLI</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Agentic coding assistant with autonomous task loops.</p>
@@ -570,7 +678,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/codex.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Codex CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/codex.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Codex CLI</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">OpenAI's lightweight coding agent for the terminal.</p>
@@ -579,7 +687,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/qwen.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Qwen Code</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/qwen.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Qwen Code</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Alibaba's Qwen terminal coding agent.</p>
@@ -588,7 +696,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/amp.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Amp CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/amp.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Amp CLI</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Sourcegraph's agentic coding CLI.</p>
@@ -597,7 +705,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/cline.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Cline</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/cline.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Cline</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Autonomous coding agent that plans and executes edits.</p>
@@ -606,7 +714,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/cody.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Cody CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/cody.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Cody CLI</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Sourcegraph's context-aware coding assistant.</p>
@@ -615,7 +723,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/codebuff.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Codebuff</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/codebuff.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Codebuff</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Fast agentic coding tool focused on large codebases.</p>
@@ -624,7 +732,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/freebuff.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Freebuff</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/freebuff.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Freebuff</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Open, free alternative to Codebuff.</p>
@@ -633,7 +741,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/commandcode.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Command Code</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/commandcode.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Command Code</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Lightweight command-driven coding assistant.</p>
@@ -642,7 +750,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/continue.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Continue CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/continue.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Continue CLI</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Open-source autonomous software development agent.</p>
@@ -651,7 +759,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/crush.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Crush</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/crush.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Crush</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">TUI agentic coding tool by Charm.</p>
@@ -660,7 +768,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/auggie.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Auggie</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/auggie.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Auggie</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Augment Code's terminal coding agent.</p>
@@ -669,7 +777,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/grok.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Grok CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/grok.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Grok CLI</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">xAI's Grok terminal coding assistant.</p>
@@ -678,7 +786,7 @@
 
         <article class="inv-card" data-runtime="node">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/pi.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">PI Coding Agent</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/pi.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">PI Coding Agent</span></div>
             <span class="inv-badge inv-badge-node">node</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Voice-driven coding agent by Mario Zechner.</p>
@@ -688,7 +796,7 @@
         <!-- ============ PYTHON ============ -->
         <article class="inv-card" data-runtime="python">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/aider.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Aider</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/aider.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Aider</span></div>
             <span class="inv-badge inv-badge-python">python</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Premier command-line pair programmer. Edits across files, writes commits.</p>
@@ -697,7 +805,7 @@
 
         <article class="inv-card" data-runtime="python">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/interpreter.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Open Interpreter</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/interpreter.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Open Interpreter</span></div>
             <span class="inv-badge inv-badge-python">python</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Run LLMs in a real local code-execution environment.</p>
@@ -706,7 +814,7 @@
 
         <article class="inv-card" data-runtime="python">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/sgpt.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Shell-GPT</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/sgpt.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Shell-GPT</span></div>
             <span class="inv-badge inv-badge-python">python</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">A command-line productivity tool powered by LLMs.</p>
@@ -715,7 +823,7 @@
 
         <article class="inv-card" data-runtime="python">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/gptme.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">gptme</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/gptme.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">gptme</span></div>
             <span class="inv-badge inv-badge-python">python</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Personal AI assistant for the command line.</p>
@@ -724,7 +832,7 @@
 
         <article class="inv-card" data-runtime="python">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/ra-aid.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">RA.Aid</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/ra-aid.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">RA.Aid</span></div>
             <span class="inv-badge inv-badge-python">python</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Research and development agent with cowboy mode.</p>
@@ -733,7 +841,7 @@
 
         <article class="inv-card" data-runtime="python">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/openhands.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">OpenHands CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/openhands.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">OpenHands CLI</span></div>
             <span class="inv-badge inv-badge-python">python</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Platform for autonomous software engineering agents.</p>
@@ -743,74 +851,74 @@
         <!-- ============ STANDALONE ============ -->
         <article class="inv-card" data-runtime="standalone">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/goose.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Goose CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/goose.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Goose CLI</span></div>
             <span class="inv-badge inv-badge-standalone">standalone</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Block's open-source agentic assistant. Prebuilt binary.</p>
-          <code class="inv-snippet" data-copy="goose">goose · prebuilt binary (managed by CLI Launcher)</code>
+          <code class="inv-snippet" data-copy="goose">goose ï¿½ prebuilt binary (managed by CLI Launcher)</code>
         </article>
 
         <article class="inv-card" data-runtime="standalone">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/cursor.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Cursor CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/cursor.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Cursor CLI</span></div>
             <span class="inv-badge inv-badge-standalone">standalone</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Cursor's agent mode exposed as a terminal CLI.</p>
-          <code class="inv-snippet" data-copy="cursor-agent">cursor-agent · prebuilt binary</code>
+          <code class="inv-snippet" data-copy="cursor-agent">cursor-agent ï¿½ prebuilt binary</code>
         </article>
 
         <article class="inv-card" data-runtime="standalone">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/amazonq.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Amazon Q Developer CLI</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/amazonq.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Amazon Q Developer CLI</span></div>
             <span class="inv-badge inv-badge-standalone">standalone</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">AWS's agentic coding assistant. Prebuilt binary.</p>
-          <code class="inv-snippet" data-copy="q">q · prebuilt binary (Amazon Q)</code>
+          <code class="inv-snippet" data-copy="q">q ï¿½ prebuilt binary (Amazon Q)</code>
         </article>
 
         <article class="inv-card" data-runtime="standalone">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/droid.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Droid (Factory)</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/droid.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Droid (Factory)</span></div>
             <span class="inv-badge inv-badge-standalone">standalone</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Factory.ai's autonomous coding agent. Prebuilt binary.</p>
-          <code class="inv-snippet" data-copy="droid">droid · prebuilt binary (Factory.ai)</code>
+          <code class="inv-snippet" data-copy="droid">droid ï¿½ prebuilt binary (Factory.ai)</code>
         </article>
 
         <article class="inv-card" data-runtime="standalone">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/plandex.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Plandex</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/plandex.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Plandex</span></div>
             <span class="inv-badge inv-badge-standalone">standalone</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Long-running AI coding agent for large tasks. Prebuilt binary.</p>
-          <code class="inv-snippet" data-copy="plandex">plandex · prebuilt binary</code>
+          <code class="inv-snippet" data-copy="plandex">plandex ï¿½ prebuilt binary</code>
         </article>
 
         <article class="inv-card" data-runtime="standalone">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/mods.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Mods</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/mods.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Mods</span></div>
             <span class="inv-badge inv-badge-standalone">standalone</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">AI on the command line by Charmbracelet. Prebuilt binary.</p>
-          <code class="inv-snippet" data-copy="mods">mods · prebuilt binary (charmbracelet)</code>
+          <code class="inv-snippet" data-copy="mods">mods ï¿½ prebuilt binary (charmbracelet)</code>
         </article>
 
         <article class="inv-card" data-runtime="standalone">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/aichat.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">aichat</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/aichat.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">aichat</span></div>
             <span class="inv-badge inv-badge-standalone">standalone</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">All-in-one LLM CLI with many providers. Prebuilt binary.</p>
-          <code class="inv-snippet" data-copy="aichat">aichat · prebuilt binary (sigoden)</code>
+          <code class="inv-snippet" data-copy="aichat">aichat ï¿½ prebuilt binary (sigoden)</code>
         </article>
 
         <article class="inv-card" data-runtime="standalone">
           <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/fabric.svg" alt="" class="w-7 h-7 shrink-0"><span class="text-sm font-bold font-mono truncate">Fabric</span></div>
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/fabric.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Fabric</span></div>
             <span class="inv-badge inv-badge-standalone">standalone</span>
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Framework for augmenting humans using AI. Prebuilt binary.</p>
-          <code class="inv-snippet" data-copy="fabric">fabric · prebuilt binary (danielmiessler)</code>
+          <code class="inv-snippet" data-copy="fabric">fabric ï¿½ prebuilt binary (danielmiessler)</code>
         </article>
 
       </div>
@@ -868,11 +976,11 @@
           <h2 class="text-2xl md:text-3xl font-extrabold tracking-tighter">Open source you can audit</h2>
           <p class="text-sm text-muted-foreground max-w-[52ch]">
             CLI Launcher is MIT-licensed and built in the open. Read the code, file issues, or ship a
-            PR — it's your machine, your agents, your rules.
+            PR ï¿½ it's your machine, your agents, your rules.
           </p>
           <div class="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-1">
             <span class="text-[11px] font-mono px-2 py-1 bg-secondary border border-border text-secondary-foreground">MIT License</span>
-            <span class="text-[11px] font-mono px-2 py-1 bg-secondary border border-border text-secondary-foreground">Electron · React · TS</span>
+            <span class="text-[11px] font-mono px-2 py-1 bg-secondary border border-border text-secondary-foreground">Electron ï¿½ React ï¿½ TS</span>
             <span class="text-[11px] font-mono px-2 py-1 bg-secondary border border-border text-secondary-foreground">No telemetry</span>
           </div>
         </div>
@@ -882,7 +990,7 @@
             <svg class="w-5 h-5 shrink-0" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.579.688.481C19.138 20.161 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
             <span class="flex flex-col leading-tight">
               <span>Star on GitHub</span>
-              <span id="star-count-2" class="text-[10px] font-mono opacity-70">— stars</span>
+              <span id="star-count-2" class="text-[10px] font-mono opacity-70">ï¿½ stars</span>
             </span>
           </a>
           <a href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="text-[11px] font-mono text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">View all releases ?</a>
@@ -899,6 +1007,16 @@
       <a href="https://github.com/MadBlast0/Cli-launcher" class="underline hover:text-foreground transition-colors">GitHub</a>.
     </p>
   </footer>
+
+  <!-- Mobile sticky download bar (conversion CTA, mobile only) -->
+  <div class="md:hidden fixed bottom-0 inset-x-0 z-50 border-t border-border bg-card/95 backdrop-blur-md px-4 flex items-center gap-3" style="padding-top:0.75rem;padding-bottom:calc(0.75rem + env(safe-area-inset-bottom, 0px));">
+    <div class="flex-1 min-w-0">
+      <div class="text-[10px] font-mono uppercase tracking-wider text-muted-foreground leading-none">CLI Launcher</div>
+      <div class="text-xs text-foreground font-semibold truncate leading-tight mt-0.5">Free &middot; Open-source</div>
+    </div>
+    <a href="https://github.com/MadBlast0/Cli-launcher/releases/latest" target="_blank" rel="noopener noreferrer"
+       class="mac-btn mac-btn-primary px-5 py-2.5 text-xs font-bold whitespace-nowrap shrink-0">Download</a>
+  </div>
 
   <script src="main.js?v=4"></script>
 </body>

@@ -12,6 +12,12 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch (e) {
     console.error('Error detecting OS:', e);
   }
+
+  try {
+    initInstallSnippet();
+  } catch (e) {
+    console.error('Error initializing install snippet:', e);
+  }
   
   try {
     fetchLatestRelease();
@@ -42,7 +48,90 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch (e) {
     console.error('Error initializing app demo:', e);
   }
+
+  try {
+    initInventoryCopy();
+  } catch (e) {
+    console.error('Error initializing inventory copy:', e);
+  }
 });
+
+/**
+ * Copy helper with a fallback for non-secure contexts (file://).
+ * Resolves to true on success.
+ */
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+      return ok;
+    } catch (_) {
+      return false;
+    }
+  }
+}
+
+/** Lightweight global toast for copy / action feedback. */
+let _toastEl = null;
+let _toastTimer = null;
+function showToast(msg) {
+  if (!_toastEl) {
+    _toastEl = document.createElement('div');
+    _toastEl.setAttribute('role', 'status');
+    _toastEl.setAttribute('aria-live', 'polite');
+    _toastEl.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(8px);'
+      + 'z-index:60;background:var(--popover,#222);color:var(--popover-foreground,#f4f4f5);'
+      + 'border:1px solid var(--border,#333);border-radius:10px;padding:10px 16px;'
+      + 'font:600 13px/1.2 var(--font-mono,monospace);box-shadow:0 8px 24px rgba(0,0,0,.35);'
+      + 'opacity:0;transition:opacity .18s ease, transform .18s ease;pointer-events:none;max-width:90vw;';
+    document.body.appendChild(_toastEl);
+  }
+  _toastEl.textContent = msg;
+  requestAnimationFrame(() => {
+    _toastEl.style.opacity = '1';
+    _toastEl.style.transform = 'translateX(-50%) translateY(0)';
+  });
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => {
+    _toastEl.style.opacity = '0';
+    _toastEl.style.transform = 'translateX(-50%) translateY(8px)';
+  }, 1600);
+}
+
+/**
+ * Make the inventory install snippets copy-to-clipboard (they carry data-copy).
+ */
+function initInventoryCopy() {
+  const snippets = Array.from(document.querySelectorAll('.inv-snippet'));
+  if (!snippets.length) return;
+  snippets.forEach((el) => {
+    if (!el.hasAttribute('tabindex')) el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    el.setAttribute('aria-label', 'Copy install command: ' + (el.getAttribute('data-copy') || el.textContent));
+    el.title = 'Click to copy';
+    const doCopy = async () => {
+      const text = el.getAttribute('data-copy') || el.textContent;
+      const ok = await copyText(text);
+      el.classList.add('copied');
+      setTimeout(() => el.classList.remove('copied'), 1400);
+      showToast(ok ? 'Copied: ' + text : 'Copy failed');
+    };
+    el.addEventListener('click', doCopy);
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); doCopy(); }
+    });
+  });
+}
 
 /**
  * Interactive replica of the actual app window shown in the hero.
@@ -446,19 +535,70 @@ function detectOS() {
 }
 
 /**
+ * Platform-aware one-line install command shown near the CTAs.
+ * macOS/Linux -> curl|sh, Windows -> PowerShell irm|iex.
+ */
+function initInstallSnippet() {
+  const cmdEl = document.getElementById('install-cmd');
+  const copyEl = document.getElementById('install-copy');
+  if (!cmdEl) return;
+
+  const COMMANDS = {
+    macOS: 'curl -fsSL https://cli-launcher.veyl.in/install.sh | sh',
+    Linux: 'curl -fsSL https://cli-launcher.veyl.in/install.sh | sh',
+    Windows: 'powershell -ExecutionPolicy Bypass -c "irm https://cli-launcher.veyl.in/install.ps1 | iex"'
+  };
+  const command = COMMANDS[detectedOS] || COMMANDS.Linux;
+  cmdEl.textContent = command;
+
+  if (copyEl) {
+    copyEl.addEventListener('click', async () => {
+      const done = () => {
+        const original = 'Copy';
+        copyEl.textContent = 'Copied';
+        setTimeout(() => { copyEl.textContent = original; }, 1400);
+      };
+      try {
+        await navigator.clipboard.writeText(command);
+        done();
+      } catch (e) {
+        // Fallback for non-secure contexts (file://)
+        const ta = document.createElement('textarea');
+        ta.value = command;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (_) {}
+        document.body.removeChild(ta);
+        done();
+      }
+    });
+  }
+}
+
+/**
  * Live GitHub star counter (real-time metric beside install actions).
+ * Resilient: caches the count in localStorage (24h) and never flashes a
+ * bogus "0" — the 60/hr unauthenticated GitHub rate limit means most
+ * visitors would otherwise hit the fallback on every load.
  */
 function initStarCounter() {
   const repoOwner = 'MadBlast0';
   const repoName = 'Cli-launcher';
   const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}`;
+  // Honest static fallback (real count at build time); the per-visitor cache
+  // keeps it fresh without hammering the unauthenticated GitHub API.
+  const STATIC_FALLBACK = 10;
+  const CACHE_KEY = 'clla_stars';
+  const DAY = 86400000;
   const els = [
     document.getElementById('star-count'),
     document.getElementById('star-count-2'),
   ].filter(Boolean);
 
   function paint(n) {
-    if (!n && n !== 0) return;
+    if (n == null || isNaN(n)) return;
     const pretty = n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(n);
     els.forEach((el) => {
       if (el.id === 'star-count-2') {
@@ -469,14 +609,25 @@ function initStarCounter() {
     });
   }
 
-  // Optimistic fallback so the layout never shows a bare dash forever
-  paint(0);
+  // 1) Paint something sensible immediately: cached value, else the fallback.
+  //    No layout shift, no flash of "0"/"?".
+  let cached = null;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (raw) {
+      const o = JSON.parse(raw);
+      if (o && typeof o.n === 'number' && Date.now() - o.ts < DAY) cached = o.n;
+    }
+  } catch (e) {}
+  paint(cached != null ? cached : STATIC_FALLBACK);
 
+  // 2) Refresh in the background and re-cache.
   fetch(apiURL)
     .then((r) => { if (!r.ok) throw new Error('API failed'); return r.json(); })
     .then((data) => {
       if (typeof data.stargazers_count === 'number') {
         paint(data.stargazers_count);
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify({ n: data.stargazers_count, ts: Date.now() })); } catch (e) {}
         const btn = document.getElementById('github-star-btn');
         if (btn) btn.setAttribute('aria-label', 'Star on GitHub — ' + data.stargazers_count + ' stars');
       }
@@ -561,17 +712,34 @@ function initYoloToggle() {
 function fetchLatestRelease() {
   const repoOwner = 'MadBlast0';
   const repoName = 'Cli-launcher';
-  const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}/releases/latest`;
-  const defaultReleasePage = `https://github.com/${repoOwner}/${repoName}/releases/latest`;
+  const apiURL = `https://api.github.com/repos/${repoOwner}/${repoName}/releases?per_page=100`;
+  const defaultReleasePage = `https://github.com/${repoOwner}/${repoName}/releases`;
+  // Honest static fallback (current release at build time); the per-visitor
+  // cache + live tag_name keep it fresh when the API is reachable.
+  const STATIC_VERSION = 'v0.0.3';
 
   fetch(apiURL)
     .then(response => {
-      if (!response.ok) throw new Error('API request failed');
+      if (!response.ok) throw new Error('API request failed: ' + response.status);
       return response.json();
     })
-    .then(data => {
+    .then(releases => {
+      if (!Array.isArray(releases) || !releases.length) throw new Error('No releases');
+      // Prefer the newest published (non-draft, non-prerelease) release; if every
+      // release is a prerelease/draft, fall back to the newest overall.
+      const published = releases.filter(r => !r.draft && !r.prerelease);
+      const data = published[0] || releases[0];
       const assets = data.assets || [];
-      
+
+      // Latest-version badge (from the release tag_name)
+      const badge = document.getElementById('version-badge');
+      if (badge && data.tag_name) {
+        const v = String(data.tag_name).replace(/^v/i, '');
+        const label = 'v' + v;
+        badge.textContent = label;
+        try { localStorage.setItem('clla_version', JSON.stringify({ v: label, ts: Date.now() })); } catch (e) {}
+      }
+
       let winURL = defaultReleasePage;
       let macURL = defaultReleasePage;
       let linuxURL = defaultReleasePage;
@@ -668,6 +836,15 @@ function fetchLatestRelease() {
       }
     })
     .catch(err => {
-      console.warn('Could not fetch direct download links, falling back to release page.', err);
+      console.warn('Could not fetch latest release, falling back to cached/static version.', err);
+      const badge = document.getElementById('version-badge');
+      if (badge) {
+        let shown = false;
+        try {
+          const cached = JSON.parse(localStorage.getItem('clla_version') || 'null');
+          if (cached && cached.v) { badge.textContent = cached.v; shown = true; }
+        } catch (e) {}
+        if (!shown) badge.textContent = STATIC_VERSION;
+      }
     });
 }

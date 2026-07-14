@@ -23,6 +23,7 @@
     "build:mac": "npm run build:renderer && npm run build:main && electron-builder --mac",
     "build:linux": "npm run build:renderer && npm run build:main && electron-builder --linux",
     "build:all": "npm run build:renderer && npm run build:main && electron-builder --win --mac --linux",
+    "build:site-css": "node Website/build-css.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -32,6 +33,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.3.2",
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
