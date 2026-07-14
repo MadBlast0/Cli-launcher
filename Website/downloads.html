@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +9,18 @@
        against the /Website/ mount even under clean URLs like /Website/downloads/. -->
 
   <!-- Global site bootstrap: URL normalize + theme (prevents flash) -->
+  <script>
+    (function () {
+      try { var p = location.pathname; if (p && !p.endsWith('/') && p.lastIndexOf('.') <= p.lastIndexOf('/')) location.replace(p + '/'); } catch (e) {}
+      function gc(n){ try { var m = document.cookie.match(new RegExp('(?:^|; )' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; } catch (e) { return null; } }
+      var saved = gc('clla_theme');
+      if (!saved) { try { saved = localStorage.getItem('theme'); } catch (e) { saved = null; } }
+      var pd = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark', saved === 'dark' || (!saved && pd));
+    })();
+  </script>
   <script src="theme.js"></script>
+  <script src="consent.js"></script>
   
   <!-- SEO & Metadata -->
   <title>Downloads - CLI Launcher</title>

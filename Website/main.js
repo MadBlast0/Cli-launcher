@@ -474,8 +474,14 @@ function initTheme() {
     return;
   }
 
-  // Retrieve saved theme or default to system preference
-  const savedTheme = localStorage.getItem('theme');
+  // Retrieve saved theme (cookie is the source of truth) or default to system.
+  function getCookie(name) {
+    try {
+      var m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)'));
+      return m ? decodeURIComponent(m[1]) : null;
+    } catch (e) { return null; }
+  }
+  const savedTheme = getCookie('clla_theme') || localStorage.getItem('theme');
   const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   
   const isDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark);
@@ -496,14 +502,20 @@ function initTheme() {
     html.classList.add('theme-transition');
     
     const wasDark = html.classList.contains('dark');
+    // Persist the theme choice in a real cookie (survives navigation) plus a
+    // localStorage mirror. This is always saved — theme is core UX, not optional.
+    const persist = (val) => {
+      try { localStorage.setItem('theme', val); } catch (e) {}
+      if (window.CLLASetThemeCookie) window.CLLASetThemeCookie(val);
+    };
     if (wasDark) {
       html.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
+      persist('light');
       sunIcon.classList.add('hidden');
       moonIcon.classList.remove('hidden');
     } else {
       html.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
+      persist('dark');
       sunIcon.classList.remove('hidden');
       moonIcon.classList.add('hidden');
     }
@@ -632,8 +644,11 @@ function initStarCounter() {
   } catch (e) {}
   paint(cached != null ? cached : STATIC_FALLBACK);
 
-  // 2) Refresh in the background and re-cache.
-  fetch(apiURL)
+  // 2) Refresh in the background and re-cache — but only if analytics consent
+  //    was granted (cookie banner). Falls back to the cached/static count.
+  var _consent = window.CLLAConsent ? window.CLLAConsent.get() : null;
+  var _allowAnalytics = !_consent || _consent.analytics !== false;
+  if (_allowAnalytics) fetch(apiURL)
     .then((r) => { if (!r.ok) throw new Error('API failed'); return r.json(); })
     .then((data) => {
       if (typeof data.stargazers_count === 'number') {
