@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/Website/">
+
+  <script src="theme.js"></script>
+  <script src="docs-nav.js"></script>
+
+  <title>Theming - CLI Launcher Docs</title>
+  <meta name="description" content="How CLI Launcher's light and dark themes work, how your choice is persisted, and the CSS variables that drive the flat design system.">
+  <link rel="canonical" href="https://cli-launcher.veyl.in/docs/theming.html">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1a1a1a">
+  <link rel="preconnect" href="https://api.github.com">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cli-launcher.veyl.in/docs/theming.html">
+  <meta property="og:title" content="Theming - CLI Launcher Docs">
+  <meta property="og:description" content="How CLI Launcher's light and dark themes work, how your choice is persisted, and the CSS variables that drive the flat design system.">
+  <meta property="og:image" content="media/og-image.png">
+  <meta property="og:image:alt" content="CLI Launcher theming">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://cli-launcher.veyl.in/docs/theming.html">
+  <meta property="twitter:title" content="Theming - CLI Launcher Docs">
+  <meta property="twitter:description" content="How CLI Launcher's light and dark themes work, how your choice is persisted, and the CSS variables that drive the flat design system.">
+  <meta property="twitter:image" content="media/og-image.png">
+  <meta property="twitter:image:alt" content="CLI Launcher theming">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "CLI Launcher",
+    "url": "https://cli-launcher.veyl.in/",
+    "publisher": { "@type": "Organization", "name": "CLI Launcher" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://cli-launcher.veyl.in/" },
+      { "@type": "ListItem", "position": 2, "name": "Docs", "item": "https://cli-launcher.veyl.in/docs/" },
+      { "@type": "ListItem", "position": 3, "name": "Theming", "item": "https://cli-launcher.veyl.in/docs/theming.html" }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="style.css?v=4">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {
+        colors: {
+          background: 'var(--background)', foreground: 'var(--foreground)',
+          card: 'var(--card)', 'card-foreground': 'var(--card-foreground)',
+          popover: 'var(--popover)', 'popover-foreground': 'var(--popover-foreground)',
+          primary: 'var(--primary)', 'primary-foreground': 'var(--primary-foreground)',
+          secondary: 'var(--secondary)', 'secondary-foreground': 'var(--secondary-foreground)',
+          muted: 'var(--muted)', 'muted-foreground': 'var(--muted-foreground)',
+          accent: 'var(--accent)', 'accent-foreground': 'var(--accent-foreground)',
+          'accent-soft': 'var(--accent-soft)', border: 'var(--border)',
+          'border-strong': 'var(--border-strong)', input: 'var(--input)', ring: 'var(--ring)',
+          success: 'var(--success)', warning: 'var(--warning)'
+        },
+        fontFamily: { sans: ['var(--font-sans)', 'sans-serif'], mono: ['var(--font-mono)', 'monospace'] },
+        boxShadow: {
+          'flat-sm': '0px 1px 0px 0px var(--border-strong)',
+          'flat': '0px 2px 0px 0px var(--border-strong)',
+          'flat-md': '0px 2px 0px 0px var(--border-strong)',
+          'flat-lg': '0px 3px 0px 0px var(--border-strong)'
+        }
+      } }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col bg-background text-foreground font-sans">
+
+  <script src="topbar.js"></script>
+
+  <div class="flex flex-1 w-full">
+    <script>DocsNav.sidebar();</script>
+
+    <div class="flex-1 min-w-0 flex flex-col">
+      <script>DocsNav.mobileBar();</script>
+
+      <main class="flex-1 w-full">
+        <article class="doc mx-auto max-w-3xl px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
+          <header class="mb-9">
+            <div class="text-[11px] font-mono uppercase tracking-widest text-muted-foreground mb-3">Docs / Using CLI Launcher</div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tighter">Theming</h1>
+            <p class="mt-3 text-sm text-muted-foreground leading-relaxed max-w-[65ch]">
+              CLI Launcher ships with light and dark themes that follow your system and remember your choice.
+            </p>
+          </header>
+
+          <h2>Switching themes</h2>
+          <p>
+            Use the sun/moon toggle in the top bar to switch instantly. Your selection is stored locally, so it
+            persists across launches. On first run, CLI Launcher respects your operating system's appearance setting.
+          </p>
+
+          <h2>How it works</h2>
+          <p>
+            Themes are driven by a single <code>dark</code> class on the document root. All colors resolve from
+            CSS custom properties defined in <code>style.css</code>, so the app, this site, and the marketing page
+            all share one consistent, flat design language.
+          </p>
+          <pre><code>:root {
+  --background: #f0f0f0;
+  --foreground: #333333;
+  /* … */
+}
+html.dark {
+  --background: #1a1a1a;
+  --foreground: #d9d9d9;
+  /* … */
+}</code></pre>
+
+          <h2>Customizing</h2>
+          <p>
+            Because every color is a variable, you can re-skin CLI Launcher by overriding a handful of tokens in your
+            own stylesheet — no build step required. The most useful ones:
+          </p>
+          <ul>
+            <li><code>--background</code> / <code>--foreground</code> — base canvas and text.</li>
+            <li><code>--card</code> — surfaces like the agent rows and panels.</li>
+            <li><code>--primary</code> — emphasized buttons and active states.</li>
+            <li><code>--border</code> / <code>--border-strong</code> — hairlines and flat shadows.</li>
+            <li><code>--accent-soft</code> — hover backgrounds.</li>
+          </ul>
+
+          <div class="callout callout-info">
+            <div class="callout-title">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+              One design system
+            </div>
+            <p>The same tokens power the in-app UI, the hero demo on the homepage, and these docs — change them once and the whole product follows.</p>
+          </div>
+
+          <script>DocsNav.prevNext();</script>
+        </article>
+      </main>
+
+      <footer class="border-t border-border py-8 text-center text-xs text-muted-foreground font-mono mt-auto select-none">
+        <p>
+          <a href="docs/" class="underline hover:text-foreground transition-colors">Docs</a>
+          &middot;
+          <a href="downloads.html" class="underline hover:text-foreground transition-colors">Downloads</a>
+          &middot;
+          <a href="https://github.com/MadBlast0/Cli-launcher" class="underline hover:text-foreground transition-colors">GitHub</a>
+        </p>
+        <p class="mt-2">CLI Launcher is open-source under the MIT License.</p>
+      </footer>
+    </div>
+  </div>
+
+  <script src="main.js?v=4"></script>
+</body>
+</html>

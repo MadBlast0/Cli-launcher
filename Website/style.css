@@ -707,6 +707,128 @@ html.dark .inv-badge-standalone { color: #d6b15e; }
   font-family: var(--font-mono);
 }
 
+/* ============================================================
+   Documentation content (.doc) — shared prose styles for every
+   page under /docs/. Flat, high-contrast, readable on phone
+   and desktop. Mirrors the site's CSS-variable design tokens.
+   ============================================================ */
+.doc { color: var(--foreground); }
+.doc > * + * { margin-top: 1rem; }
+
+.doc h2 {
+  margin-top: 2.75rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.doc h3 {
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+.doc p,
+.doc li {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: color-mix(in srgb, var(--foreground) 88%, transparent);
+}
+@media (min-width: 640px) {
+  .doc p, .doc li { font-size: 0.9375rem; }
+}
+
+.doc a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--border-strong);
+  transition: text-decoration-color 0.12s ease, color 0.12s ease;
+}
+.doc a:hover { text-decoration-color: var(--foreground); }
+
+.doc strong { font-weight: 700; color: var(--foreground); }
+.doc em { font-style: italic; }
+
+.doc ul, .doc ol { padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.doc ul { list-style: disc; }
+.doc ol { list-style: decimal; }
+.doc li::marker { color: var(--muted-foreground); }
+.doc li > ul, .doc li > ol { margin-top: 0.5rem; }
+
+/* Inline code */
+.doc :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--secondary);
+  border: 1px solid var(--border);
+  padding: 0.1em 0.4em;
+  white-space: nowrap;
+}
+
+/* Code block */
+.doc pre {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  color: var(--foreground);
+}
+.doc pre code { font-family: inherit; font-size: inherit; background: none; border: none; padding: 0; white-space: pre; }
+
+/* Callouts */
+.doc .callout {
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  background: var(--secondary);
+  padding: 0.9rem 1.1rem;
+  border-radius: var(--radius);
+}
+.doc .callout > * + * { margin-top: 0.5rem; }
+.doc .callout-title {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--foreground);
+}
+.doc .callout-info { border-left-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.doc .callout-warning { border-left-color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); }
+.doc .callout-danger { border-left-color: var(--destructive); background: color-mix(in srgb, var(--destructive) 12%, transparent); }
+
+/* Step list (numbered, for guides) */
+.doc .steps { counter-reset: step; list-style: none; padding-left: 0; gap: 1.25rem; }
+.doc .steps > li { position: relative; padding-left: 2.75rem; }
+.doc .steps > li::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute; left: 0; top: -0.1rem;
+  width: 1.9rem; height: 1.9rem;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 0.8rem; font-weight: 700;
+  background: var(--foreground); color: var(--background);
+  border: 1px solid var(--border-strong);
+}
+.doc .steps > li::marker { content: ''; }
+
+/* Agent table (docs/agents.html) */
+.doc-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.doc-table th, .doc-table td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.doc-table th { font-family: var(--font-mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted-foreground); }
+.doc-table td code { font-family: var(--font-mono); font-size: 0.78rem; white-space: nowrap; }
+.doc-table tr:hover td { background: var(--accent-soft); }
+.doc-table .rt-badge {
+  font-family: var(--font-mono); font-size: 0.62rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; padding: 0.15rem 0.45rem; border: 1px solid var(--border); white-space: nowrap;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .marquee-content {
     animation: none;

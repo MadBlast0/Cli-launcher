@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/Website/">
+
+  <script src="theme.js"></script>
+  <script src="docs-nav.js"></script>
+
+  <title>YOLO Mode - CLI Launcher Docs</title>
+  <meta name="description" content="YOLO Mode launches supported agents with their auto-approve flags so they run unattended — and how to use it safely in CLI Launcher.">
+  <link rel="canonical" href="https://cli-launcher.veyl.in/docs/yolo-mode.html">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1a1a1a">
+  <link rel="preconnect" href="https://api.github.com">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cli-launcher.veyl.in/docs/yolo-mode.html">
+  <meta property="og:title" content="YOLO Mode - CLI Launcher Docs">
+  <meta property="og:description" content="YOLO Mode launches supported agents with their auto-approve flags so they run unattended — and how to use it safely in CLI Launcher.">
+  <meta property="og:image" content="media/og-image.png">
+  <meta property="og:image:alt" content="CLI Launcher YOLO Mode">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://cli-launcher.veyl.in/docs/yolo-mode.html">
+  <meta property="twitter:title" content="YOLO Mode - CLI Launcher Docs">
+  <meta property="twitter:description" content="YOLO Mode launches supported agents with their auto-approve flags so they run unattended — and how to use it safely in CLI Launcher.">
+  <meta property="twitter:image" content="media/og-image.png">
+  <meta property="twitter:image:alt" content="CLI Launcher YOLO Mode">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "CLI Launcher",
+    "url": "https://cli-launcher.veyl.in/",
+    "publisher": { "@type": "Organization", "name": "CLI Launcher" }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://cli-launcher.veyl.in/" },
+      { "@type": "ListItem", "position": 2, "name": "Docs", "item": "https://cli-launcher.veyl.in/docs/" },
+      { "@type": "ListItem", "position": 3, "name": "YOLO Mode", "item": "https://cli-launcher.veyl.in/docs/yolo-mode.html" }
+    ]
+  }
+  </script>
+
+  <link rel="stylesheet" href="style.css?v=4">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {
+        colors: {
+          background: 'var(--background)', foreground: 'var(--foreground)',
+          card: 'var(--card)', 'card-foreground': 'var(--card-foreground)',
+          popover: 'var(--popover)', 'popover-foreground': 'var(--popover-foreground)',
+          primary: 'var(--primary)', 'primary-foreground': 'var(--primary-foreground)',
+          secondary: 'var(--secondary)', 'secondary-foreground': 'var(--secondary-foreground)',
+          muted: 'var(--muted)', 'muted-foreground': 'var(--muted-foreground)',
+          accent: 'var(--accent)', 'accent-foreground': 'var(--accent-foreground)',
+          'accent-soft': 'var(--accent-soft)', border: 'var(--border)',
+          'border-strong': 'var(--border-strong)', input: 'var(--input)', ring: 'var(--ring)',
+          success: 'var(--success)', warning: 'var(--warning)'
+        },
+        fontFamily: { sans: ['var(--font-sans)', 'sans-serif'], mono: ['var(--font-mono)', 'monospace'] },
+        boxShadow: {
+          'flat-sm': '0px 1px 0px 0px var(--border-strong)',
+          'flat': '0px 2px 0px 0px var(--border-strong)',
+          'flat-md': '0px 2px 0px 0px var(--border-strong)',
+          'flat-lg': '0px 3px 0px 0px var(--border-strong)'
+        }
+      } }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col bg-background text-foreground font-sans">
+
+  <script src="topbar.js"></script>
+
+  <div class="flex flex-1 w-full">
+    <script>DocsNav.sidebar();</script>
+
+    <div class="flex-1 min-w-0 flex flex-col">
+      <script>DocsNav.mobileBar();</script>
+
+      <main class="flex-1 w-full">
+        <article class="doc mx-auto max-w-3xl px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
+          <header class="mb-9">
+            <div class="text-[11px] font-mono uppercase tracking-widest text-muted-foreground mb-3">Docs / Using CLI Launcher</div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tighter">YOLO Mode</h1>
+            <p class="mt-3 text-sm text-muted-foreground leading-relaxed max-w-[65ch]">
+              Flip one switch to launch supported agents with their auto-approve flags enabled — ideal for
+              unattended, fully autonomous runs.
+            </p>
+          </header>
+
+          <h2>What YOLO Mode does</h2>
+          <p>
+            Terminal agents normally pause to ask for permission before editing files, running commands, or calling
+            tools. YOLO Mode injects the correct <strong>auto-approve flag</strong> for each agent, so it proceeds
+            without prompts. That makes it perfect for background automation, long-running refactors, or CI-style
+            workflows — anywhere you'd otherwise be babysitting the terminal.
+          </p>
+          <p>
+            CLI Launcher picks the right flag <em>per agent</em>, so you never hand-edit a launch command. Toggle
+            YOLO Mode on for any supported agent and launch it as usual.
+          </p>
+
+          <h2>Example: Claude Code</h2>
+          <p>With YOLO Mode on, CLI Launcher launches Claude Code with its skip-permissions flag:</p>
+          <pre><code>claude --dangerously-skip-permissions</code></pre>
+
+          <h2>Per-agent flags</h2>
+          <p>Different agents expose different flags. CLI Launcher maps them automatically; the most common:</p>
+          <table class="doc-table">
+            <thead>
+              <tr><th>Agent</th><th>Auto-approve flag (injected)</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Claude Code</td><td><code>--dangerously-skip-permissions</code></td></tr>
+              <tr><td>OpenCode</td><td><code>--dangerously-skip-permissions</code></td></tr>
+              <tr><td>Codex CLI</td><td><code>--dangerously-bypass-approvals-and-sandbox</code></td></tr>
+            </tbody>
+          </table>
+          <p class="text-xs text-muted-foreground">Flags for other agents follow the same pattern and are applied by the panel automatically.</p>
+
+          <div class="callout callout-danger">
+            <div class="callout-title">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+              Use it only in trusted directories
+            </div>
+            <p>
+              Because YOLO Mode auto-approves <strong>every</strong> action — including file edits and command
+              execution — run it only against code you trust, ideally in an isolated or disposable working directory.
+              It is not a substitute for reviewing changes.
+            </p>
+          </div>
+
+          <h2>Turning it off</h2>
+          <p>
+            Toggle YOLO Mode off and the agent launches normally, prompting for each action. You can switch modes
+            between launches at any time; it doesn't change your installed agents or their configuration.
+          </p>
+
+          <script>DocsNav.prevNext();</script>
+        </article>
+      </main>
+
+      <footer class="border-t border-border py-8 text-center text-xs text-muted-foreground font-mono mt-auto select-none">
+        <p>
+          <a href="docs/" class="underline hover:text-foreground transition-colors">Docs</a>
+          &middot;
+          <a href="downloads.html" class="underline hover:text-foreground transition-colors">Downloads</a>
+          &middot;
+          <a href="https://github.com/MadBlast0/Cli-launcher" class="underline hover:text-foreground transition-colors">GitHub</a>
+        </p>
+        <p class="mt-2">CLI Launcher is open-source under the MIT License.</p>
+      </footer>
+    </div>
+  </div>
+
+  <script src="main.js?v=4"></script>
+</body>
+</html>

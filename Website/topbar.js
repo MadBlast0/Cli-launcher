@@ -33,7 +33,7 @@
         '<span class="text-xs font-bold font-mono tracking-widest uppercase text-foreground">CLI Launcher</span>' +
       '</a>' +
       '<nav class="flex items-center gap-5 sm:gap-6 text-xs font-bold font-mono">' +
-        navLink('docs.html', 'Docs', isDocs) +
+        navLink('docs/', 'Docs', isDocs) +
         navLink('downloads.html', 'Downloads', isDl) +
         '<a href="index.html#inventory" class="hidden sm:inline hover:text-foreground text-muted-foreground transition-colors">Agents</a>' +
         '<a href="index.html#yolo" class="hidden sm:inline hover:text-foreground text-muted-foreground transition-colors">YOLO</a>' +
