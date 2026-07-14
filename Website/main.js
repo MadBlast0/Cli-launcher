@@ -540,13 +540,7 @@ function detectOS() {
     if (linuxBtn) linuxBtn.classList.add('os-current');
   }
 
-  // Downloads page: surface the user's platform (recommended card + badge).
-  const secMap = { Windows: 'section-windows', macOS: 'section-macos', Linux: 'section-linux' };
-  const badgeMap = { Windows: 'rec-badge-windows', macOS: 'rec-badge-macos', Linux: 'rec-badge-linux' };
-  Object.keys(badgeMap).forEach((os) => {
-    const b = document.getElementById(badgeMap[os]);
-    if (b) b.classList.toggle('hidden', os !== detectedOS);
-  });
+  // Downloads page: surface the user's platform in the recommended card.
   const recName = document.getElementById('rec-os-name');
   if (recName) recName.textContent = 'Download for ' + (detectedOS || 'your system');
 }

@@ -155,7 +155,7 @@
           <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
           <span id="rec-download-label">Download</span>
         </a>
-        <div class="mac-surface flex items-center gap-2 px-3 py-2 w-full">
+        <div class="flex items-center gap-2 px-3 py-2 w-full bg-secondary/40">
           <code id="rec-install-cmd" class="flex-1 text-[11px] font-mono text-foreground whitespace-nowrap overflow-x-auto">curl -fsSL https://cli-launcher.veyl.in/install.sh | sh</code>
           <button id="rec-install-copy" class="mac-btn mac-btn-soft px-2 py-1 text-[10px] font-mono shrink-0" type="button" aria-label="Copy install command">Copy</button>
         </div>
@@ -172,7 +172,7 @@
           <svg class="w-4 h-4 text-foreground" viewBox="0 0 24 24" fill="currentColor"><path d="M3 5.55 10.5 4.5v7H3v-5.95ZM3 18.45V12.5h7.5v7L3 18.45ZM11.5 4.35 21 3v8.5h-9.5v-7.15ZM21 12.5V21l-9.5-1.35V12.5H21Z"/></svg>
           <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-foreground">Windows</h2>
         </div>
-        <span id="rec-badge-windows" class="hidden text-[9px] font-bold font-mono px-1.5 py-0.5 bg-primary text-primary-foreground border border-border rounded">Recommended</span>
+
       </div>
       <div class="divide-y divide-border flex-1">
         <div class="p-4 flex flex-col gap-3">
@@ -215,9 +215,7 @@
           </a>
         </div>
       </div>
-      <div class="px-4 py-3 border-t border-border bg-secondary/40 text-[11px] font-mono text-muted-foreground">
-        Built &amp; signed via GitHub Actions · <a href="https://github.com/MadBlast0/Cli-launcher/releases" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">All releases</a>
-      </div>
+
     </div>
 
     <!-- macOS Category -->
@@ -227,7 +225,7 @@
           <svg class="w-4 h-4 text-foreground" viewBox="0 0 24 24" fill="currentColor"><path d="M16.4 12.9c0-2.2 1.8-3.2 1.9-3.3-1-1.5-2.6-1.7-3.2-1.7-1.4-.1-2.7.8-3.4.8-.7 0-1.8-.8-2.9-.8-1.5 0-2.9.9-3.7 2.2-1.6 2.7-.4 6.8 1.1 9 .7 1.1 1.6 2.3 2.8 2.3 1.1 0 1.5-.7 2.9-.7 1.4 0 1.7.7 2.9.7 1.2 0 2-1.1 2.7-2.2.9-1.2 1.2-2.4 1.2-2.5-.1 0-2.3-.9-2.3-3.8ZM14.2 5.9c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.7 1.4-.6.7-1.2 1.8-1 2.9 1 .1 2-.5 2.7-1.3Z"/></svg>
           <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-foreground">macOS</h2>
         </div>
-        <span id="rec-badge-macos" class="hidden text-[9px] font-bold font-mono px-1.5 py-0.5 bg-primary text-primary-foreground border border-border rounded">Recommended</span>
+
       </div>
       <div class="divide-y divide-border flex-1">
         <div class="p-4 flex flex-col gap-3">
@@ -283,9 +281,7 @@
           </a>
         </div>
       </div>
-      <div class="px-4 py-3 border-t border-border bg-secondary/40 text-[11px] font-mono text-muted-foreground">
-        Built &amp; signed via GitHub Actions · <a href="https://github.com/MadBlast0/Cli-launcher/releases" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">All releases</a>
-      </div>
+
     </div>
 
     <!-- Linux Category -->
@@ -295,7 +291,7 @@
           <svg class="w-4 h-4 text-foreground" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c-2.2 0-3.6 1.7-3.6 4 0 1.4.2 2.6-.5 3.9-.8 1.4-2 2.7-2.5 4.4-.3 1-.2 2 .2 2.8-.3.3-.5.7-.5 1.2-.1.6.2 1.1.5 1.4.5.5 1.4.7 2.2.9.5.1 1 .5 1.6.8.6.4 1.3.6 2.1.6 1 0 1.8-.4 2.4-.9.5-.4 1-.7 1.4-.8.8-.2 1.6-.3 2.1-.8.4-.4.6-.9.5-1.6 0-.4-.2-.8-.4-1.1.4-.9.4-1.9.2-2.9-.5-1.8-1.8-3.3-2.7-4.4-.8-1.1-.6-2.1-.6-3.5C14.4 3.9 14.1 2 12 2Zm-1.9 6.7c.5 0 .8.5.8 1.1 0 .4-.2.8-.5 1l-.4-.2c.2-.1.4-.4.4-.7 0-.4-.2-.7-.4-.7-.2 0-.4.3-.4.7v.1c-.1-.1-.2-.1-.3-.2v-.1c0-.5.3-1 .8-1Zm3.6 0c.6 0 .9.6.9 1.1l-.1.3-.4.1c.1-.1.1-.3.1-.5 0-.4-.2-.7-.5-.7s-.5.3-.5.7c0 .2 0 .3.1.5h-.5c-.1-.2-.1-.4-.1-.5.1-.5.4-1 1-1Zm-1.8 1.5c.4 0 .7.1 1 .3l.8.4c.3.2.5.4.5.6 0 .3-.3.5-.6.7-.4.3-.9.7-1.6.7-.7 0-1.1-.4-1.5-.7-.3-.2-.6-.4-.6-.6 0-.3.3-.5.6-.7.4-.2.6-.4.8-.5.2-.1.4-.2.6-.2Z"/></svg>
           <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-foreground">Linux</h2>
         </div>
-        <span id="rec-badge-linux" class="hidden text-[9px] font-bold font-mono px-1.5 py-0.5 bg-primary text-primary-foreground border border-border rounded">Recommended</span>
+
       </div>
       <div class="divide-y divide-border flex-1">
         <div class="p-4 flex flex-col gap-3">
@@ -351,9 +347,7 @@
           </a>
         </div>
       </div>
-      <div class="px-4 py-3 border-t border-border bg-secondary/40 text-[11px] font-mono text-muted-foreground">
-        Built &amp; signed via GitHub Actions · <a href="https://github.com/MadBlast0/Cli-launcher/releases" target="_blank" rel="noopener noreferrer" class="underline hover:text-foreground">All releases</a>
-      </div>
+
     </div>
 
   </div>
@@ -374,7 +368,7 @@
         </div>
         <div class="p-4 flex flex-col gap-3">
           <p class="text-xs text-muted-foreground leading-relaxed">Fetch and run the universal installer script.</p>
-          <div class="mac-surface flex items-center gap-2 px-3 py-2 w-full">
+          <div class="flex items-center gap-2 px-3 py-2 w-full bg-secondary/40">
             <code class="flex-1 text-[11px] font-mono text-foreground whitespace-nowrap overflow-x-auto" data-install-cmd="curl -fsSL https://cli-launcher.veyl.in/install.sh | sh">curl -fsSL https://cli-launcher.veyl.in/install.sh | sh</code>
             <button class="mac-btn mac-btn-soft px-2 py-1 text-[10px] font-mono copy-btn shrink-0" type="button" aria-label="Copy command">Copy</button>
           </div>
@@ -390,7 +384,7 @@
         </div>
         <div class="p-4 flex flex-col gap-3">
           <p class="text-xs text-muted-foreground leading-relaxed">Alternative downloader if curl is unavailable.</p>
-          <div class="mac-surface flex items-center gap-2 px-3 py-2 w-full">
+          <div class="flex items-center gap-2 px-3 py-2 w-full bg-secondary/40">
             <code class="flex-1 text-[11px] font-mono text-foreground whitespace-nowrap overflow-x-auto" data-install-cmd="wget -qO- https://cli-launcher.veyl.in/install.sh | sh">wget -qO- https://cli-launcher.veyl.in/install.sh | sh</code>
             <button class="mac-btn mac-btn-soft px-2 py-1 text-[10px] font-mono copy-btn shrink-0" type="button" aria-label="Copy command">Copy</button>
           </div>
@@ -406,7 +400,7 @@
         </div>
         <div class="p-4 flex flex-col gap-3">
           <p class="text-xs text-muted-foreground leading-relaxed">One-line installer for Windows via IRM.</p>
-          <div class="mac-surface flex items-center gap-2 px-3 py-2 w-full">
+          <div class="flex items-center gap-2 px-3 py-2 w-full bg-secondary/40">
             <code class="flex-1 text-[11px] font-mono text-foreground whitespace-nowrap overflow-x-auto" data-install-cmd="powershell -ExecutionPolicy Bypass -c &quot;irm https://cli-launcher.veyl.in/install.ps1 | iex&quot;">powershell -ExecutionPolicy Bypass -c "irm https://cli-launcher.veyl.in/install.ps1 | iex"</code>
             <button class="mac-btn mac-btn-soft px-2 py-1 text-[10px] font-mono copy-btn shrink-0" type="button" aria-label="Copy command">Copy</button>
           </div>
@@ -422,7 +416,7 @@
         </div>
         <div class="p-4 flex flex-col gap-3">
           <p class="text-xs text-muted-foreground leading-relaxed">Clone the repo and build locally with Node.</p>
-          <div class="mac-surface flex items-center gap-2 px-3 py-2 w-full">
+          <div class="flex items-center gap-2 px-3 py-2 w-full bg-secondary/40">
             <code class="flex-1 text-[11px] font-mono text-foreground whitespace-nowrap overflow-x-auto" data-install-cmd="git clone https://github.com/MadBlast0/Cli-launcher && cd Cli-launcher && npm install && npm run build">git clone https://github.com/MadBlast0/Cli-launcher &amp;&amp; cd Cli-launcher &amp;&amp; npm install &amp;&amp; npm run build</code>
             <button class="mac-btn mac-btn-soft px-2 py-1 text-[10px] font-mono copy-btn shrink-0" type="button" aria-label="Copy command">Copy</button>
           </div>
