@@ -6,7 +6,21 @@
 /* Restrict scanning to the static site sources (not the whole repo) */
 @source "./index.html";
 @source "./downloads.html";
+@source "./privacy.html";
+@source "./docs/index.html";
+@source "./docs/agents.html";
+@source "./docs/faq.html";
+@source "./docs/installation.html";
+@source "./docs/quick-start.html";
+@source "./docs/theming.html";
+@source "./docs/troubleshooting.html";
+@source "./docs/yolo-mode.html";
 @source "./main.js";
+@source "./topbar.js";
+@source "./footer.js";
+@source "./docs-nav.js";
+@source "./consent.js";
+@source "./theme.js";
 
 /* Map the app's CSS-variable design tokens to Tailwind theme so utilities
    like `bg-background`, `text-muted-foreground`, `border-border` are emitted. */

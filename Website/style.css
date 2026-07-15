@@ -62,12 +62,17 @@ html.dark {
   --radius: 0rem;
 }
 
-/* Base resets & styles matching the app theme */
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  border-color: var(--border);
+/* Base resets & styles matching the app theme.
+   Kept in @layer base so Tailwind's utilities (@layer utilities, which sorts
+   later) still win — unlayered rules would beat every layered utility and
+   silently cancel out spacing classes like px-6. */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border-color: var(--border);
+  }
 }
 
 body {

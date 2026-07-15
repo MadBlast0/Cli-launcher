@@ -24,6 +24,7 @@
     "build:linux": "npm run build:renderer && npm run build:main && electron-builder --linux",
     "build:all": "npm run build:renderer && npm run build:main && electron-builder --win --mac --linux",
     "build:site-css": "node Website/build-css.mjs",
+    "dev:site": "npm run build:site-css && npx --yes serve Website -p 3000",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
