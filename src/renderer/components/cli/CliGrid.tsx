@@ -3,7 +3,7 @@ import { SearchInput, Button, Tooltip, CliCardSkeleton } from '../ui'
 import { CliCard } from './CliCard'
 import { ModeDropdown } from './ModeDropdown'
 import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared/types'
-import { Database, AlertTriangle, Terminal, Plus, RefreshCw, ArrowUpFromLine, Wrench } from 'lucide-react'
+import { Database, AlertTriangle, Terminal, Plus, RefreshCw, ArrowUpFromLine } from 'lucide-react'
 
 interface CliGridProps {
   clis: CliDefinition[]
@@ -36,7 +36,6 @@ interface CliGridProps {
   onSelect?: (index: number) => void
   onConfigure?: (cliId: string) => void
   onUpdateAll?: () => void
-  onRepairAll?: () => void
   onHide?: (cliId: string) => void
   aliasMap?: Record<string, string>
 }
@@ -46,7 +45,7 @@ export function CliGrid({
   onRepair, onUpdate, onReorder, onReorderCommit, onOpenDeps, onOpenCatalog, onCliChanged, onRefreshAll,
   deps, depsLoading = false, search, onSearchChange, justInstalled, onToast, searchInputRef,
   yoloMode, onYoloModeChange, refreshProgress = 0, refreshCurrent = '', totalClis = 0,
-  selectedIndex = -1, onSelect, onConfigure, onUpdateAll, onRepairAll, onHide, aliasMap,
+  selectedIndex = -1, onSelect, onConfigure, onUpdateAll, onHide, aliasMap,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [reordered, setReordered] = useState(false)
@@ -91,10 +90,8 @@ export function CliGrid({
     ? [!deps.node.installed && 'Node.js', !deps.python.installed && 'Python'].filter(Boolean)
     : []
 
+  const refreshing = refreshProgress > 0 && refreshProgress < totalClis
   const outdatedCount = clis.filter((c) => states[c.id]?.status === 'update-available').length
-  const installedCount = clis.filter(
-    (c) => states[c.id]?.status === 'installed' || states[c.id]?.status === 'update-available'
-  ).length
 
   return (
     <div className="flex flex-col h-full min-h-0 px-4 pb-4" role="main" aria-label="CLI Launcher">
@@ -124,56 +121,42 @@ export function CliGrid({
         )}
       </div>
 
-      {/* Refresh progress bar — animates in/out smoothly */}
-      <div
-        className={`overflow-hidden transition-all duration-300 ease-out shrink-0 ${
-          refreshProgress > 0 && refreshProgress < totalClis
-            ? 'max-h-7 opacity-100 pt-2'
-            : 'max-h-0 opacity-0 pt-0'
-        }`}
-      >
-        <div className="flex items-center gap-2 px-1 anim-fade-down">
-          <div className="flex-1 h-1 bg-border overflow-hidden rounded-none">
-            <div
-              className="h-full bg-primary rounded-none transition-all duration-300 ease-out"
-              style={{ width: `${Math.round((refreshProgress / totalClis) * 100)}%` }}
-            />
-          </div>
-          <span className="text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
-            {refreshCurrent ? `Checking ${refreshCurrent}… ` : ''}
-            {refreshProgress}/{totalClis}
-          </span>
-        </div>
-      </div>
-
       {/* Section label */}
       <div className="flex items-center justify-between px-1 pt-3 pb-2 shrink-0">
-        <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
-          Installed
-        </span>
         <div className="flex items-center gap-2">
+          <span className="text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
+            Installed
+          </span>
+          {refreshing && (
+            <span className="text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
+              {refreshCurrent ? `Checking ${refreshCurrent}… ` : ''}
+              {refreshProgress}/{totalClis}
+            </span>
+          )}
+          <Tooltip text="Re-detect CLIs and dependencies">
+            <Button
+              variant="ghost"
+              size="sm"
+              icon={<RefreshCw size={13} className={refreshing ? 'animate-spin' : ''} />}
+              onClick={onRefreshAll}
+              aria-label="Refresh detection"
+            />
+          </Tooltip>
+        </div>
+        <div className="flex items-center gap-2">
+          {onUpdateAll && outdatedCount > 0 && (
+            <Button variant="secondary" size="xs" icon={<ArrowUpFromLine size={13} />} onClick={onUpdateAll} aria-label={`Update all ${outdatedCount} outdated CLIs`}>
+              Update all{outdatedCount > 0 ? ` (${outdatedCount})` : ''}
+            </Button>
+          )}
           <ModeDropdown
             yoloMode={yoloMode}
             onYoloModeChange={onYoloModeChange}
             supportedClis={supportedYoloClis}
           />
-          <Tooltip text="Re-detect CLIs and dependencies">
-            <Button variant="ghost" size="sm" icon={<RefreshCw size={13} />} onClick={onRefreshAll} aria-label="Refresh detection">
-            </Button>
-          </Tooltip>
-          <Button variant="secondary" size="sm" icon={<Plus size={14} />} onClick={onOpenCatalog} aria-label="Browse CLI catalog">
+          <Button variant="secondary" size="xs" icon={<Plus size={14} />} onClick={onOpenCatalog} aria-label="Browse CLI catalog">
             Catalog
           </Button>
-          {onRepairAll && installedCount > 0 && (
-            <Button variant="ghost" size="sm" icon={<Wrench size={13} />} onClick={onRepairAll} aria-label="Repair all installed CLIs">
-              Repair all
-            </Button>
-          )}
-          {onUpdateAll && outdatedCount > 0 && (
-            <Button variant="secondary" size="sm" icon={<ArrowUpFromLine size={13} />} onClick={onUpdateAll} aria-label={`Update all ${outdatedCount} outdated CLIs`}>
-              Update all{outdatedCount > 0 ? ` (${outdatedCount})` : ''}
-            </Button>
-          )}
         </div>
       </div>
 

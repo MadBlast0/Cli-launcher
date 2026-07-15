@@ -289,6 +289,7 @@ function initAppDemo() {
           updateBtn.remove();
           row.querySelector('.demo-row-version').textContent = cli.update;
           toast(cli.name + ' updated to ' + cli.update);
+          updateAllVisibility();
         }, 1400);
       });
     }
@@ -296,6 +297,14 @@ function initAppDemo() {
     rowsEl.appendChild(row);
   }
   clis.forEach(buildRow);
+
+  // Hide the "Update all" button unless at least one installed CLI has an
+  // available update (mirrors the real app's `outdatedCount > 0` condition).
+  function updateAllVisibility() {
+    const btn = document.getElementById('demo-update-all-btn');
+    if (btn) btn.hidden = rowsEl.querySelectorAll('.demo-update-btn').length === 0;
+  }
+  updateAllVisibility();
 
   // --- Search filter ----------------------------------------------------
   const searchInput = document.getElementById('demo-search-input');
@@ -460,6 +469,30 @@ function initAppDemo() {
     pinBtn.addEventListener('click', () => {
       const on = pinBtn.classList.toggle('is-active');
       toast(on ? 'Pinned to top' : 'Unpinned');
+    });
+  }
+
+  // --- Reload / re-detect (demo) — mirrors the app's refresh button -------
+  const refreshBtn = document.getElementById('demo-refresh-btn');
+  if (refreshBtn) {
+    refreshBtn.addEventListener('click', () => {
+      const svg = refreshBtn.querySelector('svg');
+      if (svg) svg.classList.add('is-spinning');
+      setTimeout(() => {
+        if (svg) svg.classList.remove('is-spinning');
+        toast('Re-detecting CLIs and dependencies');
+      }, 900);
+    });
+  }
+
+  // --- Update all (demo) — mirrors the app's onUpdateAll ------------------
+  const updateAllBtn = document.getElementById('demo-update-all-btn');
+  if (updateAllBtn) {
+    updateAllBtn.addEventListener('click', () => {
+      const updaters = rowsEl.querySelectorAll('.demo-update-btn');
+      if (updaters.length === 0) { toast('All CLIs are up to date'); return; }
+      toast('Updating ' + updaters.length + ' CLIs…');
+      updaters.forEach((b) => b.click());
     });
   }
 

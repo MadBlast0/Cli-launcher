@@ -498,7 +498,6 @@ export default function App() {
           onCliChanged={refreshStates}
           onConfigure={setConfigCliId}
           onUpdateAll={() => handleBulkAction('update')}
-          onRepairAll={() => handleBulkAction('repair')}
           onHide={handleHide}
           aliasMap={cliAlias}
           onRefreshAll={refreshAll}

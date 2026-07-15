@@ -344,7 +344,13 @@ html:not(.dark) .demo-theme-icon { left: 6px; right: auto; }
   color: var(--muted-foreground);
 }
 .demo-sectionrow .demo-btn { height: 38px; font-size: 13px; }
+.demo-btn.demo-btn-sm { height: 30px; padding: 0 10px; font-size: 11px; border-radius: 3px; }
+.demo-btn.demo-btn-sm svg { width: 13px; height: 13px; }
+.demo-btn[hidden] { display: none; }
+.demo-section-left { display: flex; align-items: center; gap: 8px; }
 .demo-section-actions { display: flex; align-items: center; gap: 8px; }
+.demo-icon-ghost.is-spinning svg { animation: demo-spin 0.9s linear infinite; }
+@keyframes demo-spin { to { transform: rotate(360deg); } }
 
 /* Mode dropdown (Normal / YOLO) — mirrors the app's ModeDropdown */
 .demo-mode { position: relative; }
