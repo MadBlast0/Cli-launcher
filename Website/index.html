@@ -526,7 +526,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
 
         <!-- Left: copy + interactive mock toggle -->
-        <div class="flex flex-col justify-center">
+          <div class="flex flex-col">
           <span class="text-[10px] font-bold tracking-widest uppercase font-mono text-warning mb-4 select-none">? Autonomous execution</span>
           <h2 class="text-3xl md:text-4xl font-extrabold tracking-tighter mb-4">YOLO Mode</h2>
           <p class="text-sm md:text-base text-muted-foreground leading-relaxed mb-8 max-w-[48ch]">
@@ -536,7 +536,7 @@
           </p>
 
           <!-- Mock toggle switch -->
-          <div class="mac-surface p-5 flex flex-col gap-4">
+          <div class="mac-surface p-3.5 flex flex-col gap-3 mt-auto">
             <div class="flex items-center justify-between gap-4">
               <div class="flex flex-col">
                 <span class="text-sm font-bold font-mono uppercase text-foreground">YOLO mode</span>
@@ -547,7 +547,7 @@
                 <span class="yolo-knob"></span>
               </button>
             </div>
-            <div class="border-t border-border pt-4">
+             <div class="border-t border-border pt-3">
               <p class="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">Command injected for Claude Code:</p>
               <pre class="yolo-code text-[12px] leading-relaxed overflow-x-auto"><code><span class="text-muted-foreground">$ </span><span id="yolo-cmd">claude</span></code></pre>
             </div>
@@ -555,30 +555,30 @@
         </div>
 
         <!-- Right: supported flags grid -->
-        <div class="flex flex-col justify-center">
+          <div class="flex flex-col">
           <span class="text-[10px] font-bold tracking-widest uppercase font-mono text-muted-foreground mb-4 select-none">Per-agent auto-approve flags</span>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="yolo-flags">
-            <div class="mac-card p-3.5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-auto" id="yolo-flags">
+            <div class="mac-card p-4">
               <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/claude.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">Claude Code</span></div>
               <code class="text-[11px] font-mono text-warning break-all">--dangerously-skip-permissions</code>
             </div>
-            <div class="mac-card p-3.5">
+            <div class="mac-card p-4">
               <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/opencode.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">OpenCode</span></div>
               <code class="text-[11px] font-mono text-warning break-all">--dangerously-skip-permissions</code>
             </div>
-            <div class="mac-card p-3.5">
+            <div class="mac-card p-4">
               <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/codex.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">Codex CLI</span></div>
               <code class="text-[11px] font-mono text-warning break-all">--dangerously-bypass-approvals-and-sandbox</code>
             </div>
-            <div class="mac-card p-3.5">
+            <div class="mac-card p-4">
               <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/aider.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">Aider</span></div>
               <code class="text-[11px] font-mono text-warning break-all">--yes-always</code>
             </div>
-            <div class="mac-card p-3.5">
+            <div class="mac-card p-4">
               <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/gemini.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">Gemini CLI</span></div>
               <code class="text-[11px] font-mono text-warning break-all">--yolo</code>
             </div>
-            <div class="mac-card p-3.5">
+            <div class="mac-card p-4">
               <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/ra-aid.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">RA.Aid</span></div>
               <code class="text-[11px] font-mono text-warning break-all">--cowboy-mode</code>
             </div>

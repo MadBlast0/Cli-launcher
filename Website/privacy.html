@@ -17,6 +17,7 @@
   </script>
   <script src="theme.js"></script>
   <script src="consent.js"></script>
+  <script src="docs-nav.js"></script>
 
   <title>Privacy Policy - CLI Launcher</title>
   <meta name="description" content="How CLI Launcher uses cookies and public data, what we collect, and your choices and rights.">
@@ -89,8 +90,14 @@
 
   <script src="topbar.js"></script>
 
-  <main class="flex-1 w-full">
-    <article class="doc mx-auto max-w-3xl px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
+  <div class="flex flex-1 w-full">
+    <script>DocsNav.sidebar();</script>
+
+    <div class="flex-1 min-w-0 flex flex-col">
+      <script>DocsNav.mobileBar();</script>
+
+      <main class="flex-1 w-full">
+        <article class="doc mx-auto max-w-3xl px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
       <header class="mb-9">
         <div class="text-[11px] font-mono uppercase tracking-widest text-muted-foreground mb-3">Docs / Legal</div>
         <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tighter">Privacy Policy</h1>
@@ -209,10 +216,12 @@
         Questions about this policy can be raised through the project's
         <a href="https://github.com/MadBlast0/Cli-launcher/issues" target="_blank" rel="noopener">GitHub issues</a>.
       </p>
-    </article>
-  </main>
+        </article>
+      </main>
 
-  <script src="footer.js"></script>
+      <script src="footer.js"></script>
+    </div>
+  </div>
 
   <script src="main.js?v=4"></script>
 </body>
