@@ -5,12 +5,6 @@
       Theme preference is persisted in a real cookie (clla_theme) so it
       survives navigation across pages; localStorage is a fallback. */
 (function () {
-  try {
-    var p = location.pathname;
-    if (p && !p.endsWith('/') && p.lastIndexOf('.') <= p.lastIndexOf('/')) {
-      location.replace(p + '/');
-    }
-  } catch (e) {}
 
   function getCookie(name) {
     try {

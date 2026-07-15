@@ -7,7 +7,6 @@
 
   <script>
     (function () {
-      try { var p = location.pathname; if (p && !p.endsWith('/') && p.lastIndexOf('.') <= p.lastIndexOf('/')) location.replace(p + '/'); } catch (e) {}
       function gc(n){ try { var m = document.cookie.match(new RegExp('(?:^|; )' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; } catch (e) { return null; } }
       var saved = gc('clla_theme');
       if (!saved) { try { saved = localStorage.getItem('theme'); } catch (e) { saved = null; } }
