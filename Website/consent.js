@@ -94,7 +94,7 @@
 
     var root = el('div', 'fixed inset-x-0 bottom-0 z-[60] p-4 flex justify-end pointer-events-none');
     root.id = 'clla-consent';
-    var card = el('div', 'pointer-events-auto w-full max-w-sm mac-surface border border-border-strong p-4 sm:p-5');
+    var card = el('div', 'pointer-events-auto w-full max-w-md mac-surface border border-border-strong p-4 sm:p-5');
     root.appendChild(card);
     document.body.appendChild(root);
 
@@ -140,7 +140,7 @@
         list.appendChild(item);
       });
       card.appendChild(list);
-      var actions = el('div', 'flex flex-wrap gap-2 justify-end mt-4');
+      var actions = el('div', 'flex gap-2 justify-end mt-4');
       var save = el('button', 'mac-btn mac-btn-primary px-3 py-2 text-xs', 'Save preferences'); save.id = 'clla-save';
       var accept2 = el('button', 'mac-btn mac-btn-soft px-3 py-2 text-xs', 'Accept all'); accept2.id = 'clla-accept2';
       var reject2 = el('button', 'mac-btn mac-btn-soft px-3 py-2 text-xs', 'Reject all'); reject2.id = 'clla-reject2';

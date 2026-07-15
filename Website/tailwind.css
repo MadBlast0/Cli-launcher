@@ -12,7 +12,7 @@
     --color-white: #fff;
     --spacing: 0.25rem;
     --container-sm: 24rem;
-    --container-2xl: 42rem;
+    --container-md: 28rem;
     --container-3xl: 48rem;
     --container-5xl: 64rem;
     --container-6xl: 72rem;
@@ -498,8 +498,8 @@
   .max-w-\[600px\] {
     max-width: 600px;
   }
-  .max-w-sm {
-    max-width: var(--container-sm);
+  .max-w-md {
+    max-width: var(--container-md);
   }
   .min-w-0 {
     min-width: 0;
