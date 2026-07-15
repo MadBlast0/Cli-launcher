@@ -799,7 +799,7 @@ html.dark .inv-badge-standalone { color: #d6b15e; }
   font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: var(--foreground);
 }
-.doc .callout-info { border-left-color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, transparent); }
+.doc .callout-info { border-left-color: var(--primary); background: var(--card); }
 .doc .callout-warning { border-left-color: var(--warning); background: color-mix(in srgb, var(--warning) 12%, transparent); }
 .doc .callout-danger { border-left-color: var(--destructive); background: color-mix(in srgb, var(--destructive) 12%, transparent); }
 
