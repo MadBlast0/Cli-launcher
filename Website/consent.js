@@ -92,9 +92,9 @@
     var existing = read();
     var draft = existing ? JSON.parse(JSON.stringify(existing)) : fresh();
 
-    var root = el('div', 'fixed inset-x-0 bottom-0 z-[60] p-4 flex justify-center pointer-events-none');
+    var root = el('div', 'fixed bottom-0 right-0 z-[60] p-4 pointer-events-none');
     root.id = 'clla-consent';
-    var card = el('div', 'pointer-events-auto w-full max-w-2xl mac-surface border border-border-strong p-4 sm:p-5');
+    var card = el('div', 'pointer-events-auto w-full max-w-md mac-surface border border-border-strong p-4 sm:p-5');
     root.appendChild(card);
     document.body.appendChild(root);
 
