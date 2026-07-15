@@ -12,6 +12,7 @@
   ];
   var resources = [
     { href: 'downloads.html', label: 'Downloads' },
+    { href: 'privacy.html', label: 'Privacy Policy' },
     { href: 'https://github.com/MadBlast0/Cli-launcher', label: 'GitHub' },
     { href: 'https://github.com/MadBlast0/Cli-launcher/releases/latest', label: 'Releases' },
     { href: 'https://github.com/MadBlast0/Cli-launcher/issues', label: 'Report an Issue' }

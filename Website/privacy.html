@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <base href="/Website/">
+
+  <script>
+    (function () {
+      try { var p = location.pathname; if (p && !p.endsWith('/') && p.lastIndexOf('.') <= p.lastIndexOf('/')) location.replace(p + '/'); } catch (e) {}
+      function gc(n){ try { var m = document.cookie.match(new RegExp('(?:^|; )' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^;]*)')); return m ? decodeURIComponent(m[1]) : null; } catch (e) { return null; } }
+      var saved = gc('clla_theme');
+      if (!saved) { try { saved = localStorage.getItem('theme'); } catch (e) { saved = null; } }
+      var pd = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.classList.toggle('dark', saved === 'dark' || (!saved && pd));
+    })();
+  </script>
+  <script src="theme.js"></script>
+  <script src="consent.js"></script>
+
+  <title>Privacy Policy - CLI Launcher</title>
+  <meta name="description" content="How CLI Launcher uses cookies and public data, what we collect, and your choices and rights.">
+  <link rel="canonical" href="https://cli-launcher.veyl.in/privacy.html">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#1a1a1a">
+  <link rel="preconnect" href="https://api.github.com">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cli-launcher.veyl.in/privacy.html">
+  <meta property="og:title" content="Privacy Policy - CLI Launcher">
+  <meta property="og:description" content="How CLI Launcher uses cookies and public data, what we collect, and your choices and rights.">
+  <meta property="og:image" content="media/og-image.png">
+
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://cli-launcher.veyl.in/privacy.html">
+  <meta property="twitter:title" content="Privacy Policy - CLI Launcher">
+  <meta property="twitter:description" content="How CLI Launcher uses cookies and public data, what we collect, and your choices and rights.">
+  <meta property="twitter:image" content="media/og-image.png">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "CLI Launcher",
+    "url": "https://cli-launcher.veyl.in/",
+    "publisher": { "@type": "Organization", "name": "CLI Launcher" }
+  }
+  </script>
+
+  <link rel="stylesheet" href="style.css?v=4">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: {
+        colors: {
+          background: 'var(--background)', foreground: 'var(--foreground)',
+          card: 'var(--card)', 'card-foreground': 'var(--card-foreground)',
+          popover: 'var(--popover)', 'popover-foreground': 'var(--popover-foreground)',
+          primary: 'var(--primary)', 'primary-foreground': 'var(--primary-foreground)',
+          secondary: 'var(--secondary)', 'secondary-foreground': 'var(--secondary-foreground)',
+          muted: 'var(--muted)', 'muted-foreground': 'var(--muted-foreground)',
+          accent: 'var(--accent)', 'accent-foreground': 'var(--accent-foreground)',
+          'accent-soft': 'var(--accent-soft)', border: 'var(--border)',
+          'border-strong': 'var(--border-strong)', input: 'var(--input)', ring: 'var(--ring)',
+          success: 'var(--success)', warning: 'var(--warning)'
+        },
+        fontFamily: { sans: ['var(--font-sans)', 'sans-serif'], mono: ['var(--font-mono)', 'monospace'] },
+        boxShadow: {
+          'flat-sm': '0px 1px 0px 0px var(--border-strong)',
+          'flat': '0px 2px 0px 0px var(--border-strong)',
+          'flat-md': '0px 2px 0px 0px var(--border-strong)',
+          'flat-lg': '0px 3px 0px 0px var(--border-strong)'
+        }
+      } }
+    }
+  </script>
+</head>
+<body class="min-h-screen flex flex-col bg-background text-foreground font-sans">
+
+  <script src="topbar.js"></script>
+
+  <main class="flex-1 w-full">
+    <article class="doc mx-auto max-w-3xl px-4 sm:px-6 lg:px-10 py-8 lg:py-12">
+      <header class="mb-9">
+        <div class="text-[11px] font-mono uppercase tracking-widest text-muted-foreground mb-3">Home / Legal</div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tighter">Privacy Policy</h1>
+        <p class="mt-3 text-sm text-muted-foreground leading-relaxed max-w-[65ch]">
+          This page explains what CLI Launcher's website stores in your browser, what public data it reads, and the
+          choices and rights you have. It is written in plain language.
+        </p>
+        <p class="mt-2 text-xs text-muted-foreground">Last updated: July 2026</p>
+      </header>
+
+      <h2>Who we are</h2>
+      <p>
+        CLI Launcher is an open-source desktop application and website. The project is published under the MIT license
+        at <a href="https://github.com/MadBlast0/Cli-launcher" target="_blank" rel="noopener">github.com/MadBlast0/Cli-launcher</a>.
+        This policy covers the website (this site). The desktop app is described briefly under "The desktop application" below.
+      </p>
+
+      <h2>What we store in your browser</h2>
+      <p>
+        We use a small number of first-party cookies and the equivalent <code>localStorage</code> values. These never
+        leave your device and are not sent to any analytics or advertising service:
+      </p>
+      <div class="overflow-x-auto my-4">
+        <table class="w-full text-sm border border-border">
+          <thead class="bg-muted/50 text-left">
+            <tr>
+              <th class="px-3 py-2 font-mono text-xs uppercase tracking-wider">Name</th>
+              <th class="px-3 py-2 font-mono text-xs uppercase tracking-wider">Category</th>
+              <th class="px-3 py-2 font-mono text-xs uppercase tracking-wider">Purpose</th>
+              <th class="px-3 py-2 font-mono text-xs uppercase tracking-wider">Duration</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-border">
+            <tr>
+              <td class="px-3 py-2 font-mono text-xs">clla_consent</td>
+              <td class="px-3 py-2 text-xs">Strictly necessary</td>
+              <td class="px-3 py-2 text-xs">Remembers the cookie choices you made in the consent banner.</td>
+              <td class="px-3 py-2 text-xs">Up to 1 year</td>
+            </tr>
+            <tr>
+              <td class="px-3 py-2 font-mono text-xs">clla_theme</td>
+              <td class="px-3 py-2 text-xs">Preferences</td>
+              <td class="px-3 py-2 text-xs">Remembers whether you prefer light or dark mode.</td>
+              <td class="px-3 py-2 text-xs">Up to 1 year</td>
+            </tr>
+            <tr>
+              <td class="px-3 py-2 font-mono text-xs">theme <span class="text-muted-foreground">(localStorage)</span></td>
+              <td class="px-3 py-2 text-xs">Preferences</td>
+              <td class="px-3 py-2 text-xs">Fallback mirror of your theme choice when cookies are unavailable.</td>
+              <td class="px-3 py-2 text-xs">Until cleared</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-xs text-muted-foreground">
+        "Strictly necessary" cookies cannot be disabled &mdash; the site requires them to remember your consent and
+        function. "Preferences" and "Analytics" are optional and only set after you accept them.
+      </p>
+      <div class="callout callout-info">
+        <div class="callout-title">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          No tracking, no accounts
+        </div>
+        <p>We do not set third-party advertising or cross-site tracking cookies, and this site has no user accounts or contact forms that collect personal information.</p>
+      </div>
+
+      <h2>Public data we read</h2>
+      <p>
+        If you accept <strong>Analytics</strong> cookies, this site fetches public information from the GitHub API
+        (such as the repository's star count) to display a live badge. This request is made from your browser directly
+        to <code>api.github.com</code> and contains no personally identifiable information. If you reject Analytics, that
+        fetch is skipped.
+      </p>
+
+      <h2>The desktop application</h2>
+      <p>
+        The CLI Launcher app runs locally on your computer. It installs and manages terminal AI agents (via
+        <code>npm</code>, <code>pip</code>, or downloaded binaries) on your machine. The app does not transmit your
+        code, prompts, or usage telemetry to us. Agent installations are performed by your own package managers.
+      </p>
+
+      <h2>Legal basis</h2>
+      <p>
+        Strictly necessary cookies are required for the site to function and to remember your consent. Preferences and
+        analytics cookies are used only with your consent, which you grant through the banner on your first visit.
+      </p>
+
+      <h2>Your choices and rights</h2>
+      <ul>
+        <li>You can change or withdraw your cookie choices at any time via the <strong>Cookie settings</strong> link in the footer.</li>
+        <li>You can clear cookies and site data for this site from your browser's settings; the consent banner will reappear on your next visit.</li>
+        <li>You may request information about, or deletion of, any data you believe we hold by contacting us using the details below.</li>
+      </ul>
+
+      <h2>Data retention</h2>
+      <p>
+        Consent and theme cookies are stored for up to one year from your last choice, after which they expire and the
+        banner will ask you again. No server-side profile of you is retained.
+      </p>
+
+      <h2>Third-party services</h2>
+      <p>
+        The only external service this site contacts is the GitHub API, and only for public repository metadata when
+        Analytics is enabled. We are not responsible for the privacy practices of GitHub; refer to
+        <a href="https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement" target="_blank" rel="noopener">GitHub's Privacy Statement</a>.
+      </p>
+
+      <h2>Children</h2>
+      <p>This website is not directed at children under 16, and we do not knowingly collect personal information from them.</p>
+
+      <h2>Changes to this policy</h2>
+      <p>If we change this policy, we will update the "Last updated" date above. Significant changes will be noted on the site.</p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about this policy can be raised through the project's
+        <a href="https://github.com/MadBlast0/Cli-launcher/issues" target="_blank" rel="noopener">GitHub issues</a>.
+      </p>
+    </article>
+  </main>
+
+  <script src="footer.js"></script>
+
+  <script src="main.js?v=4"></script>
+</body>
+</html>

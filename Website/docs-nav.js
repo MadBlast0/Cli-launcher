@@ -50,6 +50,10 @@ window.DocsNav = (function () {
       });
       html += '</div>';
     });
+    html += '<div class="mb-2">' +
+      '<div class="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/70 px-3 mb-2">Legal</div>' +
+      '<a href="privacy.html" class="block px-3 py-1.5 text-sm border-l-2 border-transparent text-muted-foreground hover:text-foreground hover:bg-accent-soft/50 transition-colors">Privacy Policy</a>' +
+      '</div>';
     return html;
   }
 

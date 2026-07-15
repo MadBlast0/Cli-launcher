@@ -106,6 +106,9 @@
       info.appendChild(el('p', 'text-xs text-muted-foreground leading-relaxed',
         'We use cookies to remember your preferences (like theme) and to understand anonymous usage. ' +
         'Choose what to allow — you can change this any time.'));
+      var learn = el('a', 'text-xs text-primary hover:underline mt-1 inline-block', 'Read our Privacy Policy');
+      learn.href = 'privacy.html';
+      info.appendChild(learn);
       row.appendChild(info);
       var actions = el('div', 'flex flex-wrap gap-2 sm:flex-col sm:items-stretch');
       var accept = el('button', 'mac-btn mac-btn-primary px-3 py-2 text-xs', 'Accept all'); accept.id = 'clla-accept';
