@@ -167,9 +167,44 @@ body {
   flex-shrink: 0;
 }
 
-/* Theme toggle transition helper */
-.theme-transition * {
-  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease !important;
+/* Theme toggle transition helper — smooth, whole-page color crossfade.
+   Only color-related properties animate (no layout/transform), so spacing,
+   typography and component styles are untouched. This is the fallback for
+   browsers without the View Transitions API; when the API is available the
+   page crossfades as a single snapshot (see ::view-transition rules below). */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease,
+    fill 220ms ease,
+    stroke 220ms ease,
+    outline-color 220ms ease,
+    box-shadow 220ms ease !important;
+}
+
+/* Whole-page crossfade via the View Transitions API. Browsers without
+   support ignore these rules and use the color transitions above. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: none !important;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 1ms;
+  }
 }
 
 /* Infinite scrolling marquee animation */

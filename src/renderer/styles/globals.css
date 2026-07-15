@@ -436,3 +436,45 @@
 @media (prefers-reduced-motion: reduce) {
   .skeleton { animation: none; }
 }
+
+/* ============================================================
+   THEME SWITCHING — smooth whole-page transition
+   ============================================================ */
+
+/* Fallback for browsers without the View Transitions API: only color-related
+   properties animate (no layout/transform), so spacing, typography, sizing
+   and component styles are untouched. */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease,
+    fill 220ms ease,
+    stroke 220ms ease,
+    outline-color 220ms ease,
+    box-shadow 220ms ease !important;
+}
+
+/* Whole-page crossfade via the View Transitions API. Browsers without support
+   ignore these rules and use the color transitions above. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition: none !important;
+  }
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 1ms;
+  }
+}

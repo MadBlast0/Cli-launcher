@@ -567,34 +567,42 @@ function initTheme() {
     moonIcon.classList.remove('hidden');
   }
 
-  // Toggle button click listener
-  toggleBtn.addEventListener('click', () => {
-    // Add temporary transition class for smooth visual switch
-    html.classList.add('theme-transition');
-    
-    const wasDark = html.classList.contains('dark');
-    // Persist the theme choice in a real cookie (survives navigation) plus a
-    // localStorage mirror. This is always saved — theme is core UX, not optional.
-    const persist = (val) => {
-      try { localStorage.setItem('theme', val); } catch (e) {}
-      if (window.CLLASetThemeCookie) window.CLLASetThemeCookie(val);
-    };
-    if (wasDark) {
-      html.classList.remove('dark');
-      persist('light');
-      sunIcon.classList.add('hidden');
-      moonIcon.classList.remove('hidden');
-    } else {
+  // Persist the theme choice in a real cookie (survives navigation) plus a
+  // localStorage mirror. This is always saved — theme is core UX, not optional.
+  const persist = (val) => {
+    try { localStorage.setItem('theme', val); } catch (e) {}
+    if (window.CLLASetThemeCookie) window.CLLASetThemeCookie(val);
+  };
+
+  // Apply the next theme as a single DOM state change. When the View
+  // Transitions API is available the whole page crossfades at once; otherwise
+  // we fall back to scoped color transitions via the .theme-transition class.
+  const applyTheme = (nextDark) => {
+    if (nextDark) {
       html.classList.add('dark');
       persist('dark');
       sunIcon.classList.remove('hidden');
       moonIcon.classList.add('hidden');
+    } else {
+      html.classList.remove('dark');
+      persist('light');
+      sunIcon.classList.add('hidden');
+      moonIcon.classList.remove('hidden');
     }
+  };
 
-    // Clean up transition class
-    setTimeout(() => {
-      html.classList.remove('theme-transition');
-    }, 250);
+  // Toggle button click listener
+  toggleBtn.addEventListener('click', () => {
+    const nextDark = !html.classList.contains('dark');
+    if (typeof document.startViewTransition === 'function') {
+      document.startViewTransition(() => applyTheme(nextDark));
+    } else {
+      html.classList.add('theme-transition');
+      applyTheme(nextDark);
+      setTimeout(() => {
+        html.classList.remove('theme-transition');
+      }, 250);
+    }
   });
 }
 

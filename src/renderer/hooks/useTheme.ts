@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { flushSync } from 'react-dom'
 
 type Theme = 'light' | 'dark'
 
@@ -24,13 +25,35 @@ export function useTheme() {
     }
   }, [theme])
 
-  const setTheme = useCallback((t: Theme) => {
-    setThemeState(t)
+  // Apply a theme change as a single DOM state change, with a smooth
+  // whole-page transition. Uses the View Transitions API when available (the
+  // page crossfades as one snapshot); otherwise falls back to scoped color
+  // transitions via the .theme-transition class.
+  const applyTheme = useCallback((next: Theme) => {
+    const updateDom = () => {
+      setThemeState(next)
+      document.documentElement.classList.toggle('dark', next === 'dark')
+    }
+    const doc = document as Document & { startViewTransition?: (cb: () => void) => void }
+    if (typeof doc.startViewTransition === 'function') {
+      doc.startViewTransition(() => {
+        flushSync(updateDom)
+      })
+    } else {
+      const html = document.documentElement
+      html.classList.add('theme-transition')
+      updateDom()
+      window.setTimeout(() => html.classList.remove('theme-transition'), 250)
+    }
   }, [])
 
+  const setTheme = useCallback((t: Theme) => {
+    applyTheme(t)
+  }, [applyTheme])
+
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => (prev === 'light' ? 'dark' : 'light'))
-  }, [])
+    applyTheme(theme === 'light' ? 'dark' : 'light')
+  }, [theme, applyTheme])
 
   return { theme, setTheme, toggleTheme }
 }
