@@ -244,6 +244,8 @@ body {
 }
 .demo-win-btn:hover { color: var(--foreground); background: var(--accent); }
 .demo-win-btn svg { width: 18px; height: 18px; }
+.demo-title-btn svg { width: 16px; height: 16px; }
+.demo-title-btn.is-active { color: var(--foreground); background: var(--accent); }
 
 /* Theme pill toggle (like the app's) */
 .demo-theme-pill {
@@ -342,6 +344,61 @@ html:not(.dark) .demo-theme-icon { left: 6px; right: auto; }
   color: var(--muted-foreground);
 }
 .demo-sectionrow .demo-btn { height: 38px; font-size: 13px; }
+.demo-section-actions { display: flex; align-items: center; gap: 8px; }
+
+/* Mode dropdown (Normal / YOLO) — mirrors the app's ModeDropdown */
+.demo-mode { position: relative; }
+.demo-mode-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 30px; padding: 0 8px;
+  font-family: var(--font-sans); font-size: 11px; font-weight: 700;
+  background: var(--secondary); color: var(--secondary-foreground);
+  border: 1px solid var(--border); border-radius: 3px; cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.demo-mode-btn:hover { background: var(--accent); }
+.demo-mode-btn.yolo { color: var(--warning); }
+.demo-caret { width: 11px; height: 11px; }
+.demo-mode-menu {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 30;
+  min-width: 150px; padding: 4px;
+  background: var(--popover, var(--card)); border: 1px solid var(--border);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.18); border-radius: 4px;
+}
+.demo-mode-opt {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 7px 10px; font-size: 12px; font-weight: 600;
+  background: transparent; border: none; cursor: pointer; color: var(--foreground);
+  border-radius: 3px;
+}
+.demo-mode-opt:hover { background: var(--accent-soft); }
+.demo-mode-opt[aria-selected="true"] { background: var(--accent-soft); }
+.demo-mode-radio {
+  display: flex; align-items: center; justify-content: center;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--muted-foreground); flex-shrink: 0;
+}
+.demo-mode-radio-warn { border-color: var(--warning); }
+.demo-mode-radio-dot { width: 6px; height: 6px; border-radius: 50%; background: transparent; }
+.demo-mode-opt[aria-selected="true"] .demo-mode-radio-dot { background: var(--foreground); }
+.demo-mode-opt[aria-selected="true"] .demo-mode-radio-warn .demo-mode-radio-dot { background: var(--warning); }
+.demo-mode-opt-warn { color: var(--warning); }
+.demo-mode-info {
+  margin-left: auto; font-size: 11px; color: var(--muted-foreground);
+  cursor: help; line-height: 1;
+}
+.demo-mode-info:hover { color: var(--foreground); }
+
+/* Ghost icon button (Refresh) — mirrors the app's ghost sm button */
+.demo-icon-ghost {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px;
+  background: transparent; border: none; cursor: pointer;
+  color: var(--muted-foreground); border-radius: 3px;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+.demo-icon-ghost:hover { color: var(--foreground); background: var(--accent); }
+.demo-icon-ghost svg { width: 14px; height: 14px; }
 
 /* CLI rows */
 .demo-rows {

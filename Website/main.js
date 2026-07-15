@@ -454,6 +454,44 @@ function initAppDemo() {
     demoTheme.addEventListener('click', () => siteTheme.click());
   }
 
+  // --- Pin / always-on-top (demo) ---------------------------------------
+  const pinBtn = document.getElementById('demo-pin-btn');
+  if (pinBtn) {
+    pinBtn.addEventListener('click', () => {
+      const on = pinBtn.classList.toggle('is-active');
+      toast(on ? 'Pinned to top' : 'Unpinned');
+    });
+  }
+
+  // --- Mode dropdown (Normal / YOLO) — mirrors the app's ModeDropdown ----
+  const modeBtn = document.getElementById('demo-mode-btn');
+  const modeMenu = document.getElementById('demo-mode-menu');
+  const modeLabel = document.getElementById('demo-mode-label');
+  if (modeBtn && modeMenu && modeLabel) {
+    const opts = modeMenu.querySelectorAll('.demo-mode-opt');
+    function setMode(mode) {
+      const yolo = mode === 'yolo';
+      modeLabel.textContent = yolo ? 'YOLO' : 'Normal';
+      modeBtn.classList.toggle('yolo', yolo);
+      modeBtn.setAttribute('aria-expanded', 'false');
+      modeMenu.hidden = true;
+      opts.forEach((o) => o.setAttribute('aria-selected', String(o.dataset.mode === mode)));
+    }
+    modeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = modeMenu.hidden;
+      modeMenu.hidden = !open;
+      modeBtn.setAttribute('aria-expanded', String(open));
+    });
+    opts.forEach((o) => o.addEventListener('click', () => { setMode(o.dataset.mode); toast(o.dataset.mode === 'yolo' ? 'YOLO mode on' : 'Normal mode'); }));
+    document.addEventListener('click', (e) => {
+      if (!modeMenu.hidden && !modeMenu.contains(e.target) && e.target !== modeBtn) {
+        modeMenu.hidden = true;
+        modeBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
   // --- Generic toast buttons (close, deps, catalog) ----------------------
   demo.querySelectorAll('[data-demo-toast]').forEach((btn) => {
     btn.addEventListener('click', () => toast(btn.getAttribute('data-demo-toast')));
