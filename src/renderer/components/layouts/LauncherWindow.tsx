@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, type ReactNode } from 'react'
-import { X, Minus, ArrowUpFromLine, Loader2, Download, RotateCcw, Pin, Settings, FileText } from 'lucide-react'
+import { X, Minus, ArrowUpFromLine, Loader2, Download, Pin, Settings, FileText } from 'lucide-react'
 import { ThemeToggle } from '../ui/ThemeToggle'
 import type { AppUpdateStatus } from '../../../shared/types'
 import appLogo from '../../assets/app-logo.png'
@@ -13,6 +13,7 @@ interface LauncherWindowProps {
   onOpenSettings?: () => void
   outdatedCount?: number
   onShowOutdated?: () => void
+  onToast?: (message: string, type: 'success' | 'error' | 'info') => void
 }
 
 type UpdateState =
@@ -24,7 +25,7 @@ type UpdateState =
   | { type: 'downloaded'; version: string }
   | { type: 'error'; message: string }
 
-export function LauncherWindow({ children, isDark, onToggleTheme, alwaysOnTop = false, onToggleAlwaysOnTop, onOpenSettings, outdatedCount = 0, onShowOutdated }: LauncherWindowProps) {
+export function LauncherWindow({ children, isDark, onToggleTheme, alwaysOnTop = false, onToggleAlwaysOnTop, onOpenSettings,   outdatedCount = 0, onShowOutdated, onToast }: LauncherWindowProps) {
   const [update, setUpdate] = useState<UpdateState>({ type: 'idle' })
   const [showNotes, setShowNotes] = useState(false)
 
@@ -58,77 +59,23 @@ export function LauncherWindow({ children, isDark, onToggleTheme, alwaysOnTop = 
   }, [])
 
   const handleUpdateClick = useCallback(async () => {
-    switch (update.type) {
-      case 'idle':
-        setUpdate({ type: 'checking' })
-        const info = await window.electronAPI.checkForAppUpdate()
-        if (!info.updateAvailable) {
-          setUpdate({ type: 'not-available' })
-          setTimeout(() => setUpdate({ type: 'idle' }), 2000)
-        } else {
-          setUpdate({ type: 'available', version: info.version ?? '', notes: info.releaseNotes })
-        }
-        break
-      case 'available':
-      case 'error':
-        setUpdate({ type: 'downloading', progress: 0 })
-        await window.electronAPI.downloadAppUpdate()
-        break
-      case 'downloaded':
-        window.electronAPI.installAppUpdate()
-        break
+    if (update.type !== 'available') return
+    setUpdate({ type: 'downloading', progress: 0 })
+    try {
+      const res = await window.electronAPI.downloadAppUpdate()
+      if (!res.success) {
+        const message = res.error ?? 'Failed to download update'
+        setUpdate({ type: 'error', message })
+        onToast?.(message, 'error')
+        return
+      }
+      await window.electronAPI.installAppUpdate()
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      setUpdate({ type: 'error', message })
+      onToast?.(message, 'error')
     }
-  }, [update.type])
-
-  let updateIcon: ReactNode
-  let updateLabel: string
-  let buttonText: string
-  let updateDisabled = false
-
-  switch (update.type) {
-    case 'idle':
-      updateIcon = <ArrowUpFromLine size={15} />
-      updateLabel = 'Check for updates'
-      buttonText = 'Update'
-      break
-    case 'checking':
-      updateIcon = <Loader2 size={15} className="animate-spin" />
-      updateLabel = 'Checking…'
-      buttonText = '⋯'
-      updateDisabled = true
-      break
-    case 'available':
-      updateIcon = <Download size={15} />
-      updateLabel = `Update to v${update.version}`
-      buttonText = 'Update'
-      break
-    case 'not-available':
-      updateIcon = <ArrowUpFromLine size={15} />
-      updateLabel = 'Up to date'
-      buttonText = 'Updated'
-      updateDisabled = true
-      break
-    case 'downloading':
-      updateIcon = (
-        <span className="text-[10px] font-mono tabular-nums">
-          {Math.round(update.progress)}%
-        </span>
-      )
-      updateLabel = `Downloading… ${Math.round(update.progress)}%`
-      buttonText = ''
-      updateDisabled = true
-      break
-    case 'downloaded':
-      updateIcon = <RotateCcw size={15} />
-      updateLabel = 'Restart to update'
-      buttonText = 'Restart'
-      break
-    case 'error':
-      updateIcon = <ArrowUpFromLine size={15} />
-      updateLabel = update.message
-      buttonText = 'Update'
-      break
-  }
+  }, [update.type, onToast])
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background overflow-hidden border border-border relative">
@@ -183,25 +130,38 @@ export function LauncherWindow({ children, isDark, onToggleTheme, alwaysOnTop = 
           className="flex items-center gap-2"
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         >
-        <button
-          onClick={handleUpdateClick}
-          disabled={updateDisabled}
-          className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold text-muted-foreground hover:text-foreground hover:bg-accent transition-colors disabled:opacity-50 whitespace-nowrap"
-          aria-label={updateLabel}
-          title={updateLabel}
-        >
-          {updateIcon}
-          {buttonText && <span>{buttonText}</span>}
-        </button>
-        {update.type === 'available' && update.notes && (
-          <button
-            onClick={() => setShowNotes((s) => !s)}
-            className={`flex items-center justify-center w-6 h-6 rounded-md transition-colors ${showNotes ? 'text-primary bg-accent' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
-            aria-label="Show release notes"
-            title="What's new"
+        {update.type === 'available' && (
+          <>
+            {update.notes && (
+              <button
+                onClick={() => setShowNotes((s) => !s)}
+                className={`flex items-center justify-center w-6 h-6 rounded-md transition-colors ${showNotes ? 'text-primary bg-accent' : 'text-muted-foreground hover:text-foreground hover:bg-accent'}`}
+                aria-label="Show release notes"
+                title="What's new"
+              >
+                <FileText size={14} />
+              </button>
+            )}
+            <button
+              onClick={handleUpdateClick}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-primary/15 text-primary hover:bg-primary/25 transition-colors whitespace-nowrap"
+              aria-label={`Update to v${update.version}`}
+              title={`Update to v${update.version}`}
+            >
+              <Download size={15} />
+              <span>Update</span>
+            </button>
+          </>
+        )}
+        {update.type === 'downloading' && (
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-primary/15 text-primary whitespace-nowrap"
+            aria-label={`Downloading… ${Math.round(update.progress)}%`}
+            title={`Downloading… ${Math.round(update.progress)}%`}
           >
-            <FileText size={14} />
-          </button>
+            <Loader2 size={14} className="animate-spin" />
+            <span className="font-mono tabular-nums">{Math.round(update.progress)}%</span>
+          </div>
         )}
           <ThemeToggle isDark={isDark} onToggle={onToggleTheme} />
           {onShowOutdated && outdatedCount > 0 && (

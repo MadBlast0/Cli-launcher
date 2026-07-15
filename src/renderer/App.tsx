@@ -448,7 +448,7 @@ export default function App() {
 
   if (!window.electronAPI) {
     return (
-      <LauncherWindow isDark={theme === 'dark'} onToggleTheme={toggleTheme}>
+      <LauncherWindow isDark={theme === 'dark'} onToggleTheme={toggleTheme} onToast={addToast}>
         <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-3 text-center px-6">
           <p className="text-sm text-white/80">
             This window must be opened from inside the Electron app.
@@ -473,6 +473,7 @@ export default function App() {
         onOpenSettings={() => setShowSettings(true)}
         outdatedCount={outdatedCount}
         onShowOutdated={() => { setCatalogOutdatedOnly(true); setShowCatalog(true) }}
+        onToast={addToast}
       >
       <div className="px-4 pt-3 pb-2 shrink-0 flex items-center gap-2">
         <FolderPicker />
