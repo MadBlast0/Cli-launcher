@@ -143,6 +143,14 @@ export default function App() {
     } catch { /* ignore */ }
   }, [])
 
+  // Mirror settings back into React state so title-bar buttons (pin, YOLO
+  // dropdown) stay in sync when the SettingsModal saves.
+  const handleSaveSettings = useCallback(async (updates: Partial<AppSettings>) => {
+    await saveSettings(updates)
+    if (updates.yoloMode !== undefined) setYoloMode(updates.yoloMode)
+    if (updates.alwaysOnTop !== undefined) setAlwaysOnTop(updates.alwaysOnTop)
+  }, [saveSettings])
+
   useEffect(() => {
     // Show the app as soon as the CLI list is available — never block the
     // loader on the (potentially slow) status detection IPC. Always clear the
@@ -500,6 +508,8 @@ export default function App() {
           onConfigure={setConfigCliId}
           onUpdateAll={() => handleBulkAction('update')}
           onHide={handleHide}
+          onToggleFavorite={handleToggleFavorite}
+          favorites={favorites}
           aliasMap={cliAlias}
           onRefreshAll={refreshAll}
           deps={deps}
@@ -546,11 +556,13 @@ export default function App() {
       <SettingsModal
         open={showSettings}
         onClose={() => setShowSettings(false)}
-        onSave={saveSettings}
+        onSave={handleSaveSettings}
         onToggleTheme={toggleTheme}
         isDark={theme === 'dark'}
         getCurrentFolder={() => window.electronAPI.getSavedFolder()}
         selectFolder={() => window.electronAPI.selectFolder()}
+        initialAlwaysOnTop={alwaysOnTop}
+        initialYoloMode={yoloMode}
       />
 
       {configCliId && (

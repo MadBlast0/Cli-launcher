@@ -148,7 +148,7 @@
          "name": "Which terminal AI agents are supported?",
          "acceptedAnswer": {
            "@type": "Answer",
-           "text": "CLI Launcher supports 32+ agents across three runtimes: 18 Node-based (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Codex, and more), 6 Python-based (Aider, Open Interpreter, Shell-GPT, gptme, RA.Aid, OpenHands), and 8 standalone binaries (Goose, Cursor, Amazon Q, Plandex, Mods, aichat, Fabric, and others)."
+            "text": "CLI Launcher supports 34+ agents across three runtimes: 19 Node-based (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Codex, Oh My Pi, and more), 7 Python-based (Aider, Open Interpreter, Shell-GPT, gptme, RA.Aid, OpenHands, Hermes Agent), and 8 standalone binaries (Goose, Cursor, Amazon Q, Plandex, Mods, aichat, Fabric, and others)."
          }
        },
        {
@@ -215,7 +215,7 @@
 
           <!-- Subheadline: one-panel management is the hook -->
           <p class="text-sm md:text-base text-muted-foreground leading-relaxed mb-0 max-w-[52ch]">
-            Install, uninstall, update, and launch 32+ terminal AI agents from
+            Install, uninstall, update, and launch 34+ terminal AI agents from
             <span class="text-foreground font-semibold">one desktop panel</span> —
             no more hand-managing global npm and pip installs or juggling terminals.
            </p>
@@ -288,7 +288,7 @@
             </a>
             <a href="#inventory" class="mac-btn mac-btn-soft px-4 py-2.5 text-xs font-semibold flex items-center gap-2 border border-border">
               <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-              <span>View 32+ agents</span>
+              <span>View 34+ agents</span>
             </a>
             <a href="docs/" class="text-[11px] font-mono text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">Documentation →</a>
             <a href="https://github.com/MadBlast0/Cli-launcher/releases/latest" class="text-[11px] font-mono text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4">All releases →</a>
@@ -444,6 +444,8 @@
         <span>Grok CLI</span>
         <span>Auggie</span>
         <span>Cody CLI</span>
+        <span>Hermes Agent</span>
+        <span>Oh My Pi</span>
         <!-- Seamless loop duplicate -->
         <span>Claude Code</span>
         <span>Gemini CLI</span>
@@ -478,6 +480,8 @@
         <span>Grok CLI</span>
         <span>Auggie</span>
         <span>Cody CLI</span>
+        <span>Hermes Agent</span>
+        <span>Oh My Pi</span>
       </div>
     </section>
 
@@ -507,7 +511,7 @@
           <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
             Open one or many pre-configured terminals and start prompting
             <code class="font-mono text-[11px]">@anthropic-ai/claude-code</code>,
-            <code class="font-mono text-[11px]">aider-chat</code>, or any of the 32+ agents immediately.
+            <code class="font-mono text-[11px]">aider-chat</code>, or any of the 34+ agents immediately.
           </p>
         </div>
       </div>
@@ -574,6 +578,14 @@
               <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/ra-aid.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">RA.Aid</span></div>
               <code class="text-[11px] font-mono text-warning break-all">--cowboy-mode</code>
             </div>
+            <div class="mac-card p-4">
+              <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/hermes.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">Hermes Agent</span></div>
+              <code class="text-[11px] font-mono text-warning break-all">--yolo</code>
+            </div>
+            <div class="mac-card p-4">
+              <div class="flex items-center gap-2 mb-1.5"><img src="media/cli/omp.svg" alt="" class="w-5 h-5"> <span class="text-xs font-bold font-mono">Oh My Pi</span></div>
+              <code class="text-[11px] font-mono text-warning break-all">--auto-approve</code>
+            </div>
           </div>
         </div>
 
@@ -583,7 +595,7 @@
     <section id="compare" class="max-w-7xl mx-auto px-6 py-16 w-full border-b border-border">
       <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-3 select-none">Why CLI Launcher</h2>
       <p class="text-sm md:text-base text-muted-foreground leading-relaxed max-w-[62ch] mb-8">
-        Every terminal AI agent can be installed by hand &mdash; but at 32+ tools that means global
+        Every terminal AI agent can be installed by hand &mdash; but at 34+ tools that means global
         clutter, version clashes, and a lot of terminal juggling. Here is the difference.
       </p>
 
@@ -643,16 +655,16 @@
         <div>
           <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-3 select-none">Live Inventory &amp; Package Typings</h2>
           <p class="text-sm md:text-base text-muted-foreground leading-relaxed max-w-[60ch]">
-            32+ agents, grouped by the runtime CLI Launcher manages for you. Every entry carries its
+            34+ agents, grouped by the runtime CLI Launcher manages for you. Every entry carries its
             real package string so you can verify it against
             <code class="font-mono text-[11px]">npm</code> or <code class="font-mono text-[11px]">pip</code>.
           </p>
         </div>
         <!-- Runtime filter tabs -->
         <div class="flex gap-1 p-1 bg-card border border-border" role="tablist" aria-label="Filter by runtime">
-          <button class="inv-tab inv-tab-active" data-runtime="all" role="tab" aria-selected="true">All <span class="inv-tab-count">32</span></button>
-          <button class="inv-tab" data-runtime="node" role="tab" aria-selected="false">Node <span class="inv-tab-count">18</span></button>
-          <button class="inv-tab" data-runtime="python" role="tab" aria-selected="false">Python <span class="inv-tab-count">6</span></button>
+          <button class="inv-tab inv-tab-active" data-runtime="all" role="tab" aria-selected="true">All <span class="inv-tab-count">34</span></button>
+          <button class="inv-tab" data-runtime="node" role="tab" aria-selected="false">Node <span class="inv-tab-count">19</span></button>
+          <button class="inv-tab" data-runtime="python" role="tab" aria-selected="false">Python <span class="inv-tab-count">7</span></button>
           <button class="inv-tab" data-runtime="standalone" role="tab" aria-selected="false">Standalone <span class="inv-tab-count">8</span></button>
         </div>
       </div>
@@ -822,6 +834,15 @@
           <code class="inv-snippet" data-copy="npm install -g @mariozechner/pi-coding-agent">npm install -g @mariozechner/pi-coding-agent</code>
         </article>
 
+        <article class="inv-card" data-runtime="node">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/omp.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Oh My Pi</span></div>
+            <span class="inv-badge inv-badge-node">node</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">AI coding agent with subagents, LSP, browser, and 32 built-in tools.</p>
+          <code class="inv-snippet" data-copy="npm install -g @oh-my-pi/pi-coding-agent">npm install -g @oh-my-pi/pi-coding-agent</code>
+        </article>
+
         <!-- ============ PYTHON ============ -->
         <article class="inv-card" data-runtime="python">
           <div class="flex items-center justify-between gap-3 mb-3">
@@ -875,6 +896,15 @@
           </div>
           <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Platform for autonomous software engineering agents.</p>
           <code class="inv-snippet" data-copy="pip install openhands-ai">pip install openhands-ai</code>
+        </article>
+
+        <article class="inv-card" data-runtime="python">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-2.5 min-w-0"><img src="media/cli/hermes.svg" alt="" class="w-7 h-7 shrink-0" loading="lazy" width="28" height="28"><span class="text-sm font-bold font-mono truncate">Hermes Agent</span></div>
+            <span class="inv-badge inv-badge-python">python</span>
+          </div>
+          <p class="text-[11px] text-muted-foreground mb-3 leading-snug">Self-improving AI agent with built-in learning loop by Nous Research.</p>
+          <code class="inv-snippet" data-copy="curl -fsSL https://hermes-agent.nousresearch.com/install.sh | sh">curl -fsSL https://hermes-agent.nousresearch.com/install.sh | sh</code>
         </article>
 
         <!-- ============ STANDALONE ============ -->
@@ -958,7 +988,7 @@
       <h2 class="text-xs font-bold tracking-widest uppercase font-mono text-muted-foreground mb-10 select-none">Specifications</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-y-10 gap-x-12">
         <div class="flex flex-col">
-          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">32+ Unified Agents</h3>
+          <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">34+ Unified Agents</h3>
           <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">
             Manage <code class="font-mono text-[11px]">@anthropic-ai/claude-code</code>,
             <code class="font-mono text-[11px]">aider-chat</code>, Gemini CLI, and Amazon Q from a single control panel.
@@ -1041,7 +1071,7 @@
       </div>
       <div class="p-6">
         <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Which terminal AI agents are supported?</h3>
-        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">CLI Launcher supports 32+ agents across three runtimes: 18 Node-based (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Codex, and more), 6 Python-based (Aider, Open Interpreter, Shell-GPT, gptme, RA.Aid, OpenHands), and 8 standalone binaries (Goose, Cursor, Amazon Q, Plandex, Mods, aichat, Fabric, and others).</p>
+        <p class="text-xs md:text-sm text-muted-foreground leading-relaxed">CLI Launcher supports 34+ agents across three runtimes: 19 Node-based (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Codex, Oh My Pi, and more), 7 Python-based (Aider, Open Interpreter, Shell-GPT, gptme, RA.Aid, OpenHands, Hermes Agent), and 8 standalone binaries (Goose, Cursor, Amazon Q, Plandex, Mods, aichat, Fabric, and others).</p>
       </div>
       <div class="p-6">
         <h3 class="text-sm font-bold font-mono uppercase text-foreground mb-2">Is CLI Launcher free and open source?</h3>

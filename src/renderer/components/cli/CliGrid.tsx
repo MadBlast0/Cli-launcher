@@ -37,6 +37,8 @@ interface CliGridProps {
   onConfigure?: (cliId: string) => void
   onUpdateAll?: () => void
   onHide?: (cliId: string) => void
+  onToggleFavorite?: (cliId: string) => void
+  favorites?: string[]
   aliasMap?: Record<string, string>
 }
 
@@ -45,7 +47,7 @@ export function CliGrid({
   onRepair, onUpdate, onReorder, onReorderCommit, onOpenDeps, onOpenCatalog, onCliChanged, onRefreshAll,
   deps, depsLoading = false, search, onSearchChange, justInstalled, onToast, searchInputRef,
   yoloMode, onYoloModeChange, refreshProgress = 0, refreshCurrent = '', totalClis = 0,
-  selectedIndex = -1, onSelect, onConfigure, onUpdateAll, onHide, aliasMap,
+  selectedIndex = -1, onSelect, onConfigure, onUpdateAll, onHide, onToggleFavorite, favorites, aliasMap,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [reordered, setReordered] = useState(false)
@@ -197,6 +199,8 @@ export function CliGrid({
             onSelect={onSelect}
             onConfigure={onConfigure}
             onHide={onHide}
+            onToggleFavorite={onToggleFavorite}
+            favorites={favorites}
             aliasMap={aliasMap}
             justInstalled={justInstalled}
             onToast={onToast}
@@ -227,6 +231,8 @@ interface CliGridRowProps {
   onSelect?: (index: number) => void
   onConfigure?: (cliId: string) => void
   onHide?: (cliId: string) => void
+  onToggleFavorite?: (cliId: string) => void
+  favorites?: string[]
   aliasMap?: Record<string, string>
   justInstalled?: string | null
   onToast?: (message: string, type: 'success' | 'error' | 'info') => void
@@ -234,7 +240,7 @@ interface CliGridRowProps {
 
 const CliGridRow = memo(function CliGridRow({
   cli, state, index, count, onUpdateCount, onLaunch, onCliChanged, onRepair,
-  onUpdate, handleDragStart, handleDragOver, handleDrop, selected = false, onSelect, onConfigure, onHide, aliasMap, justInstalled, onToast,
+  onUpdate, handleDragStart, handleDragOver, handleDrop, selected = false, onSelect, onConfigure, onHide, onToggleFavorite, favorites, aliasMap, justInstalled, onToast,
 }: CliGridRowProps) {
   const handleCountChange = useCallback(
     (delta: number) => onUpdateCount(cli.id, delta),
@@ -274,6 +280,8 @@ const CliGridRow = memo(function CliGridRow({
       onSelect={onSelectRow}
       onConfigure={onConfigure}
       onHide={onHide}
+      onToggleFavorite={onToggleFavorite}
+      favorites={favorites}
       aliasMap={aliasMap}
       justInstalled={justInstalled}
       onToast={onToast}

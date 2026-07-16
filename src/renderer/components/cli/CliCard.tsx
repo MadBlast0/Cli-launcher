@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, memo } from 'react'
 import { Tooltip } from '../ui'
 import { getCliLogo } from '../../logos'
 import type { CliDefinition, CliState, ActionProgressMessage } from '@shared/types'
-import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUpCircle, ExternalLink, Globe, Copy, X } from 'lucide-react'
+import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUpCircle, ExternalLink, Globe, Copy, X, Star } from 'lucide-react'
 
 interface CliCardProps {
   cli: CliDefinition
@@ -21,6 +21,8 @@ interface CliCardProps {
   onSelect?: (index: number) => void
   onConfigure?: (cliId: string) => void
   onHide?: (cliId: string) => void
+  onToggleFavorite?: (cliId: string) => void
+  favorites?: string[]
   aliasMap?: Record<string, string>
   justInstalled?: string | null
   onToast?: (message: string, type: 'success' | 'error' | 'info') => void
@@ -40,7 +42,7 @@ function installCommandFor(cli: CliDefinition): string {
 
 function CliCardInner({
   cli, state, count, onCountChange, onLaunch, onChanged, onRepaired, onUpdated,
-  onDragStart, onDragOver, onDrop, index, selected = false, onSelect, onConfigure, onHide, aliasMap, justInstalled, onToast,
+  onDragStart, onDragOver, onDrop, index, selected = false, onSelect, onConfigure, onHide, onToggleFavorite, favorites, aliasMap, justInstalled, onToast,
 }: CliCardProps) {
   const isNew = justInstalled === cli.id
   const displayName = (aliasMap && aliasMap[cli.id]) || cli.name
@@ -225,6 +227,20 @@ function CliCardInner({
       <div className="cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground shrink-0 transition-colors" aria-hidden="true">
         <GripVertical size={14} />
       </div>
+      {onToggleFavorite && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleFavorite(cli.id) }}
+          className={`flex items-center justify-center w-5 h-5 shrink-0 rounded-sm transition-colors ${
+            favorites?.includes(cli.id)
+              ? 'text-yellow-500 hover:text-yellow-400'
+              : 'text-muted-foreground/30 hover:text-muted-foreground/60'
+          }`}
+          aria-label={favorites?.includes(cli.id) ? 'Remove from favorites' : 'Add to favorites'}
+          title={favorites?.includes(cli.id) ? 'Remove from favorites' : 'Add to favorites'}
+        >
+          <Star size={12} fill={favorites?.includes(cli.id) ? 'currentColor' : 'none'} />
+        </button>
+      )}
 
       <div className="w-9 h-9 flex items-center justify-center shrink-0">
         {logo ? (

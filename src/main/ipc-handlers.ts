@@ -515,7 +515,7 @@ export function registerIpcHandlers() {
 let registeredHotkey = ''
 
 function defaultHotkey(): string {
-  return process.platform === 'darwin' ? 'Command+Space' : 'Control+Space'
+  return ''
 }
 
 function toggleWindow() {
@@ -548,7 +548,15 @@ function normalizeReleaseNotes(notes: unknown): string {
  *  accelerator actually in effect, or '' if none (e.g. invalid input). */
 function applyHotkey(settings: AppSettings): string {
   const accel = settings.globalHotkey || defaultHotkey()
-  if (registeredHotkey && registeredHotkey === accel) return registeredHotkey
+  // No-op when user hasn't set a hotkey — register nothing.
+  if (!accel) {
+    if (registeredHotkey) {
+      globalShortcut.unregister(registeredHotkey)
+      registeredHotkey = ''
+    }
+    return ''
+  }
+  if (registeredHotkey === accel) return registeredHotkey
   if (registeredHotkey) globalShortcut.unregister(registeredHotkey)
   let effective = ''
   try {

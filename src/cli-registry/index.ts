@@ -32,6 +32,8 @@ import gptmeDef from './gptme'
 import sgptDef from './sgpt'
 import raAidDef from './ra-aid'
 import fabricDef from './fabric'
+import hermesDef from './hermes'
+import ompDef from './omp'
 
 const registry: CliDefinition[] = [
   claudeDef,
@@ -66,6 +68,8 @@ const registry: CliDefinition[] = [
   sgptDef,
   raAidDef,
   fabricDef,
+  hermesDef,
+  ompDef,
 ]
 
 export function getCliRegistry(): CliDefinition[] {

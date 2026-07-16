@@ -11,6 +11,9 @@ interface SettingsModalProps {
   isDark: boolean
   getCurrentFolder: () => Promise<string | null>
   selectFolder: () => Promise<string | null>
+  /** Current live state so the modal starts in sync with the title-bar toggles. */
+  initialAlwaysOnTop?: boolean
+  initialYoloMode?: boolean
 }
 
 const PLATFORM = process.platform
@@ -48,10 +51,10 @@ function acceleratorFromEvent(e: KeyboardEvent): string {
   return parts.join('+')
 }
 
-export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, getCurrentFolder, selectFolder }: SettingsModalProps) {
+export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, getCurrentFolder, selectFolder, initialAlwaysOnTop = false, initialYoloMode = false }: SettingsModalProps) {
   const [hotkey, setHotkey] = useState('')
-  const [alwaysOnTop, setAlwaysOnTop] = useState(false)
-  const [yoloMode, setYoloMode] = useState(false)
+  const [alwaysOnTop, setAlwaysOnTop] = useState(initialAlwaysOnTop)
+  const [yoloMode, setYoloMode] = useState(initialYoloMode)
   const [elevateInstalls, setElevateInstalls] = useState(true)
   const [terminal, setTerminal] = useState('')
   const [folder, setFolder] = useState<string | null>(null)
@@ -61,8 +64,6 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
     try {
       const s = (await window.electronAPI.getSettings()) as AppSettings
       setHotkey(s.globalHotkey || '')
-      setAlwaysOnTop(!!s.alwaysOnTop)
-      setYoloMode(!!s.yoloMode)
       setElevateInstalls(s.elevateInstalls !== false)
       setTerminal(s.terminalEmulator || '')
       setFolder(await getCurrentFolder())
@@ -86,14 +87,14 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
         return
       }
       const accel = acceleratorFromEvent(e)
-      // Ignore bare modifier presses with no real key.
       if (!/[A-Za-z0-9 ]/.test(accel.slice(-1))) return
       setHotkey(accel)
+      onSave({ globalHotkey: accel || undefined })
       setCapturing(false)
     }
     window.addEventListener('keydown', handler, true)
     return () => window.removeEventListener('keydown', handler, true)
-  }, [capturing])
+  }, [capturing, onSave])
 
   if (!open) return null
 
@@ -109,26 +110,16 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
     </div>
   )
 
-  const Toggle = ({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) => (
+  const Toggle = ({ value, onChange, onAutoSave }: { value: boolean; onChange: (v: boolean) => void; onAutoSave: (v: boolean) => void }) => (
     <button
       role="switch"
       aria-checked={value}
-      onClick={() => onChange(!value)}
+      onClick={() => { const next = !value; onChange(next); onAutoSave(next) }}
       className={`relative w-10 h-5 rounded-full transition-colors ${value ? 'bg-primary' : 'bg-muted-foreground/30'}`}
     >
       <span className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${value ? 'translate-x-5' : ''}`} />
     </button>
   )
-
-  const saveAll = () => {
-    onSave({
-      globalHotkey: hotkey || undefined,
-      alwaysOnTop,
-      yoloMode,
-      elevateInstalls,
-      terminalEmulator: terminal || undefined,
-    })
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onMouseDown={onClose}>
@@ -150,32 +141,32 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-[12px] font-mono px-2 py-1 rounded bg-muted text-foreground min-w-[88px] text-center">
-                  {hotkey || 'Auto'}
+                  {hotkey || 'Not set'}
                 </span>
                 <Button variant="secondary" size="sm" onClick={() => setCapturing(true)}>Record</Button>
                 {hotkey && (
-                  <Button variant="ghost" size="sm" onClick={() => setHotkey('')}>Clear</Button>
+                  <Button variant="ghost" size="sm" onClick={() => { setHotkey(''); onSave({ globalHotkey: undefined }) }}>Clear</Button>
                 )}
               </div>
             )}
           </Row>
 
           <Row label="Always on top" hint="Keep the window above other apps.">
-            <Toggle value={alwaysOnTop} onChange={setAlwaysOnTop} />
+            <Toggle value={alwaysOnTop} onChange={setAlwaysOnTop} onAutoSave={(v) => onSave({ alwaysOnTop: v })} />
           </Row>
 
           <Row label="YOLO mode by default" hint="Launch CLIs with skip-permissions enabled.">
-            <Toggle value={yoloMode} onChange={setYoloMode} />
+            <Toggle value={yoloMode} onChange={setYoloMode} onAutoSave={(v) => onSave({ yoloMode: v })} />
           </Row>
 
           <Row label="Elevate global installs" hint="Use an admin prompt for npm/pip installs on macOS/Linux.">
-            <Toggle value={elevateInstalls} onChange={setElevateInstalls} />
+            <Toggle value={elevateInstalls} onChange={setElevateInstalls} onAutoSave={(v) => onSave({ elevateInstalls: v })} />
           </Row>
 
           <Row label="Terminal emulator" hint="Which terminal opens launched CLIs.">
             <select
               value={terminal}
-              onChange={(e) => setTerminal(e.target.value)}
+              onChange={(e) => { const v = e.target.value; setTerminal(v); onSave({ terminalEmulator: v || undefined }) }}
               className="mac-input rounded bg-muted text-foreground text-[12px] px-2 py-1"
             >
               {terminals.map((t) => (
@@ -195,11 +186,6 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
               {isDark ? 'Dark' : 'Light'}
             </Button>
           </Row>
-        </div>
-
-        <div className="flex items-center justify-end gap-2 px-4 h-12 py-3 border-t border-border shrink-0">
-          <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
-          <Button variant="primary" size="sm" onClick={() => { saveAll(); onClose() }}>Save</Button>
         </div>
       </div>
     </div>
