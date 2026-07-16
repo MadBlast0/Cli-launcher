@@ -2,7 +2,7 @@
 
 # CLI Launcher
 
-Cross-platform desktop launcher for AI coding CLIs. Install, update, uninstall, and launch 32 terminal AI agents — all from one mac-style panel.
+Cross-platform desktop launcher for AI coding CLIs. Install, update, uninstall, and launch 34 terminal AI agents — all from one mac-style panel.
 
 <!-- Badges -->
 <picture><source media="(prefers-color-scheme: dark)" srcset="https://www.shieldcn.dev/github/stars/MadBlast0/Cli-launcher.svg?variant=secondary&amp;size=sm&amp;mode=dark"><img alt="GitHub Stars" src="https://www.shieldcn.dev/github/stars/MadBlast0/Cli-launcher.svg?variant=secondary&amp;size=sm&amp;mode=light"></picture>
@@ -62,16 +62,23 @@ Cross-platform desktop launcher for AI coding CLIs. Install, update, uninstall, 
 | Shell-GPT | `shell-gpt` | python |
 | RA.Aid | `ra-aid` | python |
 | Fabric | `—` | standalone |
+| Hermes Agent | `hermes-coding-agent` | node |
+| Oh My Pi (omp) | `—` | standalone |
 
 ## Features
 
-- **32 AI coding CLIs** — manage all major terminal AI agents (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Aider, and more) in one place.
+- **34 AI coding CLIs** — manage all major terminal AI agents (Claude Code, OpenCode, Gemini CLI, GitHub Copilot, Aider, Hermes, and more) in one place.
 - **Install / Update / Uninstall / Repair** — per-CLI actions with real-time progress feedback. Each CLI gets its own install script generated dynamically for your platform.
 - **Multi-terminal launch** — open 1–9 terminal instances per CLI, pre-configured in your chosen working directory. Supports cmd, PowerShell, Windows Terminal, iTerm, Warp, GNOME Terminal, Konsole, Alacritty, and more. WSL-aware for cross-platform workflows.
 - **YOLO Mode** — toggle to auto-append `--dangerously-skip-permissions` (or equivalent) to supported CLIs, bypassing approval prompts for fully autonomous operation.
 - **Favorites** — mark CLIs as favorites to pin them to the top of the grid for quick access.
+- **Theme** — switch between System (follows OS preference), Light, and Dark modes with smooth view-transition animation.
+- **Custom CSS** — inject your own stylesheet via the settings panel to override any theme variable, with live preview and persistence.
+- **CLI renaming** — right-click any CLI and choose "Rename" to set a custom display name (alias). The alias is used throughout the app and persists across sessions.
+- **Global hotkey** — record a custom keyboard shortcut to show/hide the window from anywhere (click Record in Settings, press your keys, done). No default — you choose.
+- **Auto-save settings** — every toggle, dropdown, and hotkey change saves immediately — no separate Save/Cancel step.
 - **Keyboard shortcuts** — `Ctrl+F` to search, `Ctrl+D` for dependency manager, `Ctrl+1–9` to launch the Nth installed CLI.
-- **Right-click context menu** — open a CLI's homepage, copy its install command, or launch it directly.
+- **Right-click context menu** — open a CLI's homepage, copy its install command, rename it, hide it, or launch it directly.
 - **Catalog browser** — discover and install new CLIs from a searchable catalog grouped by package manager (npm, pip, standalone). Batch-install all uninstalled CLIs with one click.
 - **Update detection** — checks npm/pip for newer versions (cached 1 hour) and badges each CLI when an update is available.
 - **Drag to reorder** — rearrange CLI cards to your preference; layout commits only on drop and persists across sessions.
