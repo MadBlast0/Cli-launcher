@@ -68,7 +68,7 @@ export interface CliConfig {
 }
 
 export interface AppSettings {
-  theme: 'light' | 'dark'
+  theme: 'system' | 'light' | 'dark'
   cliOrder?: string[]
   favorites?: string[]
   terminalEmulator?: string
@@ -90,6 +90,8 @@ export interface AppSettings {
   hiddenClis?: string[]
   /** Display-name overrides keyed by CLI id (alias). */
   cliAlias?: Record<string, string>
+  /** Custom CSS to inject into the renderer for theme overrides. */
+  customCss?: string
 }
 
 export interface CliCount {

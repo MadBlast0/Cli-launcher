@@ -36,7 +36,17 @@ function fuzzyScore(query: string, text: string): number {
 }
 
 export default function App() {
-  const { theme, toggleTheme } = useTheme()
+  const { theme, toggleTheme, setTheme, isDark } = useTheme()
+
+  // Ensure the user-stylesheet tag exists on first mount so SettingsModal's
+  // onChange handler can always find it.
+  useEffect(() => {
+    if (!document.getElementById('user-stylesheet')) {
+      const tag = document.createElement('style')
+      tag.id = 'user-stylesheet'
+      document.head.appendChild(tag)
+    }
+  }, [])
   const [loaded, setLoaded] = useState(false)
   const [statesLoading, setStatesLoading] = useState(true)
   const [clis, setClis] = useState<CliDefinition[]>([])
@@ -129,6 +139,15 @@ export default function App() {
       if (settings.alwaysOnTop !== undefined) setAlwaysOnTop(settings.alwaysOnTop)
       if (settings.hiddenClis) setHiddenClis(settings.hiddenClis)
       if (settings.cliAlias) setCliAlias(settings.cliAlias)
+      if (settings.customCss) {
+        let tag = document.getElementById('user-stylesheet')
+        if (!tag) {
+          tag = document.createElement('style')
+          tag.id = 'user-stylesheet'
+          document.head.appendChild(tag)
+        }
+        tag.textContent = settings.customCss
+      }
       // Theme is owned by useTheme (localStorage) as the single source of
       // truth; it also persists into settings, so we don't re-apply it here.
     } catch { /* ignore */ }
@@ -274,6 +293,23 @@ export default function App() {
         ? prev.filter((id) => id !== cliId)
         : [...prev, cliId]
       saveSettings({ favorites: next })
+      return next
+    })
+  }
+
+  const handleRename = (cliId: string) => {
+    const current = cliAlias[cliId] || ''
+    const name = prompt('Rename CLI:', current)
+    if (name === null) return
+    const trimmed = name.trim()
+    setCliAlias((prev) => {
+      const next = { ...prev }
+      if (trimmed) {
+        next[cliId] = trimmed
+      } else {
+        delete next[cliId]
+      }
+      saveSettings({ cliAlias: next })
       return next
     })
   }
@@ -456,7 +492,7 @@ export default function App() {
 
   if (!window.electronAPI) {
     return (
-      <LauncherWindow isDark={theme === 'dark'} onToggleTheme={toggleTheme} onToast={addToast}>
+      <LauncherWindow isDark={isDark} onToggleTheme={toggleTheme} onToast={addToast}>
         <div className="flex-1 min-h-0 flex flex-col items-center justify-center gap-3 text-center px-6">
           <p className="text-sm text-white/80">
             This window must be opened from inside the Electron app.
@@ -474,7 +510,7 @@ export default function App() {
 
   return (
       <LauncherWindow
-        isDark={theme === 'dark'}
+        isDark={isDark}
         onToggleTheme={toggleTheme}
         alwaysOnTop={alwaysOnTop}
         onToggleAlwaysOnTop={handleToggleAlwaysOnTop}
@@ -509,6 +545,7 @@ export default function App() {
           onUpdateAll={() => handleBulkAction('update')}
           onHide={handleHide}
           onToggleFavorite={handleToggleFavorite}
+          onRename={handleRename}
           favorites={favorites}
           aliasMap={cliAlias}
           onRefreshAll={refreshAll}
@@ -557,8 +594,8 @@ export default function App() {
         open={showSettings}
         onClose={() => setShowSettings(false)}
         onSave={handleSaveSettings}
-        onToggleTheme={toggleTheme}
-        isDark={theme === 'dark'}
+        theme={theme}
+        onThemeChange={setTheme}
         getCurrentFolder={() => window.electronAPI.getSavedFolder()}
         selectFolder={() => window.electronAPI.selectFolder()}
         initialAlwaysOnTop={alwaysOnTop}

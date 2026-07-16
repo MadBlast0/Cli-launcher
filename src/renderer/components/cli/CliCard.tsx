@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, memo } from 'react'
 import { Tooltip } from '../ui'
 import { getCliLogo } from '../../logos'
 import type { CliDefinition, CliState, ActionProgressMessage } from '@shared/types'
-import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUpCircle, ExternalLink, Globe, Copy, X, Star } from 'lucide-react'
+import { GripVertical, Wrench, Trash2, Download, RefreshCw, Plus, Minus, ArrowUpCircle, ExternalLink, Globe, Copy, X, Star, Pencil } from 'lucide-react'
 
 interface CliCardProps {
   cli: CliDefinition
@@ -22,6 +22,7 @@ interface CliCardProps {
   onConfigure?: (cliId: string) => void
   onHide?: (cliId: string) => void
   onToggleFavorite?: (cliId: string) => void
+  onRename?: (cliId: string) => void
   favorites?: string[]
   aliasMap?: Record<string, string>
   justInstalled?: string | null
@@ -42,7 +43,7 @@ function installCommandFor(cli: CliDefinition): string {
 
 function CliCardInner({
   cli, state, count, onCountChange, onLaunch, onChanged, onRepaired, onUpdated,
-  onDragStart, onDragOver, onDrop, index, selected = false, onSelect, onConfigure, onHide, onToggleFavorite, favorites, aliasMap, justInstalled, onToast,
+  onDragStart, onDragOver, onDrop, index, selected = false, onSelect, onConfigure, onHide, onToggleFavorite, onRename, favorites, aliasMap, justInstalled, onToast,
 }: CliCardProps) {
   const isNew = justInstalled === cli.id
   const displayName = (aliasMap && aliasMap[cli.id]) || cli.name
@@ -467,6 +468,15 @@ function CliCardInner({
           >
             <Wrench size={13} /> Configure
           </button>
+          {onRename && (
+            <button
+              className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"
+              onClick={() => { onRename(cli.id); setContextMenu(null) }}
+              role="menuitem"
+            >
+              <Pencil size={13} /> Rename
+            </button>
+          )}
           {onHide && (
             <button
               className="w-full text-left px-3 py-2 text-[13px] font-medium rounded-[3px] hover:bg-accent-soft transition-colors flex items-center gap-2"

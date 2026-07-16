@@ -6,6 +6,7 @@ import type { CliDefinition, DependencyCheck, CliCount, CliState } from '@shared
 import { Database, AlertTriangle, Terminal, Plus, RefreshCw, ArrowUpFromLine } from 'lucide-react'
 
 interface CliGridProps {
+
   clis: CliDefinition[]
   states: Record<string, CliState>
   counts: CliCount[]
@@ -38,6 +39,7 @@ interface CliGridProps {
   onUpdateAll?: () => void
   onHide?: (cliId: string) => void
   onToggleFavorite?: (cliId: string) => void
+  onRename?: (cliId: string) => void
   favorites?: string[]
   aliasMap?: Record<string, string>
 }
@@ -47,7 +49,7 @@ export function CliGrid({
   onRepair, onUpdate, onReorder, onReorderCommit, onOpenDeps, onOpenCatalog, onCliChanged, onRefreshAll,
   deps, depsLoading = false, search, onSearchChange, justInstalled, onToast, searchInputRef,
   yoloMode, onYoloModeChange, refreshProgress = 0, refreshCurrent = '', totalClis = 0,
-  selectedIndex = -1, onSelect, onConfigure, onUpdateAll, onHide, onToggleFavorite, favorites, aliasMap,
+  selectedIndex = -1, onSelect, onConfigure, onUpdateAll, onHide, onToggleFavorite, onRename, favorites, aliasMap,
 }: CliGridProps) {
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [reordered, setReordered] = useState(false)
@@ -200,6 +202,7 @@ export function CliGrid({
             onConfigure={onConfigure}
             onHide={onHide}
             onToggleFavorite={onToggleFavorite}
+            onRename={onRename}
             favorites={favorites}
             aliasMap={aliasMap}
             justInstalled={justInstalled}
@@ -232,6 +235,7 @@ interface CliGridRowProps {
   onConfigure?: (cliId: string) => void
   onHide?: (cliId: string) => void
   onToggleFavorite?: (cliId: string) => void
+  onRename?: (cliId: string) => void
   favorites?: string[]
   aliasMap?: Record<string, string>
   justInstalled?: string | null
@@ -240,7 +244,7 @@ interface CliGridRowProps {
 
 const CliGridRow = memo(function CliGridRow({
   cli, state, index, count, onUpdateCount, onLaunch, onCliChanged, onRepair,
-  onUpdate, handleDragStart, handleDragOver, handleDrop, selected = false, onSelect, onConfigure, onHide, onToggleFavorite, favorites, aliasMap, justInstalled, onToast,
+  onUpdate, handleDragStart, handleDragOver, handleDrop, selected = false, onSelect, onConfigure, onHide, onToggleFavorite, onRename, favorites, aliasMap, justInstalled, onToast,
 }: CliGridRowProps) {
   const handleCountChange = useCallback(
     (delta: number) => onUpdateCount(cli.id, delta),
@@ -281,6 +285,7 @@ const CliGridRow = memo(function CliGridRow({
       onConfigure={onConfigure}
       onHide={onHide}
       onToggleFavorite={onToggleFavorite}
+      onRename={onRename}
       favorites={favorites}
       aliasMap={aliasMap}
       justInstalled={justInstalled}

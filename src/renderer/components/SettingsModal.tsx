@@ -1,14 +1,16 @@
-import { useState, useEffect, useCallback } from 'react'
-import { X, FolderIcon } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { X, FolderIcon, RotateCcw, Search, FileText, AlertTriangle } from 'lucide-react'
 import { Button } from './ui'
 import type { AppSettings } from '@shared/types'
+
+type Theme = 'system' | 'light' | 'dark'
 
 interface SettingsModalProps {
   open: boolean
   onClose: () => void
   onSave: (updates: Partial<AppSettings>) => void
-  onToggleTheme: () => void
-  isDark: boolean
+  theme: Theme
+  onThemeChange: (t: Theme) => void
   getCurrentFolder: () => Promise<string | null>
   selectFolder: () => Promise<string | null>
   /** Current live state so the modal starts in sync with the title-bar toggles. */
@@ -29,7 +31,6 @@ function terminalLabel(value: string): string {
   return value
 }
 
-/** Builds an Electron accelerator string from a keydown event. */
 function acceleratorFromEvent(e: KeyboardEvent): string {
   const parts: string[] = []
   if (e.ctrlKey) parts.push('Control')
@@ -44,14 +45,13 @@ function acceleratorFromEvent(e: KeyboardEvent): string {
   } else if (key === ' ') {
     parts.push('Space')
   } else if (key && key.length > 1) {
-    // ArrowUp, Enter, etc. — normalize a few common ones
     const map: Record<string, string> = { ArrowUp: 'Up', ArrowDown: 'Down', ArrowLeft: 'Left', ArrowRight: 'Right', Escape: 'Esc' }
     parts.push(map[key] ?? key)
   }
   return parts.join('+')
 }
 
-export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, getCurrentFolder, selectFolder, initialAlwaysOnTop = false, initialYoloMode = false }: SettingsModalProps) {
+export function SettingsModal({ open, onClose, onSave, theme, onThemeChange, getCurrentFolder, selectFolder, initialAlwaysOnTop = false, initialYoloMode = false }: SettingsModalProps) {
   const [hotkey, setHotkey] = useState('')
   const [alwaysOnTop, setAlwaysOnTop] = useState(initialAlwaysOnTop)
   const [yoloMode, setYoloMode] = useState(initialYoloMode)
@@ -59,6 +59,8 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
   const [terminal, setTerminal] = useState('')
   const [folder, setFolder] = useState<string | null>(null)
   const [capturing, setCapturing] = useState(false)
+  const [customCss, setCustomCss] = useState('')
+  const [cssLoaded, setCssLoaded] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -67,6 +69,8 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
       setElevateInstalls(s.elevateInstalls !== false)
       setTerminal(s.terminalEmulator || '')
       setFolder(await getCurrentFolder())
+      setCustomCss(s.customCss || '')
+      setCssLoaded(true)
     } catch { /* ignore */ }
   }, [getCurrentFolder])
 
@@ -124,7 +128,7 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onMouseDown={onClose}>
       <div
-        className="mac-surface bg-card text-card-foreground w-[440px] max-w-[92vw] max-h-[82vh] rounded-lg shadow-2xl flex flex-col overflow-hidden"
+        className="mac-surface bg-card text-card-foreground w-[480px] max-w-[92vw] max-h-[84vh] rounded-lg shadow-2xl flex flex-col overflow-hidden"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-4 h-11 border-b border-border shrink-0">
@@ -135,9 +139,12 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-1">
+          {/* --- General --- */}
+          <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground pt-3 pb-1">General</div>
+
           <Row label="Global hotkey" hint="Show/hide the window from anywhere. Click to record, Esc to cancel.">
             {capturing ? (
-              <span className="text-[12px] font-mono text-primary animate-pulse">Press keys…</span>
+              <span className="text-[12px] font-mono text-primary animate-pulse">Press keys...</span>
             ) : (
               <div className="flex items-center gap-2">
                 <span className="text-[12px] font-mono px-2 py-1 rounded bg-muted text-foreground min-w-[88px] text-center">
@@ -154,6 +161,63 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
           <Row label="Always on top" hint="Keep the window above other apps.">
             <Toggle value={alwaysOnTop} onChange={setAlwaysOnTop} onAutoSave={(v) => onSave({ alwaysOnTop: v })} />
           </Row>
+
+          <Row label="Default working directory" hint={folder || 'Not set — last used folder is remembered.'}>
+            <Button variant="secondary" size="sm" icon={<FolderIcon size={13} />} onClick={async () => { const f = await selectFolder(); if (f) setFolder(f) }}>
+              Choose...
+            </Button>
+          </Row>
+
+          {/* --- Appearance --- */}
+          <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground pt-4 pb-1">Appearance</div>
+
+          <Row label="Theme">
+            <div className="flex gap-1 p-0.5 bg-muted rounded-md">
+              {([['system', 'System'], ['light', 'Light'], ['dark', 'Dark']] as const).map(([mode, label]) => (
+                <button
+                  key={mode}
+                  onClick={() => onThemeChange(mode)}
+                  className={`px-3 py-1 text-[12px] font-semibold rounded-[4px] capitalize transition-all ${
+                    theme === mode
+                      ? 'bg-accent text-accent-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </Row>
+
+          <Row label="Custom CSS" hint="Inject custom styles to override the app theme.">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => {
+                const el = document.getElementById('settings-css-area')
+                if (el) el.style.display = el.style.display === 'none' ? '' : 'none'
+              }}
+            >
+              Edit CSS
+            </Button>
+          </Row>
+          <div id="settings-css-area" style={{ display: 'none' }} className="pb-3">
+            <textarea
+              className="w-full h-24 text-[11px] font-mono p-2 rounded bg-muted text-foreground border border-border resize-vertical"
+              placeholder="/* Paste CSS variables or overrides here */"
+              value={customCss}
+              onChange={(e) => {
+                setCustomCss(e.target.value)
+                const styleTag = document.getElementById('user-stylesheet')
+                if (styleTag) styleTag.textContent = e.target.value
+                onSave({ customCss: e.target.value || undefined })
+              }}
+            />
+            <p className="text-[10px] text-muted-foreground mt-1">Changes apply immediately. Empty the field to remove custom styles.</p>
+          </div>
+
+          {/* --- CLIs & Actions --- */}
+          <div className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground pt-4 pb-1">CLIs & Actions</div>
 
           <Row label="YOLO mode by default" hint="Launch CLIs with skip-permissions enabled.">
             <Toggle value={yoloMode} onChange={setYoloMode} onAutoSave={(v) => onSave({ yoloMode: v })} />
@@ -175,17 +239,7 @@ export function SettingsModal({ open, onClose, onSave, onToggleTheme, isDark, ge
             </select>
           </Row>
 
-          <Row label="Default working directory" hint={folder || 'Not set — last used folder is remembered.'}>
-            <Button variant="secondary" size="sm" icon={<FolderIcon size={13} />} onClick={async () => { const f = await selectFolder(); if (f) setFolder(f) }}>
-              Choose…
-            </Button>
-          </Row>
 
-          <Row label="Appearance" hint="Toggle light / dark theme.">
-            <Button variant="secondary" size="sm" onClick={onToggleTheme}>
-              {isDark ? 'Dark' : 'Light'}
-            </Button>
-          </Row>
         </div>
       </div>
     </div>

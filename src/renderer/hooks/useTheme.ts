@@ -1,38 +1,55 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { flushSync } from 'react-dom'
 
-type Theme = 'light' | 'dark'
+type Theme = 'system' | 'light' | 'dark'
+
+function getSystemTheme(): 'light' | 'dark' {
+  if (typeof window === 'undefined') return 'light'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+function resolveTheme(pref: Theme): 'light' | 'dark' {
+  return pref === 'system' ? getSystemTheme() : pref
+}
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return 'light'
-    return (localStorage.getItem('cli-launcher-theme') as Theme) || 'dark'
+  const [preference, setPreference] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'system'
+    return (localStorage.getItem('cli-launcher-theme') as Theme) || 'system'
   })
 
-  // localStorage is the single source of truth for the theme; always apply it
-  // to the DOM + storage, and mirror it into settings.json on every change.
-  // `savedThemeRef` tracks the last theme actually persisted so this effect
-  // does NOT write settings on mount (or under StrictMode's double-invoke) —
-  // only a real user change triggers a settings write.
-  const savedThemeRef = useRef<Theme>(theme)
+  const savedPrefRef = useRef<Theme>(preference)
 
+  // Apply the resolved theme to the DOM.
+  const applyResolved = useCallback((pref: Theme) => {
+    const resolved = resolveTheme(pref)
+    document.documentElement.classList.toggle('dark', resolved === 'dark')
+  }, [])
+
+  // Persist preference and apply.
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark')
-    localStorage.setItem('cli-launcher-theme', theme)
-    if (savedThemeRef.current !== theme) {
-      savedThemeRef.current = theme
-      window.electronAPI.saveSettings({ theme }).catch(() => {})
+    localStorage.setItem('cli-launcher-theme', preference)
+    applyResolved(preference)
+    if (savedPrefRef.current !== preference) {
+      savedPrefRef.current = preference
+      window.electronAPI.saveSettings({ theme: preference }).catch(() => {})
     }
-  }, [theme])
+  }, [preference, applyResolved])
 
-  // Apply a theme change as a single DOM state change, with a smooth
-  // whole-page transition. Uses the View Transitions API when available (the
-  // page crossfades as one snapshot); otherwise falls back to scoped color
-  // transitions via the .theme-transition class.
+  // Listen for OS theme changes when in system mode.
+  useEffect(() => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = () => {
+      if (preference === 'system') applyResolved('system')
+    }
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [preference, applyResolved])
+
   const applyTheme = useCallback((next: Theme) => {
     const updateDom = () => {
-      setThemeState(next)
-      document.documentElement.classList.toggle('dark', next === 'dark')
+      setPreference(next)
+      applyResolved(next)
     }
     const doc = document as Document & { startViewTransition?: (cb: () => void) => void }
     if (typeof doc.startViewTransition === 'function') {
@@ -45,15 +62,18 @@ export function useTheme() {
       updateDom()
       window.setTimeout(() => html.classList.remove('theme-transition'), 250)
     }
-  }, [])
+  }, [applyResolved])
 
   const setTheme = useCallback((t: Theme) => {
     applyTheme(t)
   }, [applyTheme])
 
   const toggleTheme = useCallback(() => {
-    applyTheme(theme === 'light' ? 'dark' : 'light')
-  }, [theme, applyTheme])
+    // Cycle: system → light → dark → system
+    const cycle: Theme[] = ['system', 'light', 'dark']
+    const idx = cycle.indexOf(preference)
+    applyTheme(cycle[(idx + 1) % 3])
+  }, [preference, applyTheme])
 
-  return { theme, setTheme, toggleTheme }
+  return { theme: preference, setTheme, toggleTheme, isDark: resolveTheme(preference) === 'dark' }
 }
